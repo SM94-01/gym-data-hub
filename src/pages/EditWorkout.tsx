@@ -46,7 +46,7 @@ export default function EditWorkout() {
     );
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!name.trim()) {
       toast.error('Inserisci un nome per la scheda');
       return;
@@ -57,7 +57,7 @@ export default function EditWorkout() {
     }
     if (!workout) return;
 
-    updateWorkout({
+    await updateWorkout({
       ...workout,
       name: name.trim(),
       exercises,

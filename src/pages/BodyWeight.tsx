@@ -24,13 +24,13 @@ export default function BodyWeight() {
   const bodyWeights = getUserBodyWeights();
   const todayWeight = getTodayBodyWeight();
 
-  const handleSaveWeight = () => {
+  const handleSaveWeight = async () => {
     const weight = parseFloat(weightInput);
     if (isNaN(weight) || weight <= 0) {
       toast.error('Inserisci un peso valido');
       return;
     }
-    addBodyWeight(weight);
+    await addBodyWeight(weight);
     setWeightInput('');
     toast.success('Peso salvato!');
   };

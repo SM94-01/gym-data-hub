@@ -31,7 +31,7 @@ export default function CreateWorkout() {
     setExercises((prev) => prev.filter((e) => e.id !== id));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!name.trim()) {
       toast.error('Inserisci un nome per la scheda');
       return;
@@ -41,14 +41,11 @@ export default function CreateWorkout() {
       return;
     }
 
-    addWorkout({
-      id: crypto.randomUUID(),
-      userId: currentUser?.id || '',
+    await addWorkout({
       name: name.trim(),
       exercises,
       isActive: workouts.length === 0,
       isSaved: false,
-      createdAt: new Date().toISOString(),
     });
 
     toast.success('Scheda salvata con successo!');
