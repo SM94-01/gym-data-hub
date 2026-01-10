@@ -5,15 +5,20 @@ import { ExerciseSession, SetRecord, WorkoutSession } from '@/types/gym';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, Play, Check, ChevronRight, ChevronLeft, Trophy } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { ArrowLeft, Play, Check, ChevronRight, ChevronLeft, Trophy, Timer, Pause } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Workout() {
   const navigate = useNavigate();
-  const { workouts, getActiveWorkout, startSession, endSession, currentSession, updateSession, addProgress } = useGym();
+  const { getUserWorkouts, getActiveWorkout, startSession, endSession, currentSession, updateSession, addProgress, currentUser, lastWorkoutId } = useGym();
   const [selectedWorkoutId, setSelectedWorkoutId] = useState<string | null>(null);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
+  const [recoveryTime, setRecoveryTime] = useState(60);
+  const [timerActive, setTimerActive] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(0);
 
+  const workouts = getUserWorkouts();
   const activeWorkout = getActiveWorkout();
 
   useEffect(() => {
@@ -21,6 +26,37 @@ export default function Workout() {
       setSelectedWorkoutId(activeWorkout.id);
     }
   }, [activeWorkout, selectedWorkoutId]);
+
+  // Recovery timer
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (timerActive && timeLeft > 0) {
+      interval = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            setTimerActive(false);
+            toast.success('Tempo di recupero terminato! 💪');
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [timerActive, timeLeft]);
+
+  const startRecoveryTimer = () => {
+    if (currentSession) {
+      setTimeLeft(currentSession.recoveryTime);
+      setTimerActive(true);
+    }
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const handleStartWorkout = () => {
     const workout = workouts.find((w) => w.id === selectedWorkoutId);
@@ -45,12 +81,16 @@ export default function Workout() {
       workoutId: workout.id,
       workoutName: workout.name,
       startedAt: new Date().toISOString(),
+      recoveryTime,
       exercises,
     });
   };
 
   const handleSetUpdate = (exerciseIndex: number, setIndex: number, field: keyof SetRecord, value: number | boolean) => {
     if (!currentSession) return;
+
+    const wasCompleted = currentSession.exercises[exerciseIndex].completedSets[setIndex].completed;
+    const isNowCompleted = field === 'completed' && value === true;
 
     const updatedSession: WorkoutSession = {
       ...currentSession,
@@ -67,6 +107,11 @@ export default function Workout() {
     };
 
     updateSession(updatedSession);
+
+    // Start recovery timer when completing a set
+    if (!wasCompleted && isNowCompleted) {
+      startRecoveryTimer();
+    }
   };
 
   const handleFinishWorkout = () => {
@@ -81,8 +126,10 @@ export default function Workout() {
 
         addProgress({
           id: crypto.randomUUID(),
+          userId: currentUser?.id || '',
           exerciseId: ex.exerciseId,
           exerciseName: ex.exerciseName,
+          muscle: ex.muscle,
           date: new Date().toISOString(),
           setsCompleted: completedSets.length,
           weightUsed: avgWeight,
@@ -95,6 +142,11 @@ export default function Workout() {
     toast.success('Allenamento completato! 💪');
     navigate('/');
   };
+
+  if (!currentUser) {
+    navigate('/select-user');
+    return null;
+  }
 
   // Session in progress
   if (currentSession) {
@@ -119,6 +171,29 @@ export default function Workout() {
               />
             </div>
           </div>
+
+          {/* Recovery Timer */}
+          {(timerActive || timeLeft > 0) && (
+            <div className="glass-card rounded-xl p-4 mb-6 text-center border-warning/30 animate-pulse-slow">
+              <div className="flex items-center justify-center gap-3">
+                <Timer className="w-6 h-6 text-warning" />
+                <span className="font-display text-3xl font-bold text-warning">
+                  {formatTime(timeLeft)}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setTimerActive(false);
+                    setTimeLeft(0);
+                  }}
+                >
+                  <Pause className="w-4 h-4" />
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">Recupero</p>
+            </div>
+          )}
 
           {/* Current Exercise */}
           <div className="glass-card rounded-2xl p-6 mb-6 animate-scale-in">
@@ -226,6 +301,8 @@ export default function Workout() {
   }
 
   // Workout selection
+  const lastUsedWorkout = workouts.find((w) => w.id === lastWorkoutId);
+
   return (
     <div className="min-h-screen pt-20 pb-8">
       <div className="container mx-auto px-4 max-w-lg">
@@ -245,6 +322,11 @@ export default function Workout() {
           <p className="text-muted-foreground mt-2">
             Seleziona una scheda e inizia ad allenarti
           </p>
+          {lastUsedWorkout && !activeWorkout && (
+            <p className="text-sm text-primary mt-2">
+              📌 Ultima scheda: "{lastUsedWorkout.name}"
+            </p>
+          )}
         </div>
 
         {workouts.length === 0 ? (
@@ -256,6 +338,26 @@ export default function Workout() {
           </div>
         ) : (
           <div className="space-y-4">
+            {/* Recovery Time Setting */}
+            <div className="glass-card rounded-xl p-4">
+              <Label className="text-sm font-medium text-muted-foreground mb-2 block">
+                Tempo di recupero (secondi)
+              </Label>
+              <div className="flex gap-2">
+                {[30, 60, 90, 120].map((time) => (
+                  <Button
+                    key={time}
+                    variant={recoveryTime === time ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setRecoveryTime(time)}
+                    className="flex-1"
+                  >
+                    {time}s
+                  </Button>
+                ))}
+              </div>
+            </div>
+
             {workouts.map((workout) => (
               <div
                 key={workout.id}
@@ -268,7 +370,14 @@ export default function Workout() {
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="font-display font-semibold text-lg">{workout.name}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-display font-semibold text-lg">{workout.name}</h3>
+                      {workout.isActive && (
+                        <span className="px-2 py-0.5 bg-primary/20 text-primary text-xs rounded-full">
+                          Attiva
+                        </span>
+                      )}
+                    </div>
                     <p className="text-sm text-muted-foreground">
                       {workout.exercises.length} esercizi
                     </p>

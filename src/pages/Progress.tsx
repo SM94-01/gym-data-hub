@@ -9,7 +9,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, TrendingUp, Calendar, Dumbbell } from 'lucide-react';
+import { ArrowLeft, TrendingUp, Calendar, Dumbbell, BarChart3 } from 'lucide-react';
+import { MONTHS } from '@/types/gym';
 import {
   LineChart,
   Line,
@@ -20,12 +21,19 @@ import {
   ResponsiveContainer,
   AreaChart,
   Area,
+  BarChart,
+  Bar,
+  Legend,
 } from 'recharts';
 
 export default function Progress() {
   const navigate = useNavigate();
-  const { progress, workouts } = useGym();
+  const { getUserProgress, currentUser } = useGym();
   const [selectedExercise, setSelectedExercise] = useState<string>('');
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+
+  const progress = getUserProgress();
 
   // Get unique exercises from progress
   const exercises = useMemo(() => {
@@ -36,11 +44,25 @@ export default function Progress() {
     return Array.from(uniqueExercises, ([id, name]) => ({ id, name }));
   }, [progress]);
 
-  // Filter and format progress data for chart
+  // Get available years from progress
+  const availableYears = useMemo(() => {
+    const years = new Set(progress.map((p) => new Date(p.date).getFullYear()));
+    return Array.from(years).sort((a, b) => b - a);
+  }, [progress]);
+
+  // Filter progress by month/year
+  const filteredProgress = useMemo(() => {
+    return progress.filter((p) => {
+      const date = new Date(p.date);
+      return date.getMonth() + 1 === selectedMonth && date.getFullYear() === selectedYear;
+    });
+  }, [progress, selectedMonth, selectedYear]);
+
+  // Filter and format progress data for chart (by exercise)
   const chartData = useMemo(() => {
     if (!selectedExercise) return [];
 
-    return progress
+    return filteredProgress
       .filter((p) => p.exerciseId === selectedExercise)
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
       .map((p) => ({
@@ -52,7 +74,21 @@ export default function Progress() {
         reps: p.repsCompleted,
         serie: p.setsCompleted,
       }));
-  }, [progress, selectedExercise]);
+  }, [filteredProgress, selectedExercise]);
+
+  // Calculate volume by muscle group
+  const volumeByMuscle = useMemo(() => {
+    const muscleVolume: Record<string, number> = {};
+    
+    filteredProgress.forEach((p) => {
+      const volume = p.weightUsed * p.setsCompleted * p.repsCompleted;
+      muscleVolume[p.muscle] = (muscleVolume[p.muscle] || 0) + volume;
+    });
+
+    return Object.entries(muscleVolume)
+      .map(([muscle, volume]) => ({ muscle, volume: Math.round(volume) }))
+      .sort((a, b) => b.volume - a.volume);
+  }, [filteredProgress]);
 
   // Calculate stats
   const stats = useMemo(() => {
@@ -71,6 +107,24 @@ export default function Progress() {
       totalSessions: chartData.length,
     };
   }, [chartData]);
+
+  // Overall stats for the period
+  const periodStats = useMemo(() => {
+    const uniqueDates = new Set(filteredProgress.map((p) => new Date(p.date).toDateString()));
+    const maxWeight = filteredProgress.length > 0 
+      ? Math.max(...filteredProgress.map((p) => p.weightUsed))
+      : 0;
+
+    return {
+      totalSessions: uniqueDates.size,
+      maxWeight: maxWeight.toFixed(1),
+    };
+  }, [filteredProgress]);
+
+  if (!currentUser) {
+    navigate('/select-user');
+    return null;
+  }
 
   return (
     <div className="min-h-screen pt-20 pb-8">
@@ -93,7 +147,7 @@ export default function Progress() {
           </p>
         </div>
 
-        {exercises.length === 0 ? (
+        {progress.length === 0 ? (
           <div className="glass-card rounded-2xl p-8 text-center">
             <div className="w-16 h-16 bg-secondary rounded-full flex items-center justify-center mx-auto mb-4">
               <TrendingUp className="w-8 h-8 text-muted-foreground" />
@@ -110,128 +164,229 @@ export default function Progress() {
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Exercise Selector */}
+            {/* Period Selector */}
             <div className="glass-card rounded-xl p-6 animate-fade-in">
               <label className="text-sm font-medium text-muted-foreground mb-3 block">
-                Seleziona Esercizio
+                Periodo
               </label>
-              <Select value={selectedExercise} onValueChange={setSelectedExercise}>
-                <SelectTrigger className="bg-secondary/50 border-border/50">
-                  <SelectValue placeholder="Scegli un esercizio" />
-                </SelectTrigger>
-                <SelectContent>
-                  {exercises.map((ex) => (
-                    <SelectItem key={ex.id} value={ex.id}>
-                      {ex.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex gap-3">
+                <Select 
+                  value={selectedMonth.toString()} 
+                  onValueChange={(v) => setSelectedMonth(parseInt(v))}
+                >
+                  <SelectTrigger className="bg-secondary/50 border-border/50 flex-1">
+                    <SelectValue placeholder="Mese" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MONTHS.map((month) => (
+                      <SelectItem key={month.value} value={month.value.toString()}>
+                        {month.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select 
+                  value={selectedYear.toString()} 
+                  onValueChange={(v) => setSelectedYear(parseInt(v))}
+                >
+                  <SelectTrigger className="bg-secondary/50 border-border/50 w-28">
+                    <SelectValue placeholder="Anno" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(availableYears.length > 0 ? availableYears : [new Date().getFullYear()]).map((year) => (
+                      <SelectItem key={year} value={year.toString()}>
+                        {year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
-            {selectedExercise && stats && (
+            {filteredProgress.length === 0 ? (
+              <div className="glass-card rounded-xl p-6 text-center">
+                <p className="text-muted-foreground">
+                  Nessun dato per il periodo selezionato
+                </p>
+              </div>
+            ) : (
               <>
-                {/* Stats Cards */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-fade-in" style={{ animationDelay: '100ms' }}>
-                  <div className="glass-card rounded-xl p-4 text-center">
-                    <Dumbbell className="w-5 h-5 text-primary mx-auto mb-2" />
-                    <p className="font-display text-xl font-bold">{stats.maxWeight}kg</p>
-                    <p className="text-xs text-muted-foreground">Max Peso</p>
-                  </div>
-                  <div className="glass-card rounded-xl p-4 text-center">
-                    <TrendingUp className="w-5 h-5 text-primary mx-auto mb-2" />
-                    <p className="font-display text-xl font-bold">{stats.lastWeight}kg</p>
-                    <p className="text-xs text-muted-foreground">Ultimo</p>
-                  </div>
+                {/* Period Stats */}
+                <div className="grid grid-cols-2 gap-4 animate-fade-in" style={{ animationDelay: '50ms' }}>
                   <div className="glass-card rounded-xl p-4 text-center">
                     <Calendar className="w-5 h-5 text-primary mx-auto mb-2" />
-                    <p className="font-display text-xl font-bold">{stats.totalSessions}</p>
+                    <p className="font-display text-xl font-bold">{periodStats.totalSessions}</p>
                     <p className="text-xs text-muted-foreground">Sessioni</p>
                   </div>
                   <div className="glass-card rounded-xl p-4 text-center">
-                    <TrendingUp className={`w-5 h-5 mx-auto mb-2 ${parseFloat(stats.improvement) >= 0 ? 'text-primary' : 'text-destructive'}`} />
-                    <p className="font-display text-xl font-bold">
-                      {parseFloat(stats.improvement) >= 0 ? '+' : ''}{stats.improvement}%
-                    </p>
-                    <p className="text-xs text-muted-foreground">Progresso</p>
+                    <Dumbbell className="w-5 h-5 text-primary mx-auto mb-2" />
+                    <p className="font-display text-xl font-bold">{periodStats.maxWeight}kg</p>
+                    <p className="text-xs text-muted-foreground">Peso Max</p>
                   </div>
                 </div>
 
-                {/* Weight Chart */}
-                <div className="glass-card rounded-xl p-6 animate-fade-in" style={{ animationDelay: '200ms' }}>
-                  <h3 className="font-semibold mb-4">Andamento Peso (kg)</h3>
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={chartData}>
-                        <defs>
-                          <linearGradient id="colorWeight" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="hsl(160, 84%, 39%)" stopOpacity={0.3} />
-                            <stop offset="95%" stopColor="hsl(160, 84%, 39%)" stopOpacity={0} />
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 14%, 18%)" />
-                        <XAxis
-                          dataKey="date"
-                          stroke="hsl(220, 10%, 55%)"
-                          fontSize={12}
-                        />
-                        <YAxis
-                          stroke="hsl(220, 10%, 55%)"
-                          fontSize={12}
-                        />
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: 'hsl(220, 18%, 10%)',
-                            border: '1px solid hsl(220, 14%, 18%)',
-                            borderRadius: '8px',
-                          }}
-                        />
-                        <Area
-                          type="monotone"
-                          dataKey="peso"
-                          stroke="hsl(160, 84%, 39%)"
-                          strokeWidth={2}
-                          fill="url(#colorWeight)"
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
+                {/* Volume by Muscle Chart */}
+                {volumeByMuscle.length > 0 && (
+                  <div className="glass-card rounded-xl p-6 animate-fade-in" style={{ animationDelay: '100ms' }}>
+                    <div className="flex items-center gap-2 mb-4">
+                      <BarChart3 className="w-5 h-5 text-primary" />
+                      <h3 className="font-semibold">Volume per Gruppo Muscolare</h3>
+                    </div>
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={volumeByMuscle} layout="vertical">
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 14%, 18%)" />
+                          <XAxis type="number" stroke="hsl(220, 10%, 55%)" fontSize={12} />
+                          <YAxis 
+                            dataKey="muscle" 
+                            type="category" 
+                            stroke="hsl(220, 10%, 55%)" 
+                            fontSize={11}
+                            width={80}
+                          />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: 'hsl(220, 18%, 10%)',
+                              border: '1px solid hsl(220, 14%, 18%)',
+                              borderRadius: '8px',
+                            }}
+                            formatter={(value: number) => [`${value} kg`, 'Volume']}
+                          />
+                          <Bar 
+                            dataKey="volume" 
+                            fill="hsl(160, 84%, 39%)"
+                            radius={[0, 4, 4, 0]}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
                   </div>
+                )}
+
+                {/* Exercise Selector */}
+                <div className="glass-card rounded-xl p-6 animate-fade-in" style={{ animationDelay: '150ms' }}>
+                  <label className="text-sm font-medium text-muted-foreground mb-3 block">
+                    Dettaglio Esercizio
+                  </label>
+                  <Select value={selectedExercise} onValueChange={setSelectedExercise}>
+                    <SelectTrigger className="bg-secondary/50 border-border/50">
+                      <SelectValue placeholder="Scegli un esercizio" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {exercises.map((ex) => (
+                        <SelectItem key={ex.id} value={ex.id}>
+                          {ex.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
-                {/* Reps Chart */}
-                <div className="glass-card rounded-xl p-6 animate-fade-in" style={{ animationDelay: '300ms' }}>
-                  <h3 className="font-semibold mb-4">Ripetizioni Medie</h3>
-                  <div className="h-48">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 14%, 18%)" />
-                        <XAxis
-                          dataKey="date"
-                          stroke="hsl(220, 10%, 55%)"
-                          fontSize={12}
-                        />
-                        <YAxis
-                          stroke="hsl(220, 10%, 55%)"
-                          fontSize={12}
-                        />
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: 'hsl(220, 18%, 10%)',
-                            border: '1px solid hsl(220, 14%, 18%)',
-                            borderRadius: '8px',
-                          }}
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="reps"
-                          stroke="hsl(38, 92%, 50%)"
-                          strokeWidth={2}
-                          dot={{ fill: 'hsl(38, 92%, 50%)', strokeWidth: 0 }}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
+                {selectedExercise && stats && (
+                  <>
+                    {/* Stats Cards */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-fade-in" style={{ animationDelay: '200ms' }}>
+                      <div className="glass-card rounded-xl p-4 text-center">
+                        <Dumbbell className="w-5 h-5 text-primary mx-auto mb-2" />
+                        <p className="font-display text-xl font-bold">{stats.maxWeight}kg</p>
+                        <p className="text-xs text-muted-foreground">Max Peso</p>
+                      </div>
+                      <div className="glass-card rounded-xl p-4 text-center">
+                        <TrendingUp className="w-5 h-5 text-primary mx-auto mb-2" />
+                        <p className="font-display text-xl font-bold">{stats.lastWeight}kg</p>
+                        <p className="text-xs text-muted-foreground">Ultimo</p>
+                      </div>
+                      <div className="glass-card rounded-xl p-4 text-center">
+                        <Calendar className="w-5 h-5 text-primary mx-auto mb-2" />
+                        <p className="font-display text-xl font-bold">{stats.totalSessions}</p>
+                        <p className="text-xs text-muted-foreground">Sessioni</p>
+                      </div>
+                      <div className="glass-card rounded-xl p-4 text-center">
+                        <TrendingUp className={`w-5 h-5 mx-auto mb-2 ${parseFloat(stats.improvement) >= 0 ? 'text-primary' : 'text-destructive'}`} />
+                        <p className="font-display text-xl font-bold">
+                          {parseFloat(stats.improvement) >= 0 ? '+' : ''}{stats.improvement}%
+                        </p>
+                        <p className="text-xs text-muted-foreground">Progresso</p>
+                      </div>
+                    </div>
+
+                    {/* Weight Chart */}
+                    <div className="glass-card rounded-xl p-6 animate-fade-in" style={{ animationDelay: '250ms' }}>
+                      <h3 className="font-semibold mb-4">Andamento Peso (kg)</h3>
+                      <div className="h-64">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={chartData}>
+                            <defs>
+                              <linearGradient id="colorWeight" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="hsl(160, 84%, 39%)" stopOpacity={0.3} />
+                                <stop offset="95%" stopColor="hsl(160, 84%, 39%)" stopOpacity={0} />
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 14%, 18%)" />
+                            <XAxis
+                              dataKey="date"
+                              stroke="hsl(220, 10%, 55%)"
+                              fontSize={12}
+                            />
+                            <YAxis
+                              stroke="hsl(220, 10%, 55%)"
+                              fontSize={12}
+                            />
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: 'hsl(220, 18%, 10%)',
+                                border: '1px solid hsl(220, 14%, 18%)',
+                                borderRadius: '8px',
+                              }}
+                            />
+                            <Area
+                              type="monotone"
+                              dataKey="peso"
+                              stroke="hsl(160, 84%, 39%)"
+                              strokeWidth={2}
+                              fill="url(#colorWeight)"
+                            />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+
+                    {/* Reps Chart */}
+                    <div className="glass-card rounded-xl p-6 animate-fade-in" style={{ animationDelay: '300ms' }}>
+                      <h3 className="font-semibold mb-4">Ripetizioni Medie</h3>
+                      <div className="h-48">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={chartData}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 14%, 18%)" />
+                            <XAxis
+                              dataKey="date"
+                              stroke="hsl(220, 10%, 55%)"
+                              fontSize={12}
+                            />
+                            <YAxis
+                              stroke="hsl(220, 10%, 55%)"
+                              fontSize={12}
+                            />
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: 'hsl(220, 18%, 10%)',
+                                border: '1px solid hsl(220, 14%, 18%)',
+                                borderRadius: '8px',
+                              }}
+                            />
+                            <Line
+                              type="monotone"
+                              dataKey="reps"
+                              stroke="hsl(38, 92%, 50%)"
+                              strokeWidth={2}
+                              dot={{ fill: 'hsl(38, 92%, 50%)', strokeWidth: 0 }}
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                  </>
+                )}
               </>
             )}
           </div>
