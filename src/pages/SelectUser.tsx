@@ -43,7 +43,7 @@ export default function SelectUser() {
             <Dumbbell className="w-16 h-16 text-primary relative z-10 mx-auto" />
           </div>
           <h1 className="font-display text-4xl font-bold mt-4">
-            Gym<span className="text-primary">Tracker</span>
+            Gym<span className="text-primary">App</span>
           </h1>
           <p className="text-muted-foreground mt-2">
             Seleziona il tuo profilo per iniziare
