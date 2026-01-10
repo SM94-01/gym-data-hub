@@ -1,4 +1,4 @@
-import { Dumbbell } from 'lucide-react';
+import { Dumbbell, Scale } from 'lucide-react';
 import { useLocation, Link } from 'react-router-dom';
 
 const navItems = [
@@ -6,6 +6,7 @@ const navItems = [
   { path: '/create', label: 'Crea Scheda' },
   { path: '/workout', label: 'Allenamento' },
   { path: '/progress', label: 'Progressi' },
+  { path: '/weight', label: 'Peso' },
 ];
 
 export function Header() {
@@ -42,11 +43,11 @@ export function Header() {
           </nav>
 
           <nav className="flex md:hidden items-center gap-1">
-            {navItems.map((item) => (
+            {navItems.slice(0, 4).map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                className={`px-2 py-2 rounded-lg text-xs font-medium transition-all ${
                   location.pathname === item.path
                     ? 'bg-primary text-primary-foreground'
                     : 'text-muted-foreground'
@@ -55,6 +56,16 @@ export function Header() {
                 {item.label.split(' ')[0]}
               </Link>
             ))}
+            <Link
+              to="/weight"
+              className={`p-2 rounded-lg transition-all ${
+                location.pathname === '/weight'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground'
+              }`}
+            >
+              <Scale className="w-4 h-4" />
+            </Link>
           </nav>
         </div>
       </div>

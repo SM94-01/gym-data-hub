@@ -1,3 +1,9 @@
+export interface User {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
 export interface Exercise {
   id: string;
   name: string;
@@ -9,17 +15,21 @@ export interface Exercise {
 
 export interface Workout {
   id: string;
+  userId: string;
   name: string;
   exercises: Exercise[];
   isActive: boolean;
+  isSaved: boolean;
   lastUsed?: string;
   createdAt: string;
 }
 
 export interface WorkoutProgress {
   id: string;
+  userId: string;
   exerciseId: string;
   exerciseName: string;
+  muscle: string;
   date: string;
   setsCompleted: number;
   weightUsed: number;
@@ -30,6 +40,7 @@ export interface WorkoutSession {
   workoutId: string;
   workoutName: string;
   startedAt: string;
+  recoveryTime: number;
   exercises: ExerciseSession[];
 }
 
@@ -48,6 +59,13 @@ export interface SetRecord {
   reps: number;
   weight: number;
   completed: boolean;
+}
+
+export interface BodyWeight {
+  id: string;
+  userId: string;
+  date: string;
+  weight: number;
 }
 
 export type MuscleGroup = 
@@ -73,4 +91,20 @@ export const MUSCLE_GROUPS: MuscleGroup[] = [
   'Glutei',
   'Polpacci',
   'Avambracci',
+];
+
+// Helper to get month names in Italian
+export const MONTHS = [
+  { value: 1, label: 'Gennaio' },
+  { value: 2, label: 'Febbraio' },
+  { value: 3, label: 'Marzo' },
+  { value: 4, label: 'Aprile' },
+  { value: 5, label: 'Maggio' },
+  { value: 6, label: 'Giugno' },
+  { value: 7, label: 'Luglio' },
+  { value: 8, label: 'Agosto' },
+  { value: 9, label: 'Settembre' },
+  { value: 10, label: 'Ottobre' },
+  { value: 11, label: 'Novembre' },
+  { value: 12, label: 'Dicembre' },
 ];

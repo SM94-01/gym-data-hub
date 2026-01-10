@@ -12,9 +12,11 @@ import { toast } from 'sonner';
 
 export default function CreateWorkout() {
   const navigate = useNavigate();
-  const { addWorkout, workouts } = useGym();
+  const { addWorkout, getUserWorkouts, currentUser } = useGym();
   const [name, setName] = useState('');
   const [exercises, setExercises] = useState<Exercise[]>([]);
+
+  const workouts = getUserWorkouts();
 
   const handleAddExercise = (exercise: Omit<Exercise, 'id'>) => {
     const newExercise: Exercise = {
@@ -41,15 +43,22 @@ export default function CreateWorkout() {
 
     addWorkout({
       id: crypto.randomUUID(),
+      userId: currentUser?.id || '',
       name: name.trim(),
       exercises,
       isActive: workouts.length === 0,
+      isSaved: false,
       createdAt: new Date().toISOString(),
     });
 
     toast.success('Scheda salvata con successo!');
     navigate('/');
   };
+
+  if (!currentUser) {
+    navigate('/select-user');
+    return null;
+  }
 
   return (
     <div className="min-h-screen pt-20 pb-8">

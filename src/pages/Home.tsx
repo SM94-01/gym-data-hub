@@ -1,22 +1,60 @@
 import { useGym } from '@/context/GymContext';
 import { WorkoutCard } from '@/components/gym/WorkoutCard';
 import { Button } from '@/components/ui/button';
-import { Plus, Play, Trophy, Flame, Target } from 'lucide-react';
+import { Plus, Play, Trophy, Flame, Target, Scale, LogOut, User } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 export default function Home() {
-  const { workouts, getActiveWorkout, progress } = useGym();
+  const { getUserWorkouts, getActiveWorkout, getUserProgress, currentUser, logout } = useGym();
   const navigate = useNavigate();
+  
+  const workouts = getUserWorkouts();
+  const progress = getUserProgress();
   const activeWorkout = getActiveWorkout();
 
   const totalWorkouts = progress.length;
   const totalExercises = workouts.reduce((acc, w) => acc + w.exercises.length, 0);
 
+  // Calculate unique sessions (by date)
+  const uniqueSessions = new Set(
+    progress.map((p) => new Date(p.date).toDateString())
+  ).size;
+
+  if (!currentUser) {
+    navigate('/select-user');
+    return null;
+  }
+
   return (
     <div className="min-h-screen pt-20 pb-8">
       <div className="container mx-auto px-4">
+        {/* User Header */}
+        <div className="flex items-center justify-between mb-6 animate-fade-in">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center">
+              <User className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Ciao,</p>
+              <p className="font-display font-semibold">{currentUser.name}</p>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              logout();
+              navigate('/select-user');
+            }}
+            className="text-muted-foreground"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Cambia utente
+          </Button>
+        </div>
+
         {/* Hero Section */}
-        <section className="py-8 md:py-12">
+        <section className="py-6">
           <div className="text-center mb-8">
             <h1 className="font-display text-4xl md:text-5xl font-bold mb-4 animate-fade-in">
               Il Tuo <span className="text-gradient">Allenamento</span>
@@ -27,7 +65,7 @@ export default function Home() {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             <div className="glass-card rounded-xl p-4 text-center animate-slide-up" style={{ animationDelay: '150ms' }}>
               <Flame className="w-6 h-6 text-primary mx-auto mb-2" />
               <p className="font-display text-2xl font-bold text-foreground">{workouts.length}</p>
@@ -40,9 +78,18 @@ export default function Home() {
             </div>
             <div className="glass-card rounded-xl p-4 text-center animate-slide-up" style={{ animationDelay: '250ms' }}>
               <Trophy className="w-6 h-6 text-primary mx-auto mb-2" />
-              <p className="font-display text-2xl font-bold text-foreground">{totalWorkouts}</p>
-              <p className="text-xs text-muted-foreground">Allenamenti</p>
+              <p className="font-display text-2xl font-bold text-foreground">{uniqueSessions}</p>
+              <p className="text-xs text-muted-foreground">Sessioni</p>
             </div>
+            <Link 
+              to="/weight"
+              className="glass-card rounded-xl p-4 text-center animate-slide-up hover:border-primary/30 transition-all cursor-pointer" 
+              style={{ animationDelay: '300ms' }}
+            >
+              <Scale className="w-6 h-6 text-primary mx-auto mb-2" />
+              <p className="font-display text-lg font-bold text-foreground">Peso</p>
+              <p className="text-xs text-muted-foreground">Traccia →</p>
+            </Link>
           </div>
 
           {/* Active Workout Quick Action */}
