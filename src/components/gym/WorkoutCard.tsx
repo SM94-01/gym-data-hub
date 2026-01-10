@@ -1,5 +1,6 @@
+import { useNavigate } from 'react-router-dom';
 import { Workout } from '@/types/gym';
-import { Calendar, Dumbbell, ChevronRight, Star, Trash2 } from 'lucide-react';
+import { Calendar, Dumbbell, ChevronRight, Star, Trash2, Edit2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useGym } from '@/context/GymContext';
 
@@ -9,6 +10,7 @@ interface WorkoutCardProps {
 }
 
 export function WorkoutCard({ workout, onSelect }: WorkoutCardProps) {
+  const navigate = useNavigate();
   const { setActiveWorkout, deleteWorkout } = useGym();
 
   const muscleGroups = [...new Set(workout.exercises.map((e) => e.muscle))];
@@ -79,6 +81,17 @@ export function WorkoutCard({ workout, onSelect }: WorkoutCardProps) {
               Attiva
             </Button>
           )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/edit/${workout.id}`);
+            }}
+            className="text-xs text-muted-foreground hover:text-primary"
+          >
+            <Edit2 className="w-4 h-4" />
+          </Button>
           <Button
             variant="ghost"
             size="sm"

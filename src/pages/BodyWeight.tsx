@@ -52,6 +52,11 @@ export default function BodyWeight() {
         min: Math.min(...bodyWeights.map((bw) => bw.weight)),
         max: Math.max(...bodyWeights.map((bw) => bw.weight)),
         diff: bodyWeights[bodyWeights.length - 1].weight - bodyWeights[0].weight,
+        avg: (bodyWeights.reduce((sum, bw) => sum + bw.weight, 0) / bodyWeights.length).toFixed(1),
+        percentChange: (((bodyWeights[bodyWeights.length - 1].weight - bodyWeights[0].weight) / bodyWeights[0].weight) * 100).toFixed(1),
+        weeklyAvg: bodyWeights.length >= 7 
+          ? (bodyWeights.slice(-7).reduce((sum, bw) => sum + bw.weight, 0) / Math.min(7, bodyWeights.length)).toFixed(1)
+          : null,
       }
     : null;
 
@@ -107,37 +112,63 @@ export default function BodyWeight() {
 
         {/* Stats */}
         {stats && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 animate-fade-in" style={{ animationDelay: '100ms' }}>
-            <div className="glass-card rounded-xl p-4 text-center">
-              <Scale className="w-5 h-5 text-primary mx-auto mb-2" />
-              <p className="font-display text-xl font-bold">{stats.last}kg</p>
-              <p className="text-xs text-muted-foreground">Attuale</p>
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 animate-fade-in" style={{ animationDelay: '100ms' }}>
+              <div className="glass-card rounded-xl p-4 text-center">
+                <Scale className="w-5 h-5 text-primary mx-auto mb-2" />
+                <p className="font-display text-xl font-bold">{stats.last}kg</p>
+                <p className="text-xs text-muted-foreground">Attuale</p>
+              </div>
+              <div className="glass-card rounded-xl p-4 text-center">
+                <Scale className="w-5 h-5 text-muted-foreground mx-auto mb-2" />
+                <p className="font-display text-xl font-bold">{stats.first}kg</p>
+                <p className="text-xs text-muted-foreground">Inizio</p>
+              </div>
+              <div className="glass-card rounded-xl p-4 text-center">
+                {stats.diff > 0 ? (
+                  <TrendingUp className="w-5 h-5 text-warning mx-auto mb-2" />
+                ) : stats.diff < 0 ? (
+                  <TrendingDown className="w-5 h-5 text-primary mx-auto mb-2" />
+                ) : (
+                  <Minus className="w-5 h-5 text-muted-foreground mx-auto mb-2" />
+                )}
+                <p className={`font-display text-xl font-bold ${
+                  stats.diff > 0 ? 'text-warning' : stats.diff < 0 ? 'text-primary' : ''
+                }`}>
+                  {stats.diff > 0 ? '+' : ''}{stats.diff.toFixed(1)}kg
+                </p>
+                <p className="text-xs text-muted-foreground">Variazione</p>
+              </div>
+              <div className="glass-card rounded-xl p-4 text-center">
+                <p className="font-display text-xl font-bold">{bodyWeights.length}</p>
+                <p className="text-xs text-muted-foreground">Registrazioni</p>
+              </div>
             </div>
-            <div className="glass-card rounded-xl p-4 text-center">
-              <Scale className="w-5 h-5 text-muted-foreground mx-auto mb-2" />
-              <p className="font-display text-xl font-bold">{stats.first}kg</p>
-              <p className="text-xs text-muted-foreground">Inizio</p>
+            
+            {/* Additional Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 animate-fade-in" style={{ animationDelay: '150ms' }}>
+              <div className="glass-card rounded-xl p-4 text-center">
+                <p className="font-display text-xl font-bold">{stats.min}kg</p>
+                <p className="text-xs text-muted-foreground">Peso Min</p>
+              </div>
+              <div className="glass-card rounded-xl p-4 text-center">
+                <p className="font-display text-xl font-bold">{stats.max}kg</p>
+                <p className="text-xs text-muted-foreground">Peso Max</p>
+              </div>
+              <div className="glass-card rounded-xl p-4 text-center">
+                <p className="font-display text-xl font-bold">{stats.avg}kg</p>
+                <p className="text-xs text-muted-foreground">Media</p>
+              </div>
+              <div className="glass-card rounded-xl p-4 text-center">
+                <p className={`font-display text-xl font-bold ${
+                  parseFloat(stats.percentChange) > 0 ? 'text-warning' : parseFloat(stats.percentChange) < 0 ? 'text-primary' : ''
+                }`}>
+                  {parseFloat(stats.percentChange) > 0 ? '+' : ''}{stats.percentChange}%
+                </p>
+                <p className="text-xs text-muted-foreground">% Variazione</p>
+              </div>
             </div>
-            <div className="glass-card rounded-xl p-4 text-center">
-              {stats.diff > 0 ? (
-                <TrendingUp className="w-5 h-5 text-warning mx-auto mb-2" />
-              ) : stats.diff < 0 ? (
-                <TrendingDown className="w-5 h-5 text-primary mx-auto mb-2" />
-              ) : (
-                <Minus className="w-5 h-5 text-muted-foreground mx-auto mb-2" />
-              )}
-              <p className={`font-display text-xl font-bold ${
-                stats.diff > 0 ? 'text-warning' : stats.diff < 0 ? 'text-primary' : ''
-              }`}>
-                {stats.diff > 0 ? '+' : ''}{stats.diff.toFixed(1)}kg
-              </p>
-              <p className="text-xs text-muted-foreground">Variazione</p>
-            </div>
-            <div className="glass-card rounded-xl p-4 text-center">
-              <p className="font-display text-xl font-bold">{bodyWeights.length}</p>
-              <p className="text-xs text-muted-foreground">Registrazioni</p>
-            </div>
-          </div>
+          </>
         )}
 
         {/* Chart */}
