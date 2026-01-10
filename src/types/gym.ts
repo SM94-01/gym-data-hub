@@ -71,6 +71,7 @@ export interface BodyWeight {
 export type MuscleGroup = 
   | 'Petto'
   | 'Schiena'
+  | 'Dorsali'
   | 'Spalle'
   | 'Bicipiti'
   | 'Tricipiti'
@@ -83,6 +84,7 @@ export type MuscleGroup =
 export const MUSCLE_GROUPS: MuscleGroup[] = [
   'Petto',
   'Schiena',
+  'Dorsali',
   'Spalle',
   'Bicipiti',
   'Tricipiti',

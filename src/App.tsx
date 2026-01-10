@@ -7,6 +7,7 @@ import { GymProvider, useGym } from "@/context/GymContext";
 import { Header } from "@/components/gym/Header";
 import Home from "./pages/Home";
 import CreateWorkout from "./pages/CreateWorkout";
+import EditWorkout from "./pages/EditWorkout";
 import Workout from "./pages/Workout";
 import Progress from "./pages/Progress";
 import BodyWeight from "./pages/BodyWeight";
@@ -33,6 +34,7 @@ function AppRoutes() {
         <Route path="/select-user" element={<SelectUser />} />
         <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
         <Route path="/create" element={<ProtectedRoute><CreateWorkout /></ProtectedRoute>} />
+        <Route path="/edit/:id" element={<ProtectedRoute><EditWorkout /></ProtectedRoute>} />
         <Route path="/workout" element={<ProtectedRoute><Workout /></ProtectedRoute>} />
         <Route path="/progress" element={<ProtectedRoute><Progress /></ProtectedRoute>} />
         <Route path="/weight" element={<ProtectedRoute><BodyWeight /></ProtectedRoute>} />

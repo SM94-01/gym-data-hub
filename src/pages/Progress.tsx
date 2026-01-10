@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, TrendingUp, Calendar, Dumbbell, BarChart3 } from 'lucide-react';
+import { ArrowLeft, TrendingUp, Calendar, Dumbbell, BarChart3, Target, Flame, Award, Activity } from 'lucide-react';
 import { MONTHS } from '@/types/gym';
 import {
   LineChart,
@@ -23,8 +23,12 @@ import {
   Area,
   BarChart,
   Bar,
-  Legend,
+  PieChart,
+  Pie,
+  Cell,
 } from 'recharts';
+
+const COLORS = ['hsl(160, 84%, 39%)', 'hsl(38, 92%, 50%)', 'hsl(280, 65%, 60%)', 'hsl(200, 80%, 50%)', 'hsl(340, 75%, 55%)', 'hsl(120, 60%, 45%)'];
 
 export default function Progress() {
   const navigate = useNavigate();
@@ -73,6 +77,7 @@ export default function Progress() {
         peso: p.weightUsed,
         reps: p.repsCompleted,
         serie: p.setsCompleted,
+        volume: p.weightUsed * p.setsCompleted * p.repsCompleted,
       }));
   }, [filteredProgress, selectedExercise]);
 
@@ -90,21 +95,64 @@ export default function Progress() {
       .sort((a, b) => b.volume - a.volume);
   }, [filteredProgress]);
 
+  // Calculate sets by muscle group
+  const setsByMuscle = useMemo(() => {
+    const muscleSets: Record<string, number> = {};
+    
+    filteredProgress.forEach((p) => {
+      muscleSets[p.muscle] = (muscleSets[p.muscle] || 0) + p.setsCompleted;
+    });
+
+    return Object.entries(muscleSets)
+      .map(([muscle, sets]) => ({ muscle, sets }))
+      .sort((a, b) => b.sets - a.sets);
+  }, [filteredProgress]);
+
+  // Pie chart data for muscle distribution
+  const muscleDistribution = useMemo(() => {
+    const total = setsByMuscle.reduce((sum, m) => sum + m.sets, 0);
+    return setsByMuscle.map((m, i) => ({
+      name: m.muscle,
+      value: m.sets,
+      percentage: total > 0 ? ((m.sets / total) * 100).toFixed(1) : 0,
+      fill: COLORS[i % COLORS.length],
+    }));
+  }, [setsByMuscle]);
+
+  // Exercise frequency
+  const exerciseFrequency = useMemo(() => {
+    const frequency: Record<string, number> = {};
+    
+    filteredProgress.forEach((p) => {
+      frequency[p.exerciseName] = (frequency[p.exerciseName] || 0) + 1;
+    });
+
+    return Object.entries(frequency)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+  }, [filteredProgress]);
+
   // Calculate stats
   const stats = useMemo(() => {
     if (chartData.length === 0) return null;
 
     const weights = chartData.map((d) => d.peso);
+    const volumes = chartData.map((d) => d.volume);
     const maxWeight = Math.max(...weights);
     const lastWeight = weights[weights.length - 1];
     const firstWeight = weights[0];
     const improvement = firstWeight > 0 ? ((lastWeight - firstWeight) / firstWeight) * 100 : 0;
+    const totalVolume = volumes.reduce((sum, v) => sum + v, 0);
+    const avgVolume = totalVolume / volumes.length;
 
     return {
       maxWeight,
       lastWeight,
       improvement: improvement.toFixed(1),
       totalSessions: chartData.length,
+      totalVolume: Math.round(totalVolume),
+      avgVolume: Math.round(avgVolume),
     };
   }, [chartData]);
 
@@ -114,10 +162,20 @@ export default function Progress() {
     const maxWeight = filteredProgress.length > 0 
       ? Math.max(...filteredProgress.map((p) => p.weightUsed))
       : 0;
+    const totalSets = filteredProgress.reduce((sum, p) => sum + p.setsCompleted, 0);
+    const totalReps = filteredProgress.reduce((sum, p) => sum + (p.setsCompleted * p.repsCompleted), 0);
+    const totalVolume = filteredProgress.reduce((sum, p) => sum + (p.weightUsed * p.setsCompleted * p.repsCompleted), 0);
+    const uniqueExercises = new Set(filteredProgress.map((p) => p.exerciseId)).size;
+    const uniqueMuscles = new Set(filteredProgress.map((p) => p.muscle)).size;
 
     return {
       totalSessions: uniqueDates.size,
       maxWeight: maxWeight.toFixed(1),
+      totalSets,
+      totalReps,
+      totalVolume: Math.round(totalVolume),
+      uniqueExercises,
+      uniqueMuscles,
     };
   }, [filteredProgress]);
 
@@ -211,8 +269,8 @@ export default function Progress() {
               </div>
             ) : (
               <>
-                {/* Period Stats */}
-                <div className="grid grid-cols-2 gap-4 animate-fade-in" style={{ animationDelay: '50ms' }}>
+                {/* Period Stats - Enhanced */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-fade-in" style={{ animationDelay: '50ms' }}>
                   <div className="glass-card rounded-xl p-4 text-center">
                     <Calendar className="w-5 h-5 text-primary mx-auto mb-2" />
                     <p className="font-display text-xl font-bold">{periodStats.totalSessions}</p>
@@ -223,11 +281,85 @@ export default function Progress() {
                     <p className="font-display text-xl font-bold">{periodStats.maxWeight}kg</p>
                     <p className="text-xs text-muted-foreground">Peso Max</p>
                   </div>
+                  <div className="glass-card rounded-xl p-4 text-center">
+                    <Target className="w-5 h-5 text-primary mx-auto mb-2" />
+                    <p className="font-display text-xl font-bold">{periodStats.totalSets}</p>
+                    <p className="text-xs text-muted-foreground">Serie Totali</p>
+                  </div>
+                  <div className="glass-card rounded-xl p-4 text-center">
+                    <Flame className="w-5 h-5 text-primary mx-auto mb-2" />
+                    <p className="font-display text-xl font-bold">{(periodStats.totalVolume / 1000).toFixed(1)}k</p>
+                    <p className="text-xs text-muted-foreground">Volume (kg)</p>
+                  </div>
                 </div>
+
+                {/* Additional Stats Row */}
+                <div className="grid grid-cols-3 gap-4 animate-fade-in" style={{ animationDelay: '75ms' }}>
+                  <div className="glass-card rounded-xl p-4 text-center">
+                    <Activity className="w-5 h-5 text-warning mx-auto mb-2" />
+                    <p className="font-display text-lg font-bold">{periodStats.uniqueExercises}</p>
+                    <p className="text-xs text-muted-foreground">Esercizi</p>
+                  </div>
+                  <div className="glass-card rounded-xl p-4 text-center">
+                    <Award className="w-5 h-5 text-warning mx-auto mb-2" />
+                    <p className="font-display text-lg font-bold">{periodStats.uniqueMuscles}</p>
+                    <p className="text-xs text-muted-foreground">Muscoli</p>
+                  </div>
+                  <div className="glass-card rounded-xl p-4 text-center">
+                    <TrendingUp className="w-5 h-5 text-warning mx-auto mb-2" />
+                    <p className="font-display text-lg font-bold">{periodStats.totalReps}</p>
+                    <p className="text-xs text-muted-foreground">Reps Totali</p>
+                  </div>
+                </div>
+
+                {/* Muscle Distribution Pie Chart */}
+                {muscleDistribution.length > 0 && (
+                  <div className="glass-card rounded-xl p-6 animate-fade-in" style={{ animationDelay: '100ms' }}>
+                    <div className="flex items-center gap-2 mb-4">
+                      <BarChart3 className="w-5 h-5 text-primary" />
+                      <h3 className="font-semibold">Distribuzione Muscoli</h3>
+                    </div>
+                    <div className="h-64 flex items-center justify-center">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={muscleDistribution}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={50}
+                            outerRadius={80}
+                            paddingAngle={2}
+                            dataKey="value"
+                          >
+                            {muscleDistribution.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.fill} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: 'hsl(220, 18%, 10%)',
+                              border: '1px solid hsl(220, 14%, 18%)',
+                              borderRadius: '8px',
+                            }}
+                            formatter={(value: number, name: string) => [`${value} serie (${muscleDistribution.find(m => m.name === name)?.percentage}%)`, name]}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="flex flex-wrap justify-center gap-3 mt-4">
+                      {muscleDistribution.map((m, i) => (
+                        <div key={m.name} className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: m.fill }} />
+                          <span className="text-xs text-muted-foreground">{m.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Volume by Muscle Chart */}
                 {volumeByMuscle.length > 0 && (
-                  <div className="glass-card rounded-xl p-6 animate-fade-in" style={{ animationDelay: '100ms' }}>
+                  <div className="glass-card rounded-xl p-6 animate-fade-in" style={{ animationDelay: '125ms' }}>
                     <div className="flex items-center gap-2 mb-4">
                       <BarChart3 className="w-5 h-5 text-primary" />
                       <h3 className="font-semibold">Volume per Gruppo Muscolare</h3>
@@ -263,8 +395,29 @@ export default function Progress() {
                   </div>
                 )}
 
+                {/* Top Exercises */}
+                {exerciseFrequency.length > 0 && (
+                  <div className="glass-card rounded-xl p-6 animate-fade-in" style={{ animationDelay: '150ms' }}>
+                    <div className="flex items-center gap-2 mb-4">
+                      <Award className="w-5 h-5 text-primary" />
+                      <h3 className="font-semibold">Esercizi più Frequenti</h3>
+                    </div>
+                    <div className="space-y-3">
+                      {exerciseFrequency.map((ex, i) => (
+                        <div key={ex.name} className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <span className="text-lg font-bold text-muted-foreground w-6">{i + 1}</span>
+                            <span className="font-medium">{ex.name}</span>
+                          </div>
+                          <span className="text-sm text-muted-foreground">{ex.count} sessioni</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Exercise Selector */}
-                <div className="glass-card rounded-xl p-6 animate-fade-in" style={{ animationDelay: '150ms' }}>
+                <div className="glass-card rounded-xl p-6 animate-fade-in" style={{ animationDelay: '175ms' }}>
                   <label className="text-sm font-medium text-muted-foreground mb-3 block">
                     Dettaglio Esercizio
                   </label>
@@ -285,7 +438,7 @@ export default function Progress() {
                 {selectedExercise && stats && (
                   <>
                     {/* Stats Cards */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-fade-in" style={{ animationDelay: '200ms' }}>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 animate-fade-in" style={{ animationDelay: '200ms' }}>
                       <div className="glass-card rounded-xl p-4 text-center">
                         <Dumbbell className="w-5 h-5 text-primary mx-auto mb-2" />
                         <p className="font-display text-xl font-bold">{stats.maxWeight}kg</p>
@@ -297,16 +450,26 @@ export default function Progress() {
                         <p className="text-xs text-muted-foreground">Ultimo</p>
                       </div>
                       <div className="glass-card rounded-xl p-4 text-center">
-                        <Calendar className="w-5 h-5 text-primary mx-auto mb-2" />
-                        <p className="font-display text-xl font-bold">{stats.totalSessions}</p>
-                        <p className="text-xs text-muted-foreground">Sessioni</p>
-                      </div>
-                      <div className="glass-card rounded-xl p-4 text-center">
                         <TrendingUp className={`w-5 h-5 mx-auto mb-2 ${parseFloat(stats.improvement) >= 0 ? 'text-primary' : 'text-destructive'}`} />
                         <p className="font-display text-xl font-bold">
                           {parseFloat(stats.improvement) >= 0 ? '+' : ''}{stats.improvement}%
                         </p>
                         <p className="text-xs text-muted-foreground">Progresso</p>
+                      </div>
+                      <div className="glass-card rounded-xl p-4 text-center">
+                        <Calendar className="w-5 h-5 text-warning mx-auto mb-2" />
+                        <p className="font-display text-xl font-bold">{stats.totalSessions}</p>
+                        <p className="text-xs text-muted-foreground">Sessioni</p>
+                      </div>
+                      <div className="glass-card rounded-xl p-4 text-center">
+                        <Flame className="w-5 h-5 text-warning mx-auto mb-2" />
+                        <p className="font-display text-xl font-bold">{(stats.totalVolume / 1000).toFixed(1)}k</p>
+                        <p className="text-xs text-muted-foreground">Volume Tot.</p>
+                      </div>
+                      <div className="glass-card rounded-xl p-4 text-center">
+                        <Activity className="w-5 h-5 text-warning mx-auto mb-2" />
+                        <p className="font-display text-xl font-bold">{stats.avgVolume}</p>
+                        <p className="text-xs text-muted-foreground">Vol. Medio</p>
                       </div>
                     </div>
 
@@ -345,6 +508,48 @@ export default function Progress() {
                               stroke="hsl(160, 84%, 39%)"
                               strokeWidth={2}
                               fill="url(#colorWeight)"
+                            />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+
+                    {/* Volume Chart */}
+                    <div className="glass-card rounded-xl p-6 animate-fade-in" style={{ animationDelay: '275ms' }}>
+                      <h3 className="font-semibold mb-4">Andamento Volume</h3>
+                      <div className="h-48">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={chartData}>
+                            <defs>
+                              <linearGradient id="colorVolume" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="hsl(280, 65%, 60%)" stopOpacity={0.3} />
+                                <stop offset="95%" stopColor="hsl(280, 65%, 60%)" stopOpacity={0} />
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 14%, 18%)" />
+                            <XAxis
+                              dataKey="date"
+                              stroke="hsl(220, 10%, 55%)"
+                              fontSize={12}
+                            />
+                            <YAxis
+                              stroke="hsl(220, 10%, 55%)"
+                              fontSize={12}
+                            />
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: 'hsl(220, 18%, 10%)',
+                                border: '1px solid hsl(220, 14%, 18%)',
+                                borderRadius: '8px',
+                              }}
+                              formatter={(value: number) => [`${value} kg`, 'Volume']}
+                            />
+                            <Area
+                              type="monotone"
+                              dataKey="volume"
+                              stroke="hsl(280, 65%, 60%)"
+                              strokeWidth={2}
+                              fill="url(#colorVolume)"
                             />
                           </AreaChart>
                         </ResponsiveContainer>
