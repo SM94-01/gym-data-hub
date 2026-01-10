@@ -107,33 +107,48 @@ export default function Workout() {
   };
 
   const handleStartCustomWorkout = () => {
-    if (customExercises.length === 0) {
-      toast.error('Aggiungi almeno un esercizio');
-      return;
-    }
-
-    const exercises: ExerciseSession[] = customExercises.map((ex) => ({
-      exerciseId: ex.id,
-      exerciseName: ex.name,
-      muscle: ex.muscle,
-      targetSets: ex.sets,
-      targetReps: ex.reps,
-      targetWeight: ex.targetWeight,
-      completedSets: Array.from({ length: ex.sets }, (_, i) => ({
-        setNumber: i + 1,
-        reps: ex.reps,
-        weight: ex.targetWeight,
-        completed: false,
-      })),
-    }));
-
+    // Start with empty exercises for live custom workout
     startSession({
       workoutId: 'custom-' + Date.now(),
       workoutName: 'Allenamento Custom',
       startedAt: new Date().toISOString(),
       recoveryTime,
-      exercises,
+      exercises: [],
     });
+    setCustomExercises([]);
+  };
+
+  const handleAddExerciseDuringWorkout = () => {
+    if (!currentSession) return;
+    if (!newExercise.name.trim() || !newExercise.muscle) {
+      toast.error('Inserisci nome e muscolo');
+      return;
+    }
+
+    const newExerciseSession: ExerciseSession = {
+      exerciseId: crypto.randomUUID(),
+      exerciseName: newExercise.name.trim(),
+      muscle: newExercise.muscle,
+      targetSets: newExercise.sets,
+      targetReps: newExercise.reps,
+      targetWeight: newExercise.targetWeight,
+      completedSets: Array.from({ length: newExercise.sets }, (_, i) => ({
+        setNumber: i + 1,
+        reps: newExercise.reps,
+        weight: newExercise.targetWeight,
+        completed: false,
+      })),
+    };
+
+    const updatedSession: WorkoutSession = {
+      ...currentSession,
+      exercises: [...currentSession.exercises, newExerciseSession],
+    };
+
+    updateSession(updatedSession);
+    setCurrentExerciseIndex(updatedSession.exercises.length - 1);
+    setNewExercise({ name: '', muscle: '', sets: 3, reps: 10, targetWeight: 0 });
+    toast.success('Esercizio aggiunto!');
   };
 
   const handleAddCustomExercise = () => {
@@ -222,12 +237,15 @@ export default function Workout() {
     return null;
   }
 
+  // Check if it's a custom workout in progress
+  const isCustomWorkout = currentSession?.workoutId.startsWith('custom-');
+
   // Session in progress
   if (currentSession) {
-    const currentExercise = currentSession.exercises[currentExerciseIndex];
     const totalExercises = currentSession.exercises.length;
-    const completedSets = currentExercise.completedSets.filter((s) => s.completed).length;
-    const progress = (currentExerciseIndex / totalExercises) * 100;
+    const currentExercise = totalExercises > 0 ? currentSession.exercises[currentExerciseIndex] : null;
+    const completedSets = currentExercise ? currentExercise.completedSets.filter((s) => s.completed).length : 0;
+    const progress = totalExercises > 0 ? (currentExerciseIndex / totalExercises) * 100 : 0;
 
     return (
       <div className="min-h-screen pt-20 pb-8">
@@ -236,7 +254,7 @@ export default function Workout() {
           <div className="mb-6">
             <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
               <span>{currentSession.workoutName}</span>
-              <span>{currentExerciseIndex + 1} / {totalExercises}</span>
+              <span>{totalExercises > 0 ? `${currentExerciseIndex + 1} / ${totalExercises}` : 'Nessun esercizio'}</span>
             </div>
             <div className="h-2 bg-secondary rounded-full overflow-hidden">
               <div
@@ -269,85 +287,188 @@ export default function Workout() {
             </div>
           )}
 
-          {/* Current Exercise */}
-          <div className="glass-card rounded-2xl p-6 mb-6 animate-scale-in">
-            <div className="text-center mb-6">
-              <span className="px-3 py-1 bg-primary/20 text-primary rounded-full text-sm font-medium">
-                {currentExercise.muscle}
-              </span>
-              <h2 className="font-display text-2xl font-bold mt-3 text-foreground">
-                {currentExercise.exerciseName}
-              </h2>
-              <p className="text-muted-foreground mt-1">
-                {currentExercise.targetSets} × {currentExercise.targetReps} @ {currentExercise.targetWeight}kg
-              </p>
-            </div>
-
-            {/* Sets */}
-            <div className="space-y-3">
-              {currentExercise.completedSets.map((set, setIdx) => (
-                <div
-                  key={set.setNumber}
-                  className={`flex items-center gap-4 p-4 rounded-xl transition-all ${
-                    set.completed ? 'bg-primary/10 border border-primary/30' : 'bg-secondary/50'
-                  }`}
-                >
-                  <Checkbox
-                    checked={set.completed}
-                    onCheckedChange={(checked) =>
-                      handleSetUpdate(currentExerciseIndex, setIdx, 'completed', !!checked)
-                    }
-                    className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+          {/* Add Exercise Form for Custom Workout */}
+          {isCustomWorkout && (
+            <div className="glass-card rounded-xl p-4 mb-6 space-y-3 border-primary/30">
+              <h3 className="font-semibold flex items-center gap-2">
+                <Plus className="w-4 h-4 text-primary" />
+                Aggiungi Esercizio
+              </h3>
+              <Input
+                value={newExercise.name}
+                onChange={(e) => setNewExercise({ ...newExercise, name: e.target.value })}
+                placeholder="Nome esercizio"
+                className="bg-secondary/50"
+              />
+              <Select
+                value={newExercise.muscle}
+                onValueChange={(v) => setNewExercise({ ...newExercise, muscle: v })}
+              >
+                <SelectTrigger className="bg-secondary/50">
+                  <SelectValue placeholder="Seleziona muscolo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {MUSCLE_GROUPS.map((muscle) => (
+                    <SelectItem key={muscle} value={muscle}>
+                      {muscle}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Serie</Label>
+                  <Input
+                    type="number"
+                    value={newExercise.sets}
+                    onChange={(e) => setNewExercise({ ...newExercise, sets: parseInt(e.target.value) || 0 })}
+                    className="bg-secondary/50"
                   />
-                  <span className="font-display font-semibold text-lg w-8">
-                    {set.setNumber}
-                  </span>
-                  <div className="flex-1 grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs text-muted-foreground mb-1 block">Reps</label>
-                      <Input
-                        type="number"
-                        value={set.reps}
-                        onChange={(e) =>
-                          handleSetUpdate(currentExerciseIndex, setIdx, 'reps', parseInt(e.target.value) || 0)
-                        }
-                        className="bg-background/50 h-10 text-center"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground mb-1 block">Kg</label>
-                      <Input
-                        type="number"
-                        step="0.5"
-                        value={set.weight}
-                        onChange={(e) =>
-                          handleSetUpdate(currentExerciseIndex, setIdx, 'weight', parseFloat(e.target.value) || 0)
-                        }
-                        className="bg-background/50 h-10 text-center"
-                      />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Reps</Label>
+                  <Input
+                    type="number"
+                    value={newExercise.reps}
+                    onChange={(e) => setNewExercise({ ...newExercise, reps: parseInt(e.target.value) || 0 })}
+                    className="bg-secondary/50"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Peso (kg)</Label>
+                  <Input
+                    type="number"
+                    step="0.5"
+                    value={newExercise.targetWeight}
+                    onChange={(e) => setNewExercise({ ...newExercise, targetWeight: parseFloat(e.target.value) || 0 })}
+                    className="bg-secondary/50"
+                  />
+                </div>
+              </div>
+              <Button onClick={handleAddExerciseDuringWorkout} className="w-full gap-2">
+                <Plus className="w-4 h-4" />
+                Aggiungi Esercizio
+              </Button>
+            </div>
+          )}
+
+          {/* Current Exercise */}
+          {currentExercise ? (
+            <div className="glass-card rounded-2xl p-6 mb-6 animate-scale-in">
+              <div className="text-center mb-6">
+                <span className="px-3 py-1 bg-primary/20 text-primary rounded-full text-sm font-medium">
+                  {currentExercise.muscle}
+                </span>
+                <h2 className="font-display text-2xl font-bold mt-3 text-foreground">
+                  {currentExercise.exerciseName}
+                </h2>
+                <p className="text-muted-foreground mt-1">
+                  {currentExercise.targetSets} × {currentExercise.targetReps} @ {currentExercise.targetWeight}kg
+                </p>
+              </div>
+
+              {/* Sets */}
+              <div className="space-y-3">
+                {currentExercise.completedSets.map((set, setIdx) => (
+                  <div
+                    key={set.setNumber}
+                    className={`flex items-center gap-4 p-4 rounded-xl transition-all ${
+                      set.completed ? 'bg-primary/10 border border-primary/30' : 'bg-secondary/50'
+                    }`}
+                  >
+                    <Checkbox
+                      checked={set.completed}
+                      onCheckedChange={(checked) =>
+                        handleSetUpdate(currentExerciseIndex, setIdx, 'completed', !!checked)
+                      }
+                      className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                    />
+                    <span className="font-display font-semibold text-lg w-8">
+                      {set.setNumber}
+                    </span>
+                    <div className="flex-1 grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1 block">Reps</label>
+                        <Input
+                          type="number"
+                          value={set.reps}
+                          onChange={(e) =>
+                            handleSetUpdate(currentExerciseIndex, setIdx, 'reps', parseInt(e.target.value) || 0)
+                          }
+                          className="bg-background/50 h-10 text-center"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1 block">Kg</label>
+                        <Input
+                          type="number"
+                          step="0.5"
+                          value={set.weight}
+                          onChange={(e) =>
+                            handleSetUpdate(currentExerciseIndex, setIdx, 'weight', parseFloat(e.target.value) || 0)
+                          }
+                          className="bg-background/50 h-10 text-center"
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
 
-            <div className="mt-4 text-center text-sm text-muted-foreground">
-              {completedSets} / {currentExercise.targetSets} serie completate
+              <div className="mt-4 text-center text-sm text-muted-foreground">
+                {completedSets} / {currentExercise.targetSets} serie completate
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="glass-card rounded-2xl p-6 mb-6 text-center">
+              <Zap className="w-12 h-12 text-primary mx-auto mb-4" />
+              <h2 className="font-display text-xl font-bold text-foreground mb-2">
+                Allenamento Custom
+              </h2>
+              <p className="text-muted-foreground">
+                Aggiungi il tuo primo esercizio per iniziare!
+              </p>
+            </div>
+          )}
+
+          {/* Exercise List for Custom */}
+          {isCustomWorkout && totalExercises > 0 && (
+            <div className="glass-card rounded-xl p-4 mb-6">
+              <h4 className="text-sm font-medium text-muted-foreground mb-3">Esercizi aggiunti:</h4>
+              <div className="flex flex-wrap gap-2">
+                {currentSession.exercises.map((ex, idx) => (
+                  <button
+                    key={ex.exerciseId}
+                    onClick={() => setCurrentExerciseIndex(idx)}
+                    className={`px-3 py-1.5 rounded-full text-sm transition-all ${
+                      idx === currentExerciseIndex
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
+                    }`}
+                  >
+                    {ex.exerciseName}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Navigation */}
           <div className="flex items-center justify-between gap-4">
             <Button
               variant="outline"
               onClick={() => setCurrentExerciseIndex((prev) => Math.max(0, prev - 1))}
-              disabled={currentExerciseIndex === 0}
+              disabled={currentExerciseIndex === 0 || totalExercises === 0}
             >
               <ChevronLeft className="w-5 h-5" />
             </Button>
 
-            {currentExerciseIndex === totalExercises - 1 ? (
-              <Button onClick={handleFinishWorkout} className="flex-1 gap-2">
+            {(currentExerciseIndex === totalExercises - 1 || totalExercises === 0) ? (
+              <Button 
+                onClick={handleFinishWorkout} 
+                className="flex-1 gap-2"
+                disabled={totalExercises === 0}
+              >
                 <Trophy className="w-5 h-5" />
                 Termina Allenamento
               </Button>
@@ -364,7 +485,7 @@ export default function Workout() {
             <Button
               variant="outline"
               onClick={() => setCurrentExerciseIndex((prev) => Math.min(totalExercises - 1, prev + 1))}
-              disabled={currentExerciseIndex === totalExercises - 1}
+              disabled={currentExerciseIndex === totalExercises - 1 || totalExercises === 0}
             >
               <ChevronRight className="w-5 h-5" />
             </Button>
@@ -537,105 +658,21 @@ export default function Workout() {
               </div>
             </div>
 
-            {/* Add Exercise Form */}
-            <div className="glass-card rounded-xl p-4 space-y-3">
-              <h3 className="font-semibold mb-2">Aggiungi Esercizio</h3>
-              <Input
-                value={newExercise.name}
-                onChange={(e) => setNewExercise({ ...newExercise, name: e.target.value })}
-                placeholder="Nome esercizio"
-                className="bg-secondary/50"
-              />
-              <Select
-                value={newExercise.muscle}
-                onValueChange={(v) => setNewExercise({ ...newExercise, muscle: v })}
+            <div className="glass-card rounded-xl p-6 text-center">
+              <Zap className="w-12 h-12 text-primary mx-auto mb-4" />
+              <h3 className="font-display text-xl font-bold mb-2">Allenamento Custom</h3>
+              <p className="text-muted-foreground mb-6">
+                Inizia l'allenamento e aggiungi gli esercizi man mano durante la sessione
+              </p>
+              <Button
+                onClick={handleStartCustomWorkout}
+                size="lg"
+                className="w-full gap-2"
               >
-                <SelectTrigger className="bg-secondary/50">
-                  <SelectValue placeholder="Seleziona muscolo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {MUSCLE_GROUPS.map((muscle) => (
-                    <SelectItem key={muscle} value={muscle}>
-                      {muscle}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <div className="grid grid-cols-3 gap-2">
-                <div>
-                  <Label className="text-xs text-muted-foreground">Serie</Label>
-                  <Input
-                    type="number"
-                    value={newExercise.sets}
-                    onChange={(e) => setNewExercise({ ...newExercise, sets: parseInt(e.target.value) || 0 })}
-                    className="bg-secondary/50"
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Reps</Label>
-                  <Input
-                    type="number"
-                    value={newExercise.reps}
-                    onChange={(e) => setNewExercise({ ...newExercise, reps: parseInt(e.target.value) || 0 })}
-                    className="bg-secondary/50"
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Peso (kg)</Label>
-                  <Input
-                    type="number"
-                    step="0.5"
-                    value={newExercise.targetWeight}
-                    onChange={(e) => setNewExercise({ ...newExercise, targetWeight: parseFloat(e.target.value) || 0 })}
-                    className="bg-secondary/50"
-                  />
-                </div>
-              </div>
-              <Button onClick={handleAddCustomExercise} className="w-full gap-2">
-                <Plus className="w-4 h-4" />
-                Aggiungi
+                <Play className="w-5 h-5" />
+                Inizia Allenamento
               </Button>
             </div>
-
-            {/* Custom Exercises List */}
-            {customExercises.length > 0 && (
-              <div className="glass-card rounded-xl p-4">
-                <h3 className="font-semibold mb-3">Esercizi ({customExercises.length})</h3>
-                <div className="space-y-2">
-                  {customExercises.map((exercise) => (
-                    <div
-                      key={exercise.id}
-                      className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg"
-                    >
-                      <div>
-                        <p className="font-medium">{exercise.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {exercise.muscle} • {exercise.sets}×{exercise.reps} @ {exercise.targetWeight}kg
-                        </p>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRemoveCustomExercise(exercise.id)}
-                        className="text-muted-foreground hover:text-destructive"
-                      >
-                        ×
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <Button
-              onClick={handleStartCustomWorkout}
-              size="lg"
-              className="w-full"
-              disabled={customExercises.length === 0}
-            >
-              <Play className="w-5 h-5 mr-2" />
-              Inizia Allenamento Custom
-            </Button>
           </div>
         )}
       </div>
