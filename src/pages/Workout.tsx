@@ -214,8 +214,6 @@ export default function Workout() {
         const avgReps = completedSets.reduce((sum, s) => sum + s.reps, 0) / completedSets.length;
 
         addProgress({
-          id: crypto.randomUUID(),
-          userId: currentUser?.id || '',
           exerciseId: ex.exerciseId,
           exerciseName: ex.exerciseName,
           muscle: ex.muscle,

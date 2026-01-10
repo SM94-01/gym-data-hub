@@ -23,14 +23,16 @@ export default function SelectUser() {
     navigate("/");
   };
 
-  const handleAddUser = () => {
+  const handleAddUser = async () => {
     if (!newUserName.trim()) {
       toast.error("Inserisci un nome");
       return;
     }
-    const user = addUser(newUserName.trim());
-    toast.success(`Utente "${user.name}" creato!`);
-    navigate("/");
+    const user = await addUser(newUserName.trim());
+    if (user) {
+      toast.success(`Utente "${user.name}" creato!`);
+      navigate("/");
+    }
   };
 
   return (
