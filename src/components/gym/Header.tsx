@@ -22,7 +22,7 @@ export function Header() {
               <Dumbbell className="w-8 h-8 text-primary relative z-10" />
             </div>
             <span className="font-display font-bold text-xl text-foreground">
-              Gym<span className="text-primary">Tracker</span>
+              Gym<span className="text-primary">App</span>
             </span>
           </Link>
 
