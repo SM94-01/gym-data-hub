@@ -1,5 +1,12 @@
-import { Dumbbell, Scale } from 'lucide-react';
+import { Dumbbell, Menu } from 'lucide-react';
 import { useLocation, Link } from 'react-router-dom';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
 
 const navItems = [
   { path: '/', label: 'Home' },
@@ -26,6 +33,7 @@ export function Header() {
             </span>
           </Link>
 
+          {/* Desktop navigation */}
           <nav className="hidden md:flex items-center gap-1">
             {navItems.map((item) => (
               <Link
@@ -42,31 +50,30 @@ export function Header() {
             ))}
           </nav>
 
-          <nav className="flex md:hidden items-center gap-1">
-            {navItems.slice(0, 4).map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`px-2 py-2 rounded-lg text-xs font-medium transition-all ${
-                  location.pathname === item.path
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground'
-                }`}
-              >
-                {item.label.split(' ')[0]}
-              </Link>
-            ))}
-            <Link
-              to="/weight"
-              className={`p-2 rounded-lg transition-all ${
-                location.pathname === '/weight'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground'
-              }`}
-            >
-              <Scale className="w-4 h-4" />
-            </Link>
-          </nav>
+          {/* Mobile navigation - dropdown menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild className="md:hidden">
+              <Button variant="ghost" size="icon">
+                <Menu className="w-6 h-6" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48 bg-background border border-border">
+              {navItems.map((item) => (
+                <DropdownMenuItem key={item.path} asChild>
+                  <Link
+                    to={item.path}
+                    className={`w-full ${
+                      location.pathname === item.path
+                        ? 'bg-primary/10 text-primary font-medium'
+                        : ''
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>
