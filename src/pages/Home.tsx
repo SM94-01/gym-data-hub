@@ -1,12 +1,17 @@
 import { useGym } from '@/context/GymContext';
+import { useAuth } from '@/context/AuthContext';
 import { WorkoutCard } from '@/components/gym/WorkoutCard';
 import { Button } from '@/components/ui/button';
-import { Plus, Play, Trophy, Flame, Target, Scale, LogOut, User } from 'lucide-react';
+import { Plus, Play, Trophy, Flame, Target, Scale, User } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { ProfileModal } from '@/components/gym/ProfileModal';
 
 export default function Home() {
-  const { getUserWorkouts, getActiveWorkout, getUserProgress, currentUser, logout } = useGym();
+  const { getUserWorkouts, getActiveWorkout, getUserProgress, profile } = useGym();
+  const { user } = useAuth();
   const navigate = useNavigate();
+  const [showProfile, setShowProfile] = useState(false);
   
   const workouts = getUserWorkouts();
   const progress = getUserProgress();
@@ -20,8 +25,8 @@ export default function Home() {
     progress.map((p) => new Date(p.date).toDateString())
   ).size;
 
-  if (!currentUser) {
-    navigate('/select-user');
+  if (!user) {
+    navigate('/auth');
     return null;
   }
 
@@ -36,20 +41,17 @@ export default function Home() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Ciao,</p>
-              <p className="font-display font-semibold">{currentUser.name}</p>
+              <p className="font-display font-semibold">{profile?.name || 'Utente'}</p>
             </div>
           </div>
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => {
-              logout();
-              navigate('/select-user');
-            }}
+            onClick={() => setShowProfile(true)}
             className="text-muted-foreground"
           >
-            <LogOut className="w-4 h-4 mr-2" />
-            Cambia utente
+            <User className="w-4 h-4 mr-2" />
+            Profilo
           </Button>
         </div>
 
@@ -168,6 +170,8 @@ export default function Home() {
           )}
         </section>
       </div>
+
+      <ProfileModal open={showProfile} onOpenChange={setShowProfile} />
     </div>
   );
 }

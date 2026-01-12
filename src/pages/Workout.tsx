@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGym } from '@/context/GymContext';
+import { useAuth } from '@/context/AuthContext';
 import { ExerciseSession, SetRecord, WorkoutSession, Exercise, MUSCLE_GROUPS } from '@/types/gym';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,7 +21,7 @@ type WorkoutMode = 'select' | 'custom';
 
 export default function Workout() {
   const navigate = useNavigate();
-  const { getUserWorkouts, getActiveWorkout, startSession, endSession, currentSession, updateSession, addProgress, currentUser, lastWorkoutId } = useGym();
+  const { getUserWorkouts, getActiveWorkout, startSession, endSession, currentSession, updateSession, addProgress, lastWorkoutId } = useGym();
   const [selectedWorkoutId, setSelectedWorkoutId] = useState<string | null>(null);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [recoveryTime, setRecoveryTime] = useState(60);
