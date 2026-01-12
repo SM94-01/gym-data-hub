@@ -3,7 +3,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { GymProvider, useGym } from "@/context/GymContext";
+import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { GymProvider } from "@/context/GymContext";
 import { Header } from "@/components/gym/Header";
 import Home from "./pages/Home";
 import CreateWorkout from "./pages/CreateWorkout";
@@ -11,27 +12,30 @@ import EditWorkout from "./pages/EditWorkout";
 import Workout from "./pages/Workout";
 import Progress from "./pages/Progress";
 import BodyWeight from "./pages/BodyWeight";
-import SelectUser from "./pages/SelectUser";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { currentUser } = useGym();
-  if (!currentUser) {
-    return <Navigate to="/select-user" replace />;
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (!user) {
+    return <Navigate to="/auth" replace />;
   }
   return <>{children}</>;
 }
 
 function AppRoutes() {
-  const { currentUser } = useGym();
+  const { user, loading } = useAuth();
+
+  if (loading) return null;
 
   return (
     <div className="min-h-screen bg-background">
-      {currentUser && <Header />}
+      {user && <Header />}
       <Routes>
-        <Route path="/select-user" element={<SelectUser />} />
+        <Route path="/auth" element={user ? <Navigate to="/" replace /> : <Auth />} />
         <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
         <Route path="/create" element={<ProtectedRoute><CreateWorkout /></ProtectedRoute>} />
         <Route path="/edit/:id" element={<ProtectedRoute><EditWorkout /></ProtectedRoute>} />
@@ -47,13 +51,15 @@ function AppRoutes() {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <GymProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </GymProvider>
+      <AuthProvider>
+        <GymProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </GymProvider>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

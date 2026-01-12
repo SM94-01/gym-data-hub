@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGym } from '@/context/GymContext';
+import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -32,7 +33,8 @@ const COLORS = ['hsl(160, 84%, 39%)', 'hsl(38, 92%, 50%)', 'hsl(280, 65%, 60%)',
 
 export default function Progress() {
   const navigate = useNavigate();
-  const { getUserProgress, currentUser } = useGym();
+  const { getUserProgress } = useGym();
+  const { user } = useAuth();
   const [selectedExercise, setSelectedExercise] = useState<string>('');
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
@@ -179,8 +181,8 @@ export default function Progress() {
     };
   }, [filteredProgress]);
 
-  if (!currentUser) {
-    navigate('/select-user');
+  if (!user) {
+    navigate('/auth');
     return null;
   }
 

@@ -1,17 +1,21 @@
 import React, { createContext, useContext, ReactNode, useState, useEffect, useCallback } from 'react';
-import { User, Workout, WorkoutProgress, WorkoutSession, BodyWeight, Exercise } from '@/types/gym';
+import { Workout, WorkoutProgress, WorkoutSession, BodyWeight } from '@/types/gym';
 import { supabase } from '@/integrations/supabase/client';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 
+interface UserProfile {
+  id: string;
+  name: string;
+  email: string | null;
+  createdAt: string;
+}
+
 interface GymContextType {
-  // User management
-  users: User[];
-  currentUser: User | null;
-  addUser: (name: string) => Promise<User | null>;
-  selectUser: (userId: string) => void;
-  logout: () => void;
-  loading: boolean;
+  // User profile
+  profile: UserProfile | null;
+  refreshProfile: () => Promise<void>;
 
   // Workout management
   workouts: Workout[];
@@ -45,47 +49,63 @@ interface GymContextType {
   // Last workout tracking (cycle)
   lastWorkoutId: string | null;
   setLastWorkoutId: (id: string) => void;
+
+  // Loading state
+  loading: boolean;
 }
 
 const GymContext = createContext<GymContextType | undefined>(undefined);
 
 export function GymProvider({ children }: { children: ReactNode }) {
-  const [users, setUsers] = useState<User[]>([]);
+  const { user } = useAuth();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [progress, setProgress] = useState<WorkoutProgress[]>([]);
   const [bodyWeights, setBodyWeights] = useState<BodyWeight[]>([]);
   const [loading, setLoading] = useState(true);
   
-  const [currentUserId, setCurrentUserId] = useLocalStorage<string | null>('gym-current-user', null);
   const [currentSession, setCurrentSession] = useLocalStorage<WorkoutSession | null>('gym-session', null);
   const [lastWorkoutId, setLastWorkoutIdState] = useLocalStorage<string | null>('gym-last-workout', null);
 
-  const currentUser = users.find((u) => u.id === currentUserId) || null;
+  // Fetch user profile
+  const fetchProfile = useCallback(async () => {
+    if (!user) {
+      setProfile(null);
+      return;
+    }
 
-  // Fetch all profiles
-  const fetchUsers = useCallback(async () => {
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
-      .order('created_at', { ascending: true });
+      .eq('id', user.id)
+      .maybeSingle();
     
     if (error) {
-      console.error('Error fetching profiles:', error);
+      console.error('Error fetching profile:', error);
       return;
     }
     
-    setUsers(data.map(p => ({
-      id: p.id,
-      name: p.name,
-      createdAt: p.created_at,
-    })));
-  }, []);
+    if (data) {
+      setProfile({
+        id: data.id,
+        name: data.name,
+        email: data.email,
+        createdAt: data.created_at,
+      });
+    }
+  }, [user]);
 
   // Fetch workouts with exercises
   const fetchWorkouts = useCallback(async () => {
+    if (!user) {
+      setWorkouts([]);
+      return;
+    }
+
     const { data: workoutsData, error: workoutsError } = await supabase
       .from('workouts')
       .select('*, exercises(*)')
+      .eq('user_id', user.id)
       .order('created_at', { ascending: true });
     
     if (workoutsError) {
@@ -114,13 +134,19 @@ export function GymProvider({ children }: { children: ReactNode }) {
     }));
     
     setWorkouts(mappedWorkouts);
-  }, []);
+  }, [user]);
 
   // Fetch progress
   const fetchProgress = useCallback(async () => {
+    if (!user) {
+      setProgress([]);
+      return;
+    }
+
     const { data, error } = await supabase
       .from('workout_progress')
       .select('*')
+      .eq('user_id', user.id)
       .order('date', { ascending: true });
     
     if (error) {
@@ -139,13 +165,19 @@ export function GymProvider({ children }: { children: ReactNode }) {
       weightUsed: Number(p.weight_used),
       repsCompleted: p.reps_completed,
     })));
-  }, []);
+  }, [user]);
 
   // Fetch body weights
   const fetchBodyWeights = useCallback(async () => {
+    if (!user) {
+      setBodyWeights([]);
+      return;
+    }
+
     const { data, error } = await supabase
       .from('body_weights')
       .select('*')
+      .eq('user_id', user.id)
       .order('date', { ascending: true });
     
     if (error) {
@@ -159,14 +191,14 @@ export function GymProvider({ children }: { children: ReactNode }) {
       date: bw.date,
       weight: Number(bw.weight),
     })));
-  }, []);
+  }, [user]);
 
-  // Initial data load
+  // Load data when user changes
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
       await Promise.all([
-        fetchUsers(),
+        fetchProfile(),
         fetchWorkouts(),
         fetchProgress(),
         fetchBodyWeights(),
@@ -174,59 +206,26 @@ export function GymProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     };
     loadData();
-  }, [fetchUsers, fetchWorkouts, fetchProgress, fetchBodyWeights]);
+  }, [fetchProfile, fetchWorkouts, fetchProgress, fetchBodyWeights]);
 
-  // User management
-  const addUser = async (name: string): Promise<User | null> => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .insert({ name })
-      .select()
-      .single();
-    
-    if (error) {
-      console.error('Error creating user:', error);
-      toast.error('Errore nella creazione del profilo');
-      return null;
-    }
-    
-    const newUser: User = {
-      id: data.id,
-      name: data.name,
-      createdAt: data.created_at,
-    };
-    
-    setUsers((prev) => [...prev, newUser]);
-    setCurrentUserId(newUser.id);
-    return newUser;
-  };
-
-  const selectUser = (userId: string) => {
-    setCurrentUserId(userId);
-  };
-
-  const logout = () => {
-    setCurrentUserId(null);
-    setCurrentSession(null);
+  const refreshProfile = async () => {
+    await fetchProfile();
   };
 
   // Workout management
-  const getUserWorkouts = () => {
-    if (!currentUser) return [];
-    return workouts.filter((w) => w.userId === currentUser.id);
-  };
+  const getUserWorkouts = () => workouts;
 
   const refreshWorkouts = async () => {
     await fetchWorkouts();
   };
 
   const addWorkout = async (workout: Omit<Workout, 'id' | 'userId' | 'createdAt'>) => {
-    if (!currentUser) return;
+    if (!user) return;
     
     const { data: workoutData, error: workoutError } = await supabase
       .from('workouts')
       .insert({
-        user_id: currentUser.id,
+        user_id: user.id,
         name: workout.name,
         is_active: workout.isActive,
         is_saved: workout.isSaved,
@@ -317,11 +316,10 @@ export function GymProvider({ children }: { children: ReactNode }) {
   };
 
   const setActiveWorkout = async (id: string) => {
-    if (!currentUser) return;
+    if (!user) return;
     
     // Deactivate all workouts for current user
-    const userWorkouts = workouts.filter(w => w.userId === currentUser.id);
-    for (const w of userWorkouts) {
+    for (const w of workouts) {
       if (w.id !== id && w.isActive) {
         await supabase.from('workouts').update({ is_active: false }).eq('id', w.id);
       }
@@ -339,23 +337,19 @@ export function GymProvider({ children }: { children: ReactNode }) {
   };
 
   const getActiveWorkout = () => {
-    if (!currentUser) return undefined;
-    return workouts.find((w) => w.userId === currentUser.id && w.isActive);
+    return workouts.find((w) => w.isActive);
   };
 
   // Progress tracking
-  const getUserProgress = () => {
-    if (!currentUser) return [];
-    return progress.filter((p) => p.userId === currentUser.id);
-  };
+  const getUserProgress = () => progress;
 
   const addProgress = async (progressEntry: Omit<WorkoutProgress, 'id' | 'userId'>) => {
-    if (!currentUser) return;
+    if (!user) return;
     
     const { data, error } = await supabase
       .from('workout_progress')
       .insert({
-        user_id: currentUser.id,
+        user_id: user.id,
         exercise_id: progressEntry.exerciseId || null,
         exercise_name: progressEntry.exerciseName,
         muscle: progressEntry.muscle,
@@ -411,27 +405,19 @@ export function GymProvider({ children }: { children: ReactNode }) {
 
   // Body weight tracking
   const getUserBodyWeights = () => {
-    if (!currentUser) return [];
-    return bodyWeights
-      .filter((bw) => bw.userId === currentUser.id)
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    return bodyWeights.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   };
 
   const getTodayBodyWeight = () => {
-    if (!currentUser) return undefined;
     const today = new Date().toISOString().split('T')[0];
-    return bodyWeights.find(
-      (bw) => bw.userId === currentUser.id && bw.date === today
-    );
+    return bodyWeights.find((bw) => bw.date === today);
   };
 
   const addBodyWeight = async (weight: number) => {
-    if (!currentUser) return;
+    if (!user) return;
     const today = new Date().toISOString().split('T')[0];
     
-    const existing = bodyWeights.find(
-      (bw) => bw.userId === currentUser.id && bw.date === today
-    );
+    const existing = bodyWeights.find((bw) => bw.date === today);
 
     if (existing) {
       await updateBodyWeight(existing.id, weight);
@@ -439,7 +425,7 @@ export function GymProvider({ children }: { children: ReactNode }) {
       const { data, error } = await supabase
         .from('body_weights')
         .insert({
-          user_id: currentUser.id,
+          user_id: user.id,
           date: today,
           weight,
         })
@@ -487,12 +473,8 @@ export function GymProvider({ children }: { children: ReactNode }) {
   return (
     <GymContext.Provider
       value={{
-        users,
-        currentUser,
-        addUser,
-        selectUser,
-        logout,
-        loading,
+        profile,
+        refreshProfile,
         workouts,
         addWorkout,
         updateWorkout,
@@ -516,6 +498,7 @@ export function GymProvider({ children }: { children: ReactNode }) {
         getTodayBodyWeight,
         lastWorkoutId,
         setLastWorkoutId,
+        loading,
       }}
     >
       {children}

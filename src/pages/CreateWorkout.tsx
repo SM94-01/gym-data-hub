@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGym } from '@/context/GymContext';
+import { useAuth } from '@/context/AuthContext';
 import { Exercise } from '@/types/gym';
 import { ExerciseForm } from '@/components/gym/ExerciseForm';
 import { ExerciseList } from '@/components/gym/ExerciseList';
@@ -12,7 +13,8 @@ import { toast } from 'sonner';
 
 export default function CreateWorkout() {
   const navigate = useNavigate();
-  const { addWorkout, getUserWorkouts, currentUser } = useGym();
+  const { addWorkout, getUserWorkouts } = useGym();
+  const { user } = useAuth();
   const [name, setName] = useState('');
   const [exercises, setExercises] = useState<Exercise[]>([]);
 
@@ -52,8 +54,8 @@ export default function CreateWorkout() {
     navigate('/');
   };
 
-  if (!currentUser) {
-    navigate('/select-user');
+  if (!user) {
+    navigate('/auth');
     return null;
   }
 

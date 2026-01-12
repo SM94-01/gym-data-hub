@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGym } from '@/context/GymContext';
+import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,7 +19,8 @@ import {
 
 export default function BodyWeight() {
   const navigate = useNavigate();
-  const { getUserBodyWeights, getTodayBodyWeight, addBodyWeight, currentUser } = useGym();
+  const { getUserBodyWeights, getTodayBodyWeight, addBodyWeight } = useGym();
+  const { user } = useAuth();
   const [weightInput, setWeightInput] = useState('');
 
   const bodyWeights = getUserBodyWeights();
@@ -60,8 +62,8 @@ export default function BodyWeight() {
       }
     : null;
 
-  if (!currentUser) {
-    navigate('/select-user');
+  if (!user) {
+    navigate('/auth');
     return null;
   }
 
