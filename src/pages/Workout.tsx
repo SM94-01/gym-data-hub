@@ -22,6 +22,7 @@ type WorkoutMode = 'select' | 'custom';
 export default function Workout() {
   const navigate = useNavigate();
   const { getUserWorkouts, getActiveWorkout, startSession, endSession, currentSession, updateSession, addProgress, lastWorkoutId } = useGym();
+  const { user } = useAuth();
   const [selectedWorkoutId, setSelectedWorkoutId] = useState<string | null>(null);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [recoveryTime, setRecoveryTime] = useState(60);
@@ -231,8 +232,8 @@ export default function Workout() {
     navigate('/');
   };
 
-  if (!currentUser) {
-    navigate('/select-user');
+  if (!user) {
+    navigate('/auth');
     return null;
   }
 
