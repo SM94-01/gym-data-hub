@@ -78,11 +78,15 @@ export default function Home() {
               <p className="font-display text-2xl font-bold text-foreground">{totalExercises}</p>
               <p className="text-xs text-muted-foreground">Esercizi</p>
             </div>
-            <div className="glass-card rounded-xl p-4 text-center animate-slide-up" style={{ animationDelay: '250ms' }}>
+            <Link 
+              to="/sessions"
+              className="glass-card rounded-xl p-4 text-center animate-slide-up hover:border-primary/30 transition-all cursor-pointer" 
+              style={{ animationDelay: '250ms' }}
+            >
               <Trophy className="w-6 h-6 text-primary mx-auto mb-2" />
               <p className="font-display text-2xl font-bold text-foreground">{uniqueSessions}</p>
-              <p className="text-xs text-muted-foreground">Sessioni</p>
-            </div>
+              <p className="text-xs text-muted-foreground">Sessioni →</p>
+            </Link>
             <Link 
               to="/weight"
               className="glass-card rounded-xl p-4 text-center animate-slide-up hover:border-primary/30 transition-all cursor-pointer" 

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -14,7 +15,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, Play, Check, ChevronRight, ChevronLeft, Trophy, Timer, Pause, Plus, Dumbbell, Zap } from 'lucide-react';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import { ArrowLeft, Play, Check, ChevronRight, ChevronLeft, Trophy, Timer, Pause, Plus, Dumbbell, Zap, MessageSquare, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 
 type WorkoutMode = 'select' | 'custom';
@@ -205,6 +211,20 @@ export default function Workout() {
     }
   };
 
+  const handleNoteUpdate = (exerciseIndex: number, notes: string) => {
+    if (!currentSession) return;
+
+    const updatedSession: WorkoutSession = {
+      ...currentSession,
+      exercises: currentSession.exercises.map((ex, eIdx) => {
+        if (eIdx !== exerciseIndex) return ex;
+        return { ...ex, notes };
+      }),
+    };
+
+    updateSession(updatedSession);
+  };
+
   const handleFinishWorkout = () => {
     if (!currentSession) return;
 
@@ -212,7 +232,8 @@ export default function Workout() {
     currentSession.exercises.forEach((ex) => {
       const completedSets = ex.completedSets.filter((s) => s.completed);
       if (completedSets.length > 0) {
-        const avgWeight = completedSets.reduce((sum, s) => sum + s.weight, 0) / completedSets.length;
+        // Use max weight instead of average
+        const maxWeight = Math.max(...completedSets.map(s => s.weight));
         const avgReps = completedSets.reduce((sum, s) => sum + s.reps, 0) / completedSets.length;
 
         addProgress({
@@ -221,8 +242,9 @@ export default function Workout() {
           muscle: ex.muscle,
           date: new Date().toISOString(),
           setsCompleted: completedSets.length,
-          weightUsed: avgWeight,
+          weightUsed: maxWeight,
           repsCompleted: Math.round(avgReps),
+          notes: ex.notes,
         });
       }
     });
@@ -418,6 +440,34 @@ export default function Workout() {
               <div className="mt-4 text-center text-sm text-muted-foreground">
                 {completedSets} / {currentExercise.targetSets} serie completate
               </div>
+
+              {/* Notes Section */}
+              <div className="mt-4">
+                <Collapsible>
+                  <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full justify-center">
+                    <MessageSquare className="w-4 h-4" />
+                    <span>{currentExercise.notes ? 'Modifica nota' : 'Aggiungi nota'}</span>
+                    <ChevronDown className="w-4 h-4" />
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="mt-3">
+                    <Textarea
+                      placeholder="Aggiungi una nota per questo esercizio..."
+                      value={currentExercise.notes || ''}
+                      onChange={(e) => handleNoteUpdate(currentExerciseIndex, e.target.value)}
+                      className="bg-secondary/50 resize-none"
+                      rows={3}
+                    />
+                  </CollapsibleContent>
+                </Collapsible>
+                {currentExercise.notes && (
+                  <div className="mt-2 p-3 bg-secondary/30 rounded-lg">
+                    <p className="text-sm text-muted-foreground flex items-start gap-2">
+                      <MessageSquare className="w-4 h-4 mt-0.5 flex-shrink-0 text-warning" />
+                      {currentExercise.notes}
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
             <div className="glass-card rounded-2xl p-6 mb-6 text-center">
@@ -577,42 +627,80 @@ export default function Workout() {
                 </div>
 
                 {workouts.map((workout) => (
-                  <div
-                    key={workout.id}
-                    onClick={() => setSelectedWorkoutId(workout.id)}
-                    className={`glass-card rounded-xl p-5 cursor-pointer transition-all ${
-                      selectedWorkoutId === workout.id
-                        ? 'border-primary glow-primary'
-                        : 'hover:border-primary/30'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-display font-semibold text-lg">{workout.name}</h3>
-                          {workout.isActive && (
-                            <span className="px-2 py-0.5 bg-primary/20 text-primary text-xs rounded-full">
-                              Attiva
-                            </span>
-                          )}
+                  <Collapsible key={workout.id}>
+                    <div
+                      onClick={() => setSelectedWorkoutId(workout.id)}
+                      className={`glass-card rounded-xl overflow-hidden cursor-pointer transition-all ${
+                        selectedWorkoutId === workout.id
+                          ? 'border-primary glow-primary'
+                          : 'hover:border-primary/30'
+                      }`}
+                    >
+                      <div className="p-5">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-display font-semibold text-lg">{workout.name}</h3>
+                              {workout.isActive && (
+                                <span className="px-2 py-0.5 bg-primary/20 text-primary text-xs rounded-full">
+                                  Attiva
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              {workout.exercises.length} esercizi
+                            </p>
+                          </div>
+                          <div
+                            className={`w-5 h-5 rounded-full border-2 transition-all ${
+                              selectedWorkoutId === workout.id
+                                ? 'bg-primary border-primary'
+                                : 'border-muted-foreground'
+                            }`}
+                          >
+                            {selectedWorkoutId === workout.id && (
+                              <Check className="w-full h-full text-primary-foreground p-0.5" />
+                            )}
+                          </div>
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          {workout.exercises.length} esercizi
-                        </p>
                       </div>
-                      <div
-                        className={`w-5 h-5 rounded-full border-2 transition-all ${
-                          selectedWorkoutId === workout.id
-                            ? 'bg-primary border-primary'
-                            : 'border-muted-foreground'
-                        }`}
-                      >
-                        {selectedWorkoutId === workout.id && (
-                          <Check className="w-full h-full text-primary-foreground p-0.5" />
-                        )}
-                      </div>
+                      
+                      {/* Exercise Preview */}
+                      {selectedWorkoutId === workout.id && (
+                        <div className="px-5 pb-4">
+                          <CollapsibleTrigger 
+                            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Dumbbell className="w-4 h-4" />
+                            <span>Mostra esercizi</span>
+                            <ChevronDown className="w-4 h-4 ml-auto" />
+                          </CollapsibleTrigger>
+                          <CollapsibleContent>
+                            <div className="mt-3 space-y-2">
+                              {workout.exercises.map((ex, idx) => (
+                                <div 
+                                  key={ex.id} 
+                                  className="flex items-center gap-3 p-2 bg-secondary/30 rounded-lg text-sm"
+                                >
+                                  <span className="text-muted-foreground w-5">{idx + 1}.</span>
+                                  <div className="flex-1">
+                                    <span className="font-medium">{ex.name}</span>
+                                    <span className="text-muted-foreground ml-2">
+                                      ({ex.muscle})
+                                    </span>
+                                  </div>
+                                  <span className="text-xs text-muted-foreground">
+                                    {ex.sets}×{ex.reps} @ {ex.targetWeight}kg
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </CollapsibleContent>
+                        </div>
+                      )}
                     </div>
-                  </div>
+                  </Collapsible>
                 ))}
 
                 <div className="flex gap-3 mt-6">
