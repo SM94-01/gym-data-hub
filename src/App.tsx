@@ -12,6 +12,7 @@ import EditWorkout from "./pages/EditWorkout";
 import Workout from "./pages/Workout";
 import Progress from "./pages/Progress";
 import BodyWeight from "./pages/BodyWeight";
+import SessionRecap from "./pages/SessionRecap";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -41,6 +42,7 @@ function AppRoutes() {
         <Route path="/edit/:id" element={<ProtectedRoute><EditWorkout /></ProtectedRoute>} />
         <Route path="/workout" element={<ProtectedRoute><Workout /></ProtectedRoute>} />
         <Route path="/progress" element={<ProtectedRoute><Progress /></ProtectedRoute>} />
+        <Route path="/sessions" element={<ProtectedRoute><SessionRecap /></ProtectedRoute>} />
         <Route path="/weight" element={<ProtectedRoute><BodyWeight /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>

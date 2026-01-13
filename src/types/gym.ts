@@ -34,6 +34,7 @@ export interface WorkoutProgress {
   setsCompleted: number;
   weightUsed: number;
   repsCompleted: number;
+  notes?: string;
 }
 
 export interface WorkoutSession {
@@ -52,6 +53,7 @@ export interface ExerciseSession {
   targetReps: number;
   targetWeight: number;
   completedSets: SetRecord[];
+  notes?: string;
 }
 
 export interface SetRecord {

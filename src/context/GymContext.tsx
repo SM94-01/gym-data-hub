@@ -164,6 +164,7 @@ export function GymProvider({ children }: { children: ReactNode }) {
       setsCompleted: p.sets_completed,
       weightUsed: Number(p.weight_used),
       repsCompleted: p.reps_completed,
+      notes: p.notes || undefined,
     })));
   }, [user]);
 
@@ -357,6 +358,7 @@ export function GymProvider({ children }: { children: ReactNode }) {
         sets_completed: progressEntry.setsCompleted,
         weight_used: progressEntry.weightUsed,
         reps_completed: progressEntry.repsCompleted,
+        notes: progressEntry.notes || null,
       })
       .select()
       .single();
@@ -376,6 +378,7 @@ export function GymProvider({ children }: { children: ReactNode }) {
       setsCompleted: data.sets_completed,
       weightUsed: Number(data.weight_used),
       repsCompleted: data.reps_completed,
+      notes: data.notes || undefined,
     };
     
     setProgress((prev) => [...prev, newProgress]);
