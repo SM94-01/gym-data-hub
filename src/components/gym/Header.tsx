@@ -13,7 +13,6 @@ const navItems = [
   { path: '/create', label: 'Crea Scheda' },
   { path: '/workout', label: 'Allenamento' },
   { path: '/progress', label: 'Progressi' },
-  { path: '/weight', label: 'Peso' },
 ];
 
 export function Header() {
