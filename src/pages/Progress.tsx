@@ -41,13 +41,20 @@ export default function Progress() {
 
   const progress = getUserProgress();
 
-  // Get unique exercises from progress
+  // Get unique exercises from progress - GROUP BY NAME (case insensitive)
   const exercises = useMemo(() => {
     const uniqueExercises = new Map<string, string>();
     progress.forEach((p) => {
-      uniqueExercises.set(p.exerciseId, p.exerciseName);
+      const normalizedName = p.exerciseName.trim().toLowerCase();
+      // Keep original casing from first occurrence, use normalized name as key
+      if (!uniqueExercises.has(normalizedName)) {
+        uniqueExercises.set(normalizedName, p.exerciseName.trim());
+      }
     });
-    return Array.from(uniqueExercises, ([id, name]) => ({ id, name }));
+    return Array.from(uniqueExercises, ([normalizedName, displayName]) => ({ 
+      id: normalizedName, // Use normalized name as ID for grouping
+      name: displayName 
+    }));
   }, [progress]);
 
   // Get available years from progress
@@ -64,23 +71,25 @@ export default function Progress() {
     });
   }, [progress, selectedMonth, selectedYear]);
 
-  // Filter and format progress data for chart (by exercise)
+  // Filter and format progress data for chart (by exercise name - case insensitive)
   const chartData = useMemo(() => {
     if (!selectedExercise) return [];
 
     return filteredProgress
-      .filter((p) => p.exerciseId === selectedExercise)
+      .filter((p) => p.exerciseName.trim().toLowerCase() === selectedExercise)
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
       .map((p) => {
         // Calculate stats from setsData if available
         let maxWeight = p.weightUsed;
         let totalReps = p.setsCompleted * p.repsCompleted;
         let volume = p.weightUsed * p.setsCompleted * p.repsCompleted;
+        let setsCount = p.setsCompleted;
         
         if (p.setsData && p.setsData.length > 0) {
           maxWeight = Math.max(...p.setsData.map(s => s.weight));
           totalReps = p.setsData.reduce((sum, s) => sum + s.reps, 0);
           volume = p.setsData.reduce((sum, s) => sum + (s.weight * s.reps), 0);
+          setsCount = p.setsData.length;
         }
         
         return {
@@ -89,8 +98,8 @@ export default function Progress() {
             month: 'short',
           }),
           peso: maxWeight,
-          reps: Math.round(totalReps / p.setsCompleted),
-          serie: p.setsCompleted,
+          reps: setsCount > 0 ? Math.round(totalReps / setsCount) : 0,
+          serie: setsCount,
           volume,
         };
       });
@@ -151,28 +160,52 @@ export default function Progress() {
       .slice(0, 5);
   }, [filteredProgress]);
 
-  // Calculate stats
+  // Calculate stats - using max weight from setsData for accurate progress tracking
   const stats = useMemo(() => {
-    if (chartData.length === 0) return null;
-
-    const weights = chartData.map((d) => d.peso);
-    const volumes = chartData.map((d) => d.volume);
+    if (!selectedExercise) return null;
+    
+    // Get all progress entries for this exercise (by name, case insensitive)
+    const exerciseProgress = progress
+      .filter((p) => p.exerciseName.trim().toLowerCase() === selectedExercise)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    
+    if (exerciseProgress.length === 0) return null;
+    
+    // Helper to get max weight from a progress entry
+    const getMaxWeight = (p: typeof exerciseProgress[0]) => {
+      if (p.setsData && p.setsData.length > 0) {
+        return Math.max(...p.setsData.map(s => s.weight));
+      }
+      return p.weightUsed;
+    };
+    
+    const weights = exerciseProgress.map(getMaxWeight);
     const maxWeight = Math.max(...weights);
     const lastWeight = weights[weights.length - 1];
     const firstWeight = weights[0];
+    
+    // Calculate improvement based on first vs last session's max weight
     const improvement = firstWeight > 0 ? ((lastWeight - firstWeight) / firstWeight) * 100 : 0;
-    const totalVolume = volumes.reduce((sum, v) => sum + v, 0);
-    const avgVolume = totalVolume / volumes.length;
+    
+    // Calculate total volume from all sessions
+    const totalVolume = exerciseProgress.reduce((sum, p) => {
+      if (p.setsData && p.setsData.length > 0) {
+        return sum + p.setsData.reduce((s, set) => s + (set.weight * set.reps), 0);
+      }
+      return sum + (p.weightUsed * p.setsCompleted * p.repsCompleted);
+    }, 0);
+    
+    const avgVolume = totalVolume / exerciseProgress.length;
 
     return {
       maxWeight,
       lastWeight,
       improvement: improvement.toFixed(1),
-      totalSessions: chartData.length,
+      totalSessions: exerciseProgress.length,
       totalVolume: Math.round(totalVolume),
       avgVolume: Math.round(avgVolume),
     };
-  }, [chartData]);
+  }, [progress, selectedExercise]);
 
   // Overall stats for the period
   const periodStats = useMemo(() => {
@@ -209,8 +242,14 @@ export default function Progress() {
       }
     });
     
-    const totalSets = filteredProgress.reduce((sum, p) => sum + p.setsCompleted, 0);
-    const uniqueExercises = new Set(filteredProgress.map((p) => p.exerciseId)).size;
+    const totalSets = filteredProgress.reduce((sum, p) => {
+      if (p.setsData && p.setsData.length > 0) {
+        return sum + p.setsData.length;
+      }
+      return sum + p.setsCompleted;
+    }, 0);
+    // Count unique exercises by normalized name
+    const uniqueExercises = new Set(filteredProgress.map((p) => p.exerciseName.trim().toLowerCase())).size;
     const uniqueMuscles = new Set(filteredProgress.map((p) => p.muscle)).size;
 
     return {
