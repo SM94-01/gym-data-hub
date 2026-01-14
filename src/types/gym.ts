@@ -24,6 +24,13 @@ export interface Workout {
   createdAt: string;
 }
 
+// Data for a single set within a workout session
+export interface SetData {
+  setNumber: number;
+  reps: number;
+  weight: number;
+}
+
 export interface WorkoutProgress {
   id: string;
   userId: string;
@@ -32,9 +39,10 @@ export interface WorkoutProgress {
   muscle: string;
   date: string;
   setsCompleted: number;
-  weightUsed: number;
-  repsCompleted: number;
+  weightUsed: number; // Max weight used (for backwards compatibility)
+  repsCompleted: number; // Average reps (for backwards compatibility)
   notes?: string;
+  setsData?: SetData[]; // Detailed data for each set
 }
 
 export interface WorkoutSession {
