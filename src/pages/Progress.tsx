@@ -71,16 +71,29 @@ export default function Progress() {
     return filteredProgress
       .filter((p) => p.exerciseId === selectedExercise)
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-      .map((p) => ({
-        date: new Date(p.date).toLocaleDateString('it-IT', {
-          day: 'numeric',
-          month: 'short',
-        }),
-        peso: p.weightUsed,
-        reps: p.repsCompleted,
-        serie: p.setsCompleted,
-        volume: p.weightUsed * p.setsCompleted * p.repsCompleted,
-      }));
+      .map((p) => {
+        // Calculate stats from setsData if available
+        let maxWeight = p.weightUsed;
+        let totalReps = p.setsCompleted * p.repsCompleted;
+        let volume = p.weightUsed * p.setsCompleted * p.repsCompleted;
+        
+        if (p.setsData && p.setsData.length > 0) {
+          maxWeight = Math.max(...p.setsData.map(s => s.weight));
+          totalReps = p.setsData.reduce((sum, s) => sum + s.reps, 0);
+          volume = p.setsData.reduce((sum, s) => sum + (s.weight * s.reps), 0);
+        }
+        
+        return {
+          date: new Date(p.date).toLocaleDateString('it-IT', {
+            day: 'numeric',
+            month: 'short',
+          }),
+          peso: maxWeight,
+          reps: Math.round(totalReps / p.setsCompleted),
+          serie: p.setsCompleted,
+          volume,
+        };
+      });
   }, [filteredProgress, selectedExercise]);
 
   // Calculate volume by muscle group
@@ -88,7 +101,10 @@ export default function Progress() {
     const muscleVolume: Record<string, number> = {};
     
     filteredProgress.forEach((p) => {
-      const volume = p.weightUsed * p.setsCompleted * p.repsCompleted;
+      let volume = p.weightUsed * p.setsCompleted * p.repsCompleted;
+      if (p.setsData && p.setsData.length > 0) {
+        volume = p.setsData.reduce((sum, s) => sum + (s.weight * s.reps), 0);
+      }
       muscleVolume[p.muscle] = (muscleVolume[p.muscle] || 0) + volume;
     });
 
@@ -161,12 +177,39 @@ export default function Progress() {
   // Overall stats for the period
   const periodStats = useMemo(() => {
     const uniqueDates = new Set(filteredProgress.map((p) => new Date(p.date).toDateString()));
-    const maxWeight = filteredProgress.length > 0 
-      ? Math.max(...filteredProgress.map((p) => p.weightUsed))
-      : 0;
+    
+    // Calculate max weight from setsData if available, otherwise use weightUsed
+    let maxWeight = 0;
+    filteredProgress.forEach((p) => {
+      if (p.setsData && p.setsData.length > 0) {
+        const exerciseMax = Math.max(...p.setsData.map(s => s.weight));
+        if (exerciseMax > maxWeight) maxWeight = exerciseMax;
+      } else if (p.weightUsed > maxWeight) {
+        maxWeight = p.weightUsed;
+      }
+    });
+    
+    // Calculate total reps from setsData if available
+    let totalReps = 0;
+    filteredProgress.forEach((p) => {
+      if (p.setsData && p.setsData.length > 0) {
+        totalReps += p.setsData.reduce((sum, s) => sum + s.reps, 0);
+      } else {
+        totalReps += p.setsCompleted * p.repsCompleted;
+      }
+    });
+    
+    // Calculate total volume from setsData if available
+    let totalVolume = 0;
+    filteredProgress.forEach((p) => {
+      if (p.setsData && p.setsData.length > 0) {
+        totalVolume += p.setsData.reduce((sum, s) => sum + (s.weight * s.reps), 0);
+      } else {
+        totalVolume += p.weightUsed * p.setsCompleted * p.repsCompleted;
+      }
+    });
+    
     const totalSets = filteredProgress.reduce((sum, p) => sum + p.setsCompleted, 0);
-    const totalReps = filteredProgress.reduce((sum, p) => sum + (p.setsCompleted * p.repsCompleted), 0);
-    const totalVolume = filteredProgress.reduce((sum, p) => sum + (p.weightUsed * p.setsCompleted * p.repsCompleted), 0);
     const uniqueExercises = new Set(filteredProgress.map((p) => p.exerciseId)).size;
     const uniqueMuscles = new Set(filteredProgress.map((p) => p.muscle)).size;
 

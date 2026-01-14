@@ -235,6 +235,13 @@ export default function Workout() {
         // Use max weight instead of average
         const maxWeight = Math.max(...completedSets.map(s => s.weight));
         const avgReps = completedSets.reduce((sum, s) => sum + s.reps, 0) / completedSets.length;
+        
+        // Prepare detailed sets data
+        const setsData = completedSets.map(s => ({
+          setNumber: s.setNumber,
+          reps: s.reps,
+          weight: s.weight,
+        }));
 
         addProgress({
           exerciseId: ex.exerciseId,
@@ -245,6 +252,7 @@ export default function Workout() {
           weightUsed: maxWeight,
           repsCompleted: Math.round(avgReps),
           notes: ex.notes,
+          setsData,
         });
       }
     });

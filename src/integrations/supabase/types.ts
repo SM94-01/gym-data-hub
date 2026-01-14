@@ -121,6 +121,7 @@ export type Database = {
           notes: string | null
           reps_completed: number
           sets_completed: number
+          sets_data: Json | null
           user_id: string
           weight_used: number
         }
@@ -133,6 +134,7 @@ export type Database = {
           notes?: string | null
           reps_completed: number
           sets_completed: number
+          sets_data?: Json | null
           user_id: string
           weight_used: number
         }
@@ -145,6 +147,7 @@ export type Database = {
           notes?: string | null
           reps_completed?: number
           sets_completed?: number
+          sets_data?: Json | null
           user_id?: string
           weight_used?: number
         }

@@ -16,8 +16,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { ArrowLeft, Calendar, Dumbbell, MessageSquare, ChevronDown } from 'lucide-react';
-import { MONTHS } from '@/types/gym';
+import { ArrowLeft, Calendar, Dumbbell, MessageSquare, ChevronDown, Weight } from 'lucide-react';
+import { MONTHS, SetData } from '@/types/gym';
 
 export default function SessionRecap() {
   const navigate = useNavigate();
@@ -177,34 +177,76 @@ export default function SessionRecap() {
                           <div>
                             <p className="font-medium">{exercise.exerciseName}</p>
                             <p className="text-xs text-muted-foreground">
-                              {exercise.muscle} • {exercise.setsCompleted} serie × {exercise.repsCompleted} reps @ {exercise.weightUsed}kg
+                              {exercise.muscle} • {exercise.setsCompleted} serie
+                              {exercise.setsData && exercise.setsData.length > 0 ? (
+                                <> @ {Math.min(...exercise.setsData.map((s: SetData) => s.weight))}-{Math.max(...exercise.setsData.map((s: SetData) => s.weight))}kg</>
+                              ) : (
+                                <> × {exercise.repsCompleted} reps @ {exercise.weightUsed}kg</>
+                              )}
                             </p>
                           </div>
                         </div>
                       </AccordionTrigger>
                       <AccordionContent className="px-4 pb-4">
                         <div className="space-y-3">
-                          <div className="grid grid-cols-3 gap-3">
-                            <div className="bg-secondary/50 rounded-lg p-3 text-center">
-                              <p className="text-lg font-bold text-primary">{exercise.setsCompleted}</p>
-                              <p className="text-xs text-muted-foreground">Serie</p>
+                          {/* Detailed Sets Data */}
+                          {exercise.setsData && exercise.setsData.length > 0 ? (
+                            <div className="space-y-2">
+                              <p className="text-xs font-medium text-muted-foreground mb-2">Dettaglio Serie</p>
+                              {exercise.setsData.map((set: SetData, setIdx: number) => (
+                                <div 
+                                  key={setIdx}
+                                  className="flex items-center gap-3 p-2 bg-secondary/40 rounded-lg"
+                                >
+                                  <span className="text-sm font-semibold text-muted-foreground w-8">
+                                    #{set.setNumber}
+                                  </span>
+                                  <div className="flex-1 flex items-center gap-4">
+                                    <span className="text-sm">
+                                      <span className="font-medium">{set.reps}</span>
+                                      <span className="text-muted-foreground"> reps</span>
+                                    </span>
+                                    <span className="text-sm">
+                                      <span className="font-medium">{set.weight}</span>
+                                      <span className="text-muted-foreground"> kg</span>
+                                    </span>
+                                  </div>
+                                </div>
+                              ))}
+                              
+                              {/* Summary stats */}
+                              <div className="mt-3 pt-3 border-t border-border/30 grid grid-cols-2 gap-2 text-sm">
+                                <div className="text-muted-foreground">
+                                  Peso min: <span className="font-medium text-foreground">{Math.min(...exercise.setsData.map((s: SetData) => s.weight))}kg</span>
+                                </div>
+                                <div className="text-muted-foreground">
+                                  Peso max: <span className="font-medium text-primary">{Math.max(...exercise.setsData.map((s: SetData) => s.weight))}kg</span>
+                                </div>
+                              </div>
                             </div>
-                            <div className="bg-secondary/50 rounded-lg p-3 text-center">
-                              <p className="text-lg font-bold text-primary">{exercise.repsCompleted}</p>
-                              <p className="text-xs text-muted-foreground">Reps</p>
+                          ) : (
+                            <div className="grid grid-cols-3 gap-3">
+                              <div className="bg-secondary/50 rounded-lg p-3 text-center">
+                                <p className="text-lg font-bold text-primary">{exercise.setsCompleted}</p>
+                                <p className="text-xs text-muted-foreground">Serie</p>
+                              </div>
+                              <div className="bg-secondary/50 rounded-lg p-3 text-center">
+                                <p className="text-lg font-bold text-primary">{exercise.repsCompleted}</p>
+                                <p className="text-xs text-muted-foreground">Reps</p>
+                              </div>
+                              <div className="bg-secondary/50 rounded-lg p-3 text-center">
+                                <p className="text-lg font-bold text-primary">{exercise.weightUsed}kg</p>
+                                <p className="text-xs text-muted-foreground">Peso Max</p>
+                              </div>
                             </div>
-                            <div className="bg-secondary/50 rounded-lg p-3 text-center">
-                              <p className="text-lg font-bold text-primary">{exercise.weightUsed}kg</p>
-                              <p className="text-xs text-muted-foreground">Peso</p>
-                            </div>
-                          </div>
+                          )}
                           
-                          {(exercise as any).notes && (
+                          {exercise.notes && (
                             <div className="bg-secondary/30 rounded-lg p-3 flex items-start gap-2">
                               <MessageSquare className="w-4 h-4 text-warning mt-0.5 flex-shrink-0" />
                               <div>
                                 <p className="text-xs text-muted-foreground mb-1">Note</p>
-                                <p className="text-sm">{(exercise as any).notes}</p>
+                                <p className="text-sm">{exercise.notes}</p>
                               </div>
                             </div>
                           )}

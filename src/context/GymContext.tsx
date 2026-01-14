@@ -1,5 +1,5 @@
 import React, { createContext, useContext, ReactNode, useState, useEffect, useCallback } from 'react';
-import { Workout, WorkoutProgress, WorkoutSession, BodyWeight } from '@/types/gym';
+import { Workout, WorkoutProgress, WorkoutSession, BodyWeight, SetData } from '@/types/gym';
 import { supabase } from '@/integrations/supabase/client';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useAuth } from '@/context/AuthContext';
@@ -165,6 +165,7 @@ export function GymProvider({ children }: { children: ReactNode }) {
       weightUsed: Number(p.weight_used),
       repsCompleted: p.reps_completed,
       notes: p.notes || undefined,
+      setsData: p.sets_data ? (p.sets_data as unknown as SetData[]) : undefined,
     })));
   }, [user]);
 
@@ -359,7 +360,8 @@ export function GymProvider({ children }: { children: ReactNode }) {
         weight_used: progressEntry.weightUsed,
         reps_completed: progressEntry.repsCompleted,
         notes: progressEntry.notes || null,
-      })
+        sets_data: progressEntry.setsData ? JSON.parse(JSON.stringify(progressEntry.setsData)) : null,
+      } as any)
       .select()
       .single();
     
@@ -379,6 +381,7 @@ export function GymProvider({ children }: { children: ReactNode }) {
       weightUsed: Number(data.weight_used),
       repsCompleted: data.reps_completed,
       notes: data.notes || undefined,
+      setsData: data.sets_data ? (data.sets_data as unknown as SetData[]) : undefined,
     };
     
     setProgress((prev) => [...prev, newProgress]);
