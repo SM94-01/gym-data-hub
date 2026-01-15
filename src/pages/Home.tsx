@@ -8,14 +8,16 @@ import { useState } from 'react';
 import { ProfileModal } from '@/components/gym/ProfileModal';
 
 export default function Home() {
-  const { getUserWorkouts, getActiveWorkout, getUserProgress, profile } = useGym();
+  const { getUserWorkouts, getUserProgress, profile, currentSession } = useGym();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [showProfile, setShowProfile] = useState(false);
   
   const workouts = getUserWorkouts();
   const progress = getUserProgress();
-  const activeWorkout = getActiveWorkout();
+  
+  // Active workout is only shown if there's a session in progress (not finished)
+  const activeWorkout = currentSession ? workouts.find(w => w.id === currentSession.workoutId) : undefined;
 
   const totalWorkouts = progress.length;
   const totalExercises = workouts.reduce((acc, w) => acc + w.exercises.length, 0);
