@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useGym } from '@/context/GymContext';
 import { useAuth } from '@/context/AuthContext';
 import { ExerciseSession, SetRecord, WorkoutSession, Exercise, MUSCLE_GROUPS } from '@/types/gym';
@@ -27,7 +27,8 @@ type WorkoutMode = 'select' | 'custom';
 
 export default function Workout() {
   const navigate = useNavigate();
-  const { getUserWorkouts, getActiveWorkout, startSession, endSession, currentSession, updateSession, addProgress, lastWorkoutId } = useGym();
+  const [searchParams] = useSearchParams();
+  const { getUserWorkouts, startSession, endSession, currentSession, updateSession, addProgress, lastWorkoutId } = useGym();
   const { user } = useAuth();
   const [selectedWorkoutId, setSelectedWorkoutId] = useState<string | null>(null);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
@@ -47,13 +48,20 @@ export default function Workout() {
   });
 
   const workouts = getUserWorkouts();
-  const activeWorkout = getActiveWorkout();
+  
+  // Get workoutId from URL params
+  const urlWorkoutId = searchParams.get('workoutId');
 
   useEffect(() => {
-    if (activeWorkout && !selectedWorkoutId) {
-      setSelectedWorkoutId(activeWorkout.id);
+    // If there's a current session, use that workout
+    if (currentSession && !selectedWorkoutId) {
+      setSelectedWorkoutId(currentSession.workoutId);
     }
-  }, [activeWorkout, selectedWorkoutId]);
+    // Otherwise, if workoutId is in URL, use that
+    else if (urlWorkoutId && !selectedWorkoutId && !currentSession) {
+      setSelectedWorkoutId(urlWorkoutId);
+    }
+  }, [currentSession, urlWorkoutId, selectedWorkoutId]);
 
   // Recovery timer
   useEffect(() => {
@@ -616,7 +624,7 @@ export default function Workout() {
               </div>
             ) : (
               <div className="space-y-4">
-                {lastUsedWorkout && !activeWorkout && (
+                {lastUsedWorkout && !currentSession && (
                   <p className="text-sm text-primary">
                     📌 Ultima scheda: "{lastUsedWorkout.name}"
                   </p>
