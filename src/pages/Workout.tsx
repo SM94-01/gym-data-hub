@@ -303,6 +303,14 @@ export default function Workout() {
                   {formatTime(timeLeft)}
                 </span>
                 <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setTimeLeft((prev) => prev + 30)}
+                  className="border-warning/50 text-warning hover:bg-warning/10 font-semibold"
+                >
+                  +30
+                </Button>
+                <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => {

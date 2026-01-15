@@ -434,7 +434,7 @@ export default function Progress() {
                       {muscleDistribution.map((m, i) => (
                         <div key={m.name} className="flex items-center gap-2">
                           <div className="w-3 h-3 rounded-full" style={{ backgroundColor: m.fill }} />
-                          <span className="text-xs text-muted-foreground">{m.name}</span>
+                          <span className="text-xs font-medium" style={{ color: m.fill }}>{m.name} ({m.value} serie, {m.percentage}%)</span>
                         </div>
                       ))}
                     </div>
