@@ -424,19 +424,34 @@ export default function Progress() {
                               backgroundColor: 'hsl(220, 18%, 10%)',
                               border: '1px solid hsl(220, 14%, 18%)',
                               borderRadius: '8px',
+                              padding: '8px 12px',
                             }}
-                            formatter={(value: number, name: string) => [`${value} serie (${muscleDistribution.find(m => m.name === name)?.percentage}%)`, name]}
+                            content={({ active, payload }) => {
+                              if (active && payload && payload.length) {
+                                const data = payload[0].payload;
+                                return (
+                                  <div 
+                                    style={{
+                                      backgroundColor: 'hsl(220, 18%, 10%)',
+                                      border: '1px solid hsl(220, 14%, 18%)',
+                                      borderRadius: '8px',
+                                      padding: '8px 12px',
+                                    }}
+                                  >
+                                    <p style={{ color: data.fill, fontWeight: 500 }}>
+                                      {data.name}
+                                    </p>
+                                    <p style={{ color: data.fill, fontSize: '14px' }}>
+                                      {data.value} serie ({data.percentage}%)
+                                    </p>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
                           />
                         </PieChart>
                       </ResponsiveContainer>
-                    </div>
-                    <div className="flex flex-wrap justify-center gap-3 mt-4">
-                      {muscleDistribution.map((m, i) => (
-                        <div key={m.name} className="flex items-center gap-2">
-                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: m.fill }} />
-                          <span className="text-xs font-medium" style={{ color: m.fill }}>{m.name} ({m.value} serie, {m.percentage}%)</span>
-                        </div>
-                      ))}
                     </div>
                   </div>
                 )}
