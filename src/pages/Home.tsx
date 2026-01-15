@@ -119,7 +119,7 @@ export default function Home() {
                   className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
                 >
                   <Play className="w-5 h-5" />
-                  Inizia
+                  Continua
                 </Button>
               </div>
             </div>
@@ -168,7 +168,7 @@ export default function Home() {
                 >
                   <WorkoutCard
                     workout={workout}
-                    onSelect={() => navigate('/workout')}
+                    isActive={currentSession?.workoutId === workout.id}
                   />
                 </div>
               ))}

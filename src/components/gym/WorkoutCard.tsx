@@ -6,12 +6,12 @@ import { useGym } from '@/context/GymContext';
 
 interface WorkoutCardProps {
   workout: Workout;
-  onSelect?: () => void;
+  isActive?: boolean;
 }
 
-export function WorkoutCard({ workout, onSelect }: WorkoutCardProps) {
+export function WorkoutCard({ workout, isActive }: WorkoutCardProps) {
   const navigate = useNavigate();
-  const { setActiveWorkout, deleteWorkout } = useGym();
+  const { deleteWorkout } = useGym();
 
   const muscleGroups = [...new Set(workout.exercises.map((e) => e.muscle))];
   const formattedDate = workout.lastUsed
@@ -21,17 +21,21 @@ export function WorkoutCard({ workout, onSelect }: WorkoutCardProps) {
       })
     : 'Mai usata';
 
+  const handleCardClick = () => {
+    navigate(`/workout?workoutId=${workout.id}`);
+  };
+
   return (
     <div
       className={`glass-card rounded-xl p-5 transition-all duration-300 hover:border-primary/50 group cursor-pointer ${
-        workout.isActive ? 'border-primary/70 glow-primary' : ''
+        isActive ? 'border-primary/70 glow-primary' : ''
       }`}
-      onClick={onSelect}
+      onClick={handleCardClick}
     >
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
-            {workout.isActive && (
+            {isActive && (
               <Star className="w-4 h-4 text-primary fill-primary" />
             )}
             <h3 className="font-display font-semibold text-lg text-foreground group-hover:text-primary transition-colors">
@@ -68,19 +72,6 @@ export function WorkoutCard({ workout, onSelect }: WorkoutCardProps) {
           <span>{workout.exercises.length} esercizi</span>
         </div>
         <div className="flex gap-2">
-          {!workout.isActive && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                setActiveWorkout(workout.id);
-              }}
-              className="text-xs hover:text-primary"
-            >
-              Attiva
-            </Button>
-          )}
           <Button
             variant="ghost"
             size="sm"
