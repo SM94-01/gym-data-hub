@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Dumbbell, Mail, Lock, User, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { supabase } from "@/integrations/supabase/client";
 
 const loginSchema = z.object({
   email: z.string().trim().email("Email non valida"),
@@ -18,6 +19,25 @@ const signupSchema = z.object({
   email: z.string().trim().email("Email non valida"),
   password: z.string().min(6, "La password deve avere almeno 6 caratteri"),
 });
+
+// Check if email is in the allowed list
+async function checkEmailAllowed(email: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabase.functions.invoke('check-email-allowed', {
+      body: { email: email.toLowerCase().trim() }
+    });
+    
+    if (error) {
+      console.error("Error checking email:", error);
+      return false;
+    }
+    
+    return data?.allowed === true;
+  } catch (err) {
+    console.error("Error calling check-email-allowed:", err);
+    return false;
+  }
+}
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -57,6 +77,14 @@ export default function Auth() {
         const validation = signupSchema.safeParse({ name, email, password });
         if (!validation.success) {
           toast.error(validation.error.errors[0].message);
+          setLoading(false);
+          return;
+        }
+
+        // Check if email is allowed before signup
+        const isAllowed = await checkEmailAllowed(email);
+        if (!isAllowed) {
+          toast.error("Questa email non è autorizzata. Contattaci per acquistare il servizio.");
           setLoading(false);
           return;
         }
