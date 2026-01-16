@@ -40,16 +40,18 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
 
   useEffect(() => {
     if (open && user) {
-      // Fetch current profile data
+      // Set email from auth user (email is no longer stored in profiles table)
+      setEmail(user.email || "");
+      
+      // Fetch name from profile data
       supabase
         .from('profiles')
-        .select('name, email')
+        .select('name')
         .eq('id', user.id)
         .maybeSingle()
         .then(({ data }) => {
           if (data) {
             setName(data.name || "");
-            setEmail(data.email || user.email || "");
           }
         });
     }
