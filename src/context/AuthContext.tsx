@@ -73,11 +73,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateProfile = async (updates: { name?: string; email?: string }) => {
     if (!user) return { error: new Error('Non autenticato') };
 
-    // Update name in profiles table (email is stored only in auth.users)
+    // Update profile in profiles table
     if (updates.name) {
       const { error: profileError } = await supabase
         .from('profiles')
-        .update({ name: updates.name })
+        .update({ name: updates.name, email: updates.email })
         .eq('id', user.id);
       
       if (profileError) {
