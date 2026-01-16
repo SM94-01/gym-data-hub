@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      allowed_emails: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          notes: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          notes?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          notes?: string | null
+        }
+        Relationships: []
+      }
       body_weights: {
         Row: {
           created_at: string
@@ -204,7 +225,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_email_allowed: { Args: { check_email: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
