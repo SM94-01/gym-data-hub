@@ -17,7 +17,13 @@ export default function Home() {
   const progress = getUserProgress();
   
   // Active workout is only shown if there's a session in progress (not finished)
-  const activeWorkout = currentSession ? workouts.find(w => w.id === currentSession.workoutId) : undefined;
+  // For custom workouts (ID starts with "custom-"), we show "Custom" as the name
+  const isCustomSession = currentSession?.workoutId?.startsWith('custom-');
+  const activeWorkout = currentSession 
+    ? (isCustomSession 
+        ? { id: currentSession.workoutId, name: 'Custom', exercises: currentSession.exercises } 
+        : workouts.find(w => w.id === currentSession.workoutId))
+    : undefined;
 
   const totalWorkouts = progress.length;
   const totalExercises = workouts.reduce((acc, w) => acc + w.exercises.length, 0);
