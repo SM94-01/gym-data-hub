@@ -89,7 +89,7 @@ export function GymProvider({ children }: { children: ReactNode }) {
       setProfile({
         id: data.id,
         name: data.name,
-        email: data.email,
+        email: user.email || null, // Email comes from auth.users, not profiles table
         createdAt: data.created_at,
       });
     }
