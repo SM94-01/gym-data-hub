@@ -114,14 +114,16 @@ export default function Auth() {
           return;
         }
 
-        const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-          redirectTo: `${window.location.origin}/auth?reset=true`,
+        const { data, error } = await supabase.functions.invoke('reset-password', {
+          body: { email: email.trim() }
         });
 
         if (error) {
           toast.error("Errore durante l'invio dell'email di recupero");
+        } else if (data?.error) {
+          toast.error(data.error);
         } else {
-          toast.success("Email di recupero inviata! Controlla la tua casella di posta.");
+          toast.success("Password provvisoria inviata! Controlla la tua casella di posta.");
           setMode('login');
           setEmail("");
         }
@@ -238,7 +240,7 @@ export default function Auth() {
 
           {mode === 'forgot-password' && (
             <p className="text-sm text-muted-foreground">
-              Inserisci la tua email e ti invieremo un link per reimpostare la password.
+              Inserisci la tua email e ti invieremo una password provvisoria per accedere.
             </p>
           )}
 

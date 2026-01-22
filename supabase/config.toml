@@ -1,1 +1,7 @@
 project_id = "jiopyrhuanoeshscxzvc"
+
+[functions.reset-password]
+verify_jwt = false
+
+[functions.check-email-allowed]
+verify_jwt = false
