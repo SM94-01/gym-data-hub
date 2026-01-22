@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { Resend } from "npm:resend@2.0.0";
+import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -77,17 +77,18 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    // Get Resend API key
-    const resendApiKey = Deno.env.get("RESEND_API_KEY");
-    if (!resendApiKey) {
-      console.error("RESEND_API_KEY not configured");
+    // Get Gmail credentials
+    const gmailAppPassword = Deno.env.get("GMAIL_APP_PASSWORD");
+    if (!gmailAppPassword) {
+      console.error("GMAIL_APP_PASSWORD not configured");
       return new Response(
         JSON.stringify({ error: "Configurazione email mancante" }),
         { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    const resend = new Resend(resendApiKey);
+    // Remove spaces from app password (it's often formatted with spaces)
+    const cleanPassword = gmailAppPassword.replace(/\s+/g, "");
     const userName = user.user_metadata?.name || "Utente";
 
     const htmlContent = `
@@ -110,14 +111,29 @@ serve(async (req: Request): Promise<Response> => {
       </html>
     `;
 
-    const emailResponse = await resend.emails.send({
-      from: "GymApp <onboarding@resend.dev>",
-      to: [normalizedEmail],
+    // Send email via Gmail SMTP using denomailer
+    const client = new SMTPClient({
+      connection: {
+        hostname: "smtp.gmail.com",
+        port: 465,
+        tls: true,
+        auth: {
+          username: "my.gymapp26@gmail.com",
+          password: cleanPassword,
+        },
+      },
+    });
+
+    await client.send({
+      from: "GymApp <my.gymapp26@gmail.com>",
+      to: normalizedEmail,
       subject: "GymApp - Password Provvisoria",
       html: htmlContent,
     });
 
-    console.log("Email sent successfully:", emailResponse);
+    await client.close();
+
+    console.log("Email sent successfully to:", normalizedEmail);
 
     return new Response(
       JSON.stringify({ success: true, message: "Password provvisoria inviata alla tua email" }),
