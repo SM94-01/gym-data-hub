@@ -23,7 +23,8 @@ export default function Workout() {
     currentSession,
     updateSession,
     addProgress,
-    lastWorkoutId
+    lastWorkoutId,
+    getUserProgress
   } = useGym();
   const {
     user
@@ -90,22 +91,45 @@ export default function Workout() {
   const handleStartWorkout = () => {
     const workout = workouts.find(w => w.id === selectedWorkoutId);
     if (!workout) return;
-    const exercises: ExerciseSession[] = workout.exercises.map(ex => ({
-      exerciseId: ex.id,
-      exerciseName: ex.name,
-      muscle: ex.muscle,
-      targetSets: ex.sets,
-      targetReps: ex.reps,
-      targetWeight: ex.targetWeight,
-      completedSets: Array.from({
-        length: ex.sets
-      }, (_, i) => ({
-        setNumber: i + 1,
-        reps: ex.reps,
-        weight: ex.targetWeight,
-        completed: false
-      }))
-    }));
+
+    // Get all user progress to find last weight used for each exercise
+    const allProgress = getUserProgress();
+
+    const exercises: ExerciseSession[] = workout.exercises.map(ex => {
+      // Find the most recent progress for this exercise (by name, case insensitive)
+      const exerciseProgress = allProgress
+        .filter(p => p.exerciseName.trim().toLowerCase() === ex.name.trim().toLowerCase())
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      
+      // Get the last weight used (from the most recent session)
+      let lastWeight = ex.targetWeight;
+      if (exerciseProgress.length > 0) {
+        const lastSession = exerciseProgress[0];
+        if (lastSession.setsData && lastSession.setsData.length > 0) {
+          // Use the max weight from the last session's sets
+          lastWeight = Math.max(...lastSession.setsData.map(s => s.weight));
+        } else {
+          lastWeight = lastSession.weightUsed;
+        }
+      }
+
+      return {
+        exerciseId: ex.id,
+        exerciseName: ex.name,
+        muscle: ex.muscle,
+        targetSets: ex.sets,
+        targetReps: ex.reps,
+        targetWeight: lastWeight, // Use last weight instead of original targetWeight
+        completedSets: Array.from({
+          length: ex.sets
+        }, (_, i) => ({
+          setNumber: i + 1,
+          reps: ex.reps,
+          weight: lastWeight, // Pre-fill with last weight
+          completed: false
+        }))
+      };
+    });
     startSession({
       workoutId: workout.id,
       workoutName: workout.name,

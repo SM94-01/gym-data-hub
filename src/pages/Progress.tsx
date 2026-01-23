@@ -71,15 +71,71 @@ export default function Progress() {
     });
   }, [progress, selectedMonth, selectedYear]);
 
-  // Filter and format progress data for chart (by exercise name - case insensitive)
+  // Filter and format progress data for chart - SERIES BY SERIES (by exercise name - case insensitive)
   const chartData = useMemo(() => {
+    if (!selectedExercise) return [];
+
+    const exerciseProgress = filteredProgress
+      .filter((p) => p.exerciseName.trim().toLowerCase() === selectedExercise)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    // Create data points for each individual set
+    const seriesData: Array<{
+      date: string;
+      fullDate: string;
+      serie: number;
+      peso: number;
+      reps: number;
+      volume: number;
+      sessionIndex: number;
+    }> = [];
+
+    exerciseProgress.forEach((p, sessionIdx) => {
+      const dateStr = new Date(p.date).toLocaleDateString('it-IT', {
+        day: 'numeric',
+        month: 'short',
+      });
+
+      if (p.setsData && p.setsData.length > 0) {
+        // Use detailed per-set data
+        p.setsData.forEach((set) => {
+          seriesData.push({
+            date: `${dateStr} S${set.setNumber}`,
+            fullDate: dateStr,
+            serie: set.setNumber,
+            peso: set.weight,
+            reps: set.reps,
+            volume: set.weight * set.reps,
+            sessionIndex: sessionIdx,
+          });
+        });
+      } else {
+        // Fallback to aggregated data for old records
+        for (let i = 1; i <= p.setsCompleted; i++) {
+          seriesData.push({
+            date: `${dateStr} S${i}`,
+            fullDate: dateStr,
+            serie: i,
+            peso: p.weightUsed,
+            reps: p.repsCompleted,
+            volume: p.weightUsed * p.repsCompleted,
+            sessionIndex: sessionIdx,
+          });
+        }
+      }
+    });
+
+    return seriesData;
+  }, [filteredProgress, selectedExercise]);
+
+  // Aggregated chart data per session (for volume overview)
+  const sessionChartData = useMemo(() => {
     if (!selectedExercise) return [];
 
     return filteredProgress
       .filter((p) => p.exerciseName.trim().toLowerCase() === selectedExercise)
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
       .map((p) => {
-        // Calculate stats from setsData if available
         let maxWeight = p.weightUsed;
         let totalReps = p.setsCompleted * p.repsCompleted;
         let volume = p.weightUsed * p.setsCompleted * p.repsCompleted;
@@ -572,9 +628,10 @@ export default function Progress() {
                       </div>
                     </div>
 
-                    {/* Weight Chart */}
+                    {/* Weight Chart - Serie per Serie */}
                     <div className="glass-card rounded-xl p-6 animate-fade-in" style={{ animationDelay: '250ms' }}>
-                      <h3 className="font-semibold mb-4">Andamento Peso (kg)</h3>
+                      <h3 className="font-semibold mb-2">Andamento Peso (kg) - Serie per Serie</h3>
+                      <p className="text-xs text-muted-foreground mb-4">Ogni punto rappresenta una singola serie</p>
                       <div className="h-64">
                         <ResponsiveContainer width="100%" height="100%">
                           <AreaChart data={chartData}>
@@ -588,7 +645,11 @@ export default function Progress() {
                             <XAxis
                               dataKey="date"
                               stroke="hsl(220, 10%, 55%)"
-                              fontSize={12}
+                              fontSize={10}
+                              angle={-45}
+                              textAnchor="end"
+                              height={60}
+                              interval="preserveStartEnd"
                             />
                             <YAxis
                               stroke="hsl(220, 10%, 55%)"
@@ -600,6 +661,12 @@ export default function Progress() {
                                 border: '1px solid hsl(220, 14%, 18%)',
                                 borderRadius: '8px',
                               }}
+                              formatter={(value: number, name: string) => {
+                                if (name === 'peso') return [`${value} kg`, 'Peso'];
+                                if (name === 'reps') return [value, 'Reps'];
+                                return [value, name];
+                              }}
+                              labelFormatter={(label) => `${label}`}
                             />
                             <Area
                               type="monotone"
@@ -607,22 +674,63 @@ export default function Progress() {
                               stroke="hsl(160, 84%, 39%)"
                               strokeWidth={2}
                               fill="url(#colorWeight)"
+                              dot={{ fill: 'hsl(160, 84%, 39%)', r: 3 }}
                             />
                           </AreaChart>
                         </ResponsiveContainer>
                       </div>
                     </div>
 
-                    {/* Volume Chart */}
+                    {/* Volume Chart per Serie */}
                     <div className="glass-card rounded-xl p-6 animate-fade-in" style={{ animationDelay: '275ms' }}>
-                      <h3 className="font-semibold mb-4">Andamento Volume</h3>
+                      <h3 className="font-semibold mb-2">Volume per Serie</h3>
+                      <p className="text-xs text-muted-foreground mb-4">Peso × Reps per ogni serie</p>
                       <div className="h-48">
                         <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart data={chartData}>
+                          <BarChart data={chartData}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 14%, 18%)" />
+                            <XAxis
+                              dataKey="date"
+                              stroke="hsl(220, 10%, 55%)"
+                              fontSize={10}
+                              angle={-45}
+                              textAnchor="end"
+                              height={60}
+                              interval="preserveStartEnd"
+                            />
+                            <YAxis
+                              stroke="hsl(220, 10%, 55%)"
+                              fontSize={12}
+                            />
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: 'hsl(220, 18%, 10%)',
+                                border: '1px solid hsl(220, 14%, 18%)',
+                                borderRadius: '8px',
+                              }}
+                              formatter={(value: number) => [`${value} kg`, 'Volume']}
+                            />
+                            <Bar
+                              dataKey="volume"
+                              fill="hsl(280, 65%, 60%)"
+                              radius={[4, 4, 0, 0]}
+                            />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+
+                    {/* Volume Sessione - Aggregato */}
+                    <div className="glass-card rounded-xl p-6 animate-fade-in" style={{ animationDelay: '285ms' }}>
+                      <h3 className="font-semibold mb-2">Volume Totale Sessione</h3>
+                      <p className="text-xs text-muted-foreground mb-4">Somma di tutte le serie per sessione</p>
+                      <div className="h-48">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={sessionChartData}>
                             <defs>
-                              <linearGradient id="colorVolume" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="hsl(280, 65%, 60%)" stopOpacity={0.3} />
-                                <stop offset="95%" stopColor="hsl(280, 65%, 60%)" stopOpacity={0} />
+                              <linearGradient id="colorVolumeSession" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="hsl(200, 80%, 50%)" stopOpacity={0.3} />
+                                <stop offset="95%" stopColor="hsl(200, 80%, 50%)" stopOpacity={0} />
                               </linearGradient>
                             </defs>
                             <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 14%, 18%)" />
@@ -641,23 +749,24 @@ export default function Progress() {
                                 border: '1px solid hsl(220, 14%, 18%)',
                                 borderRadius: '8px',
                               }}
-                              formatter={(value: number) => [`${value} kg`, 'Volume']}
+                              formatter={(value: number) => [`${value} kg`, 'Volume Totale']}
                             />
                             <Area
                               type="monotone"
                               dataKey="volume"
-                              stroke="hsl(280, 65%, 60%)"
+                              stroke="hsl(200, 80%, 50%)"
                               strokeWidth={2}
-                              fill="url(#colorVolume)"
+                              fill="url(#colorVolumeSession)"
                             />
                           </AreaChart>
                         </ResponsiveContainer>
                       </div>
                     </div>
 
-                    {/* Reps Chart */}
+                    {/* Reps Chart - Serie per Serie */}
                     <div className="glass-card rounded-xl p-6 animate-fade-in" style={{ animationDelay: '300ms' }}>
-                      <h3 className="font-semibold mb-4">Ripetizioni Medie</h3>
+                      <h3 className="font-semibold mb-2">Ripetizioni per Serie</h3>
+                      <p className="text-xs text-muted-foreground mb-4">Reps effettuate in ogni serie</p>
                       <div className="h-48">
                         <ResponsiveContainer width="100%" height="100%">
                           <LineChart data={chartData}>
@@ -665,7 +774,11 @@ export default function Progress() {
                             <XAxis
                               dataKey="date"
                               stroke="hsl(220, 10%, 55%)"
-                              fontSize={12}
+                              fontSize={10}
+                              angle={-45}
+                              textAnchor="end"
+                              height={60}
+                              interval="preserveStartEnd"
                             />
                             <YAxis
                               stroke="hsl(220, 10%, 55%)"
@@ -677,13 +790,14 @@ export default function Progress() {
                                 border: '1px solid hsl(220, 14%, 18%)',
                                 borderRadius: '8px',
                               }}
+                              formatter={(value: number) => [value, 'Reps']}
                             />
                             <Line
                               type="monotone"
                               dataKey="reps"
                               stroke="hsl(38, 92%, 50%)"
                               strokeWidth={2}
-                              dot={{ fill: 'hsl(38, 92%, 50%)', strokeWidth: 0 }}
+                              dot={{ fill: 'hsl(38, 92%, 50%)', strokeWidth: 0, r: 3 }}
                             />
                           </LineChart>
                         </ResponsiveContainer>
