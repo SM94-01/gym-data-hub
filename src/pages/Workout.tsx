@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ArrowLeft, Play, Check, ChevronRight, ChevronLeft, Trophy, Timer, Pause, Plus, Dumbbell, Zap, MessageSquare, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Play, Check, ChevronRight, ChevronLeft, Trophy, Timer, Pause, Plus, Dumbbell, Zap, MessageSquare, ChevronDown, X } from 'lucide-react';
 import { toast } from 'sonner';
 type WorkoutMode = 'select' | 'custom';
 export default function Workout() {
@@ -412,11 +412,11 @@ export default function Workout() {
                     <div className="flex-1 grid grid-cols-2 gap-3">
                       <div>
                         <label className="text-xs text-muted-foreground mb-1 block">Reps</label>
-                        <Input type="number" value={set.reps} onChange={e => handleSetUpdate(currentExerciseIndex, setIdx, 'reps', parseInt(e.target.value) || 0)} className="bg-background/50 h-10 text-center" />
+                        <Input type="number" value={set.reps || ''} onChange={e => handleSetUpdate(currentExerciseIndex, setIdx, 'reps', parseInt(e.target.value) || 0)} className="bg-background/50 h-10 text-center" placeholder="0" />
                       </div>
                       <div>
                         <label className="text-xs text-muted-foreground mb-1 block">Kg</label>
-                        <Input type="number" step="0.5" value={set.weight} onChange={e => handleSetUpdate(currentExerciseIndex, setIdx, 'weight', parseFloat(e.target.value) || 0)} className="bg-background/50 h-10 text-center" />
+                        <Input type="number" step="0.5" value={set.weight || ''} onChange={e => handleSetUpdate(currentExerciseIndex, setIdx, 'weight', parseFloat(e.target.value) || 0)} className="bg-background/50 h-10 text-center" placeholder="0" />
                       </div>
                     </div>
                   </div>)}
@@ -467,9 +467,24 @@ export default function Workout() {
 
           {/* Navigation */}
           <div className="flex items-center justify-between gap-4">
-            <Button variant="outline" onClick={() => setCurrentExerciseIndex(prev => Math.max(0, prev - 1))} disabled={currentExerciseIndex === 0 || totalExercises === 0}>
-              <ChevronLeft className="w-5 h-5" />
-            </Button>
+            {currentExerciseIndex === 0 ? (
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  if (window.confirm('Sei sicuro di voler annullare l\'allenamento?')) {
+                    endSession();
+                    navigate('/');
+                  }
+                }}
+                className="border-destructive/50 text-destructive hover:bg-destructive/10"
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            ) : (
+              <Button variant="outline" onClick={() => setCurrentExerciseIndex(prev => Math.max(0, prev - 1))}>
+                <ChevronLeft className="w-5 h-5" />
+              </Button>
+            )}
 
             {currentExerciseIndex === totalExercises - 1 || totalExercises === 0 ? <Button onClick={handleFinishWorkout} className="flex-1 gap-2" disabled={totalExercises === 0}>
                 <Trophy className="w-5 h-5" />
@@ -567,18 +582,38 @@ export default function Workout() {
                           </CollapsibleTrigger>
                           <CollapsibleContent>
                             <div className="mt-3 space-y-2">
-                              {workout.exercises.map((ex, idx) => <div key={ex.id} className="flex items-center gap-3 p-2 bg-secondary/30 rounded-lg text-sm">
-                                  <span className="text-muted-foreground w-5">{idx + 1}.</span>
-                                  <div className="flex-1">
-                                    <span className="font-medium">{ex.name}</span>
-                                    <span className="text-muted-foreground ml-2">
-                                      ({ex.muscle})
+                              {workout.exercises.map((ex, idx) => {
+                                // Find last weight used for this exercise
+                                const allProgress = getUserProgress();
+                                const exerciseProgress = allProgress
+                                  .filter(p => p.exerciseName.trim().toLowerCase() === ex.name.trim().toLowerCase())
+                                  .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+                                
+                                let displayWeight = ex.targetWeight;
+                                if (exerciseProgress.length > 0) {
+                                  const lastSession = exerciseProgress[0];
+                                  if (lastSession.setsData && lastSession.setsData.length > 0) {
+                                    displayWeight = Math.max(...lastSession.setsData.map(s => s.weight));
+                                  } else {
+                                    displayWeight = lastSession.weightUsed;
+                                  }
+                                }
+
+                                return (
+                                  <div key={ex.id} className="flex items-center gap-3 p-2 bg-secondary/30 rounded-lg text-sm">
+                                    <span className="text-muted-foreground w-5">{idx + 1}.</span>
+                                    <div className="flex-1">
+                                      <span className="font-medium">{ex.name}</span>
+                                      <span className="text-muted-foreground ml-2">
+                                        ({ex.muscle})
+                                      </span>
+                                    </div>
+                                    <span className="text-xs text-muted-foreground">
+                                      {ex.sets}×{ex.reps} @ {displayWeight}kg
                                     </span>
                                   </div>
-                                  <span className="text-xs text-muted-foreground">
-                                    {ex.sets}×{ex.reps} @ {ex.targetWeight}kg
-                                  </span>
-                                </div>)}
+                                );
+                              })}
                             </div>
                           </CollapsibleContent>
                         </div>}
