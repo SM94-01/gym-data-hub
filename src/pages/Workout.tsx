@@ -92,24 +92,31 @@ export default function Workout() {
     const workout = workouts.find(w => w.id === selectedWorkoutId);
     if (!workout) return;
 
-    // Get all user progress to find last weight used for each exercise
+    // Get all user progress to find last weights for each exercise in THIS specific workout
     const allProgress = getUserProgress();
 
     const exercises: ExerciseSession[] = workout.exercises.map(ex => {
-      // Find the most recent progress for this exercise (by name, case insensitive)
+      // Find the most recent progress for this SPECIFIC exercise (by exercise_id, linked to this workout)
       const exerciseProgress = allProgress
-        .filter(p => p.exerciseName.trim().toLowerCase() === ex.name.trim().toLowerCase())
+        .filter(p => p.exerciseId === ex.id)
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       
-      // Get the last weight used (from the most recent session)
-      let lastWeight = ex.targetWeight;
+      // Get the last weights used per set (from the most recent session for this specific exercise)
+      let defaultWeights: number[] = Array(ex.sets).fill(ex.targetWeight);
+      let defaultReps: number[] = Array(ex.sets).fill(ex.reps);
+      
       if (exerciseProgress.length > 0) {
         const lastSession = exerciseProgress[0];
         if (lastSession.setsData && lastSession.setsData.length > 0) {
-          // Use the max weight from the last session's sets
-          lastWeight = Math.max(...lastSession.setsData.map(s => s.weight));
-        } else {
-          lastWeight = lastSession.weightUsed;
+          // Use the exact weights/reps from each set of the last session
+          defaultWeights = Array(ex.sets).fill(0).map((_, i) => {
+            const setData = lastSession.setsData?.find(s => s.setNumber === i + 1);
+            return setData?.weight ?? lastSession.setsData?.[lastSession.setsData.length - 1]?.weight ?? ex.targetWeight;
+          });
+          defaultReps = Array(ex.sets).fill(0).map((_, i) => {
+            const setData = lastSession.setsData?.find(s => s.setNumber === i + 1);
+            return setData?.reps ?? ex.reps;
+          });
         }
       }
 
@@ -119,13 +126,13 @@ export default function Workout() {
         muscle: ex.muscle,
         targetSets: ex.sets,
         targetReps: ex.reps,
-        targetWeight: lastWeight, // Use last weight instead of original targetWeight
+        targetWeight: ex.targetWeight,
         completedSets: Array.from({
           length: ex.sets
         }, (_, i) => ({
           setNumber: i + 1,
-          reps: ex.reps,
-          weight: lastWeight, // Pre-fill with last weight
+          reps: defaultReps[i],
+          weight: defaultWeights[i],
           completed: false
         }))
       };
@@ -583,19 +590,27 @@ export default function Workout() {
                           <CollapsibleContent>
                             <div className="mt-3 space-y-2">
                               {workout.exercises.map((ex, idx) => {
-                                // Find last weight used for this exercise
+                                // Find last weights used for this SPECIFIC exercise in this workout
                                 const allProgress = getUserProgress();
                                 const exerciseProgress = allProgress
-                                  .filter(p => p.exerciseName.trim().toLowerCase() === ex.name.trim().toLowerCase())
+                                  .filter(p => p.exerciseId === ex.id)
                                   .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
                                 
-                                let displayWeight = ex.targetWeight;
+                                // Get weight display - show per-set if available
+                                let weightDisplay = `${ex.targetWeight}kg`;
                                 if (exerciseProgress.length > 0) {
                                   const lastSession = exerciseProgress[0];
                                   if (lastSession.setsData && lastSession.setsData.length > 0) {
-                                    displayWeight = Math.max(...lastSession.setsData.map(s => s.weight));
-                                  } else {
-                                    displayWeight = lastSession.weightUsed;
+                                    // Show individual weights per set if they vary
+                                    const weights = lastSession.setsData.map(s => s.weight);
+                                    const uniqueWeights = [...new Set(weights)];
+                                    if (uniqueWeights.length === 1) {
+                                      weightDisplay = `${uniqueWeights[0]}kg`;
+                                    } else {
+                                      weightDisplay = weights.join('/') + 'kg';
+                                    }
+                                  } else if (lastSession.weightUsed) {
+                                    weightDisplay = `${lastSession.weightUsed}kg`;
                                   }
                                 }
 
@@ -609,7 +624,7 @@ export default function Workout() {
                                       </span>
                                     </div>
                                     <span className="text-xs text-muted-foreground">
-                                      {ex.sets}×{ex.reps} @ {displayWeight}kg
+                                      {ex.sets}×{ex.reps} @ {weightDisplay}
                                     </span>
                                   </div>
                                 );
