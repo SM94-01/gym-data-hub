@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/accordion';
 import { ArrowLeft, Calendar, Dumbbell, MessageSquare, ChevronDown, Weight } from 'lucide-react';
 import { MONTHS, SetData } from '@/types/gym';
+import { AppVersion } from '@/components/gym/AppVersion';
 
 export default function SessionRecap() {
   const navigate = useNavigate();
@@ -259,6 +260,8 @@ export default function SessionRecap() {
             ))}
           </div>
         )}
+
+        <AppVersion />
       </div>
     </div>
   );

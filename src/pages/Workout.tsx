@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ArrowLeft, Play, Check, ChevronRight, ChevronLeft, Trophy, Timer, Pause, Plus, Dumbbell, Zap, MessageSquare, ChevronDown, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { AppVersion } from '@/components/gym/AppVersion';
 type WorkoutMode = 'select' | 'custom';
 export default function Workout() {
   const navigate = useNavigate();
@@ -669,6 +670,8 @@ export default function Workout() {
                 Inizia Allenamento
               </Button>
             </div>
+
+            <AppVersion />
           </div>}
       </div>
     </div>;
