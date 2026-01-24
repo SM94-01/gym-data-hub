@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, Scale, TrendingUp, TrendingDown, Minus, Save } from 'lucide-react';
 import { toast } from 'sonner';
+import { AppVersion } from '@/components/gym/AppVersion';
 import {
   AreaChart,
   Area,
@@ -229,6 +230,8 @@ export default function BodyWeight() {
             </p>
           </div>
         )}
+
+        <AppVersion />
       </div>
     </div>
   );

@@ -80,28 +80,34 @@ export interface BodyWeight {
 
 export type MuscleGroup = 
   | 'Petto'
-  | 'Schiena'
   | 'Dorsali'
   | 'Spalle'
+  | 'Deltoide'
+  | 'Trapezio'
   | 'Bicipiti'
   | 'Tricipiti'
-  | 'Gambe'
-  | 'Addominali'
+  | 'Quadricipite'
+  | 'Femorale'
   | 'Glutei'
   | 'Polpacci'
+  | 'Addominali'
+  | 'Lombare'
   | 'Avambracci';
 
 export const MUSCLE_GROUPS: MuscleGroup[] = [
   'Petto',
-  'Schiena',
   'Dorsali',
   'Spalle',
+  'Deltoide',
+  'Trapezio',
   'Bicipiti',
   'Tricipiti',
-  'Gambe',
-  'Addominali',
+  'Quadricipite',
+  'Femorale',
   'Glutei',
   'Polpacci',
+  'Addominali',
+  'Lombare',
   'Avambracci',
 ];
 

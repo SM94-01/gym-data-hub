@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/select';
 import { ArrowLeft, TrendingUp, Calendar, Dumbbell, BarChart3, Target, Flame, Award, Activity } from 'lucide-react';
 import { MONTHS } from '@/types/gym';
+import { AppVersion } from '@/components/gym/AppVersion';
 import {
   LineChart,
   Line,
@@ -809,6 +810,8 @@ export default function Progress() {
             )}
           </div>
         )}
+
+        <AppVersion />
       </div>
     </div>
   );
