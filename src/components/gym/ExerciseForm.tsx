@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { Exercise, MUSCLE_GROUPS } from '@/types/gym';
 import { useGym } from '@/context/GymContext';
 import { Button } from '@/components/ui/button';
@@ -11,19 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
 import { Plus } from 'lucide-react';
 
 interface ExerciseFormProps {
@@ -34,10 +21,12 @@ export function ExerciseForm({ onAdd }: ExerciseFormProps) {
   const { getUserProgress } = useGym();
   const [name, setName] = useState('');
   const [muscle, setMuscle] = useState('');
-  const [sets, setSets] = useState('3');
-  const [reps, setReps] = useState('10');
+  const [sets, setSets] = useState('');
+  const [reps, setReps] = useState('');
   const [weight, setWeight] = useState('');
-  const [open, setOpen] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Get unique exercise names from user's progress history
   const exerciseSuggestions = useMemo(() => {
@@ -60,6 +49,22 @@ export function ExerciseForm({ onAdd }: ExerciseFormProps) {
     );
   }, [name, exerciseSuggestions]);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node) &&
+        inputRef.current &&
+        !inputRef.current.contains(event.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !muscle) return;
@@ -74,55 +79,60 @@ export function ExerciseForm({ onAdd }: ExerciseFormProps) {
 
     setName('');
     setMuscle('');
-    setSets('3');
-    setReps('10');
+    setSets('');
+    setReps('');
     setWeight('');
+  };
+
+  const handleSelectSuggestion = (suggestion: string) => {
+    setName(suggestion);
+    setShowSuggestions(false);
+    inputRef.current?.focus();
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
+        <div className="space-y-2 relative">
           <Label htmlFor="exercise-name">Nome Esercizio</Label>
-          <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
-              <Input
-                id="exercise-name"
-                value={name}
-                onChange={(e) => {
-                  setName(e.target.value);
-                  if (!open && e.target.value) setOpen(true);
-                }}
-                onFocus={() => {
-                  if (exerciseSuggestions.length > 0) setOpen(true);
-                }}
-                placeholder="Es: Panca piana"
-                className="bg-secondary/50 border-border/50"
-                autoComplete="off"
-              />
-            </PopoverTrigger>
-            <PopoverContent className="p-0 w-[var(--radix-popover-trigger-width)]" align="start">
-              <Command>
-                <CommandList>
-                  <CommandEmpty>Nessun suggerimento</CommandEmpty>
-                  <CommandGroup heading="Esercizi precedenti">
-                    {filteredSuggestions.map((suggestion) => (
-                      <CommandItem
-                        key={suggestion}
-                        value={suggestion}
-                        onSelect={(value) => {
-                          setName(value);
-                          setOpen(false);
-                        }}
-                      >
-                        {suggestion}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
+          <Input
+            ref={inputRef}
+            id="exercise-name"
+            value={name}
+            onChange={(e) => {
+              setName(e.target.value);
+              setShowSuggestions(true);
+            }}
+            onFocus={() => {
+              if (exerciseSuggestions.length > 0) setShowSuggestions(true);
+            }}
+            placeholder="Es: Panca piana"
+            className="bg-secondary/50 border-border/50"
+            autoComplete="off"
+          />
+          {/* Suggestions Dropdown */}
+          {showSuggestions && filteredSuggestions.length > 0 && (
+            <div
+              ref={dropdownRef}
+              className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto"
+            >
+              <div className="p-1">
+                <p className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                  Esercizi precedenti
+                </p>
+                {filteredSuggestions.map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    type="button"
+                    onClick={() => handleSelectSuggestion(suggestion)}
+                    className="w-full text-left px-2 py-1.5 text-sm rounded hover:bg-accent hover:text-accent-foreground transition-colors"
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
         <div className="space-y-2">
           <Label htmlFor="muscle">Muscolo Target</Label>
@@ -150,6 +160,7 @@ export function ExerciseForm({ onAdd }: ExerciseFormProps) {
             value={sets}
             onChange={(e) => setSets(e.target.value)}
             min="1"
+            placeholder="3"
             className="bg-secondary/50 border-border/50"
           />
         </div>
@@ -161,6 +172,7 @@ export function ExerciseForm({ onAdd }: ExerciseFormProps) {
             value={reps}
             onChange={(e) => setReps(e.target.value)}
             min="1"
+            placeholder="10"
             className="bg-secondary/50 border-border/50"
           />
         </div>

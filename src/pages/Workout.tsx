@@ -370,24 +370,24 @@ export default function Workout() {
               <div className="grid grid-cols-3 gap-2">
                 <div>
                   <Label className="text-xs text-muted-foreground">Serie</Label>
-                  <Input type="number" value={newExercise.sets} onChange={e => setNewExercise({
+                  <Input type="number" value={newExercise.sets || ''} onChange={e => setNewExercise({
                 ...newExercise,
                 sets: parseInt(e.target.value) || 0
-              })} className="bg-secondary/50" />
+              })} placeholder="3" className="bg-secondary/50" />
                 </div>
                 <div>
                   <Label className="text-xs text-muted-foreground">Reps</Label>
-                  <Input type="number" value={newExercise.reps} onChange={e => setNewExercise({
+                  <Input type="number" value={newExercise.reps || ''} onChange={e => setNewExercise({
                 ...newExercise,
                 reps: parseInt(e.target.value) || 0
-              })} className="bg-secondary/50" />
+              })} placeholder="10" className="bg-secondary/50" />
                 </div>
                 <div>
                   <Label className="text-xs text-muted-foreground">Peso (kg)</Label>
-                  <Input type="number" step="0.5" value={newExercise.targetWeight} onChange={e => setNewExercise({
+                  <Input type="number" step="0.5" value={newExercise.targetWeight || ''} onChange={e => setNewExercise({
                 ...newExercise,
                 targetWeight: parseFloat(e.target.value) || 0
-              })} className="bg-secondary/50" />
+              })} placeholder="0" className="bg-secondary/50" />
                 </div>
               </div>
               <Button onClick={handleAddExerciseDuringWorkout} className="w-full gap-2">
