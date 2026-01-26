@@ -85,26 +85,26 @@ export function ExerciseList({ exercises, onRemove, onUpdate, editable = false }
                 </Select>
                 <Input
                   type="number"
-                  value={editForm.sets}
+                  value={editForm.sets || ''}
                   onChange={(e) => setEditForm({ ...editForm, sets: parseInt(e.target.value) || 0 })}
-                  placeholder="Serie"
+                  placeholder="3"
                   className="bg-background/50"
                 />
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <Input
                   type="number"
-                  value={editForm.reps}
+                  value={editForm.reps || ''}
                   onChange={(e) => setEditForm({ ...editForm, reps: parseInt(e.target.value) || 0 })}
-                  placeholder="Reps"
+                  placeholder="10"
                   className="bg-background/50"
                 />
                 <Input
                   type="number"
                   step="0.5"
-                  value={editForm.targetWeight}
+                  value={editForm.targetWeight || ''}
                   onChange={(e) => setEditForm({ ...editForm, targetWeight: parseFloat(e.target.value) || 0 })}
-                  placeholder="Peso (kg)"
+                  placeholder="0"
                   className="bg-background/50"
                 />
               </div>
