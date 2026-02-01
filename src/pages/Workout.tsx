@@ -401,6 +401,9 @@ export default function Workout() {
 
     // Save progress for each exercise (superset saves as 2 separate exercises)
     for (const ex of currentSession.exercises) {
+      console.log('Processing exercise:', ex.exerciseName, 'isSuperset:', ex.isSuperset);
+      console.log('completedSets2:', ex.completedSets2);
+      
       const completedSets = ex.completedSets.filter(s => s.completed);
       
       // Save first exercise
@@ -413,6 +416,7 @@ export default function Workout() {
           weight: s.weight
         }));
 
+        console.log('Saving first exercise:', ex.exerciseName, setsData);
         await addProgress({
           exerciseId: ex.exerciseId,
           exerciseName: ex.exerciseName,
@@ -428,13 +432,18 @@ export default function Workout() {
 
       // Save second exercise (for superset)
       if (ex.isSuperset && ex.exercise2Name && ex.muscle2) {
-        // For superset, use completedSets2 if available, otherwise use completedSets status
+        console.log('Processing superset second exercise:', ex.exercise2Name);
+        
+        // For superset, use completedSets2 if available, otherwise derive from completedSets
         const sets2 = ex.completedSets2 || ex.completedSets.map(s => ({
           ...s,
           reps: ex.targetReps2 || s.reps,
           weight: ex.targetWeight2 || s.weight
         }));
+        
+        console.log('sets2 before filter:', sets2);
         const completedSets2 = sets2.filter(s => s.completed);
+        console.log('completedSets2 after filter:', completedSets2);
         
         if (completedSets2.length > 0) {
           const maxWeight2 = Math.max(...completedSets2.map(s => s.weight));
@@ -445,6 +454,7 @@ export default function Workout() {
             weight: s.weight
           }));
 
+          console.log('Saving second exercise:', ex.exercise2Name, setsData2);
           await addProgress({
             exerciseId: ex.exerciseId + '-ex2',
             exerciseName: ex.exercise2Name,
@@ -456,6 +466,8 @@ export default function Workout() {
             notes: ex.notes,
             setsData: setsData2
           });
+        } else {
+          console.log('No completed sets for second exercise!');
         }
       }
     }
