@@ -13,7 +13,13 @@ export function WorkoutCard({ workout, isActive }: WorkoutCardProps) {
   const navigate = useNavigate();
   const { deleteWorkout } = useGym();
 
-  const muscleGroups = [...new Set(workout.exercises.map((e) => e.muscle))];
+  // Include both muscles for superset exercises
+  const muscleGroups = [...new Set(workout.exercises.flatMap((e) => {
+    if (e.isSuperset && e.muscle2) {
+      return [e.muscle, e.muscle2];
+    }
+    return [e.muscle];
+  }))];
   const formattedDate = workout.lastUsed
     ? new Date(workout.lastUsed).toLocaleDateString('it-IT', {
         day: 'numeric',

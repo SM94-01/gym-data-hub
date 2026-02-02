@@ -396,11 +396,11 @@ export default function Workout() {
     updateSession(updatedSession);
   };
 
-  const handleFinishWorkout = () => {
+  const handleFinishWorkout = async () => {
     if (!currentSession) return;
 
     // Save progress for each exercise (superset saves as 2 separate exercises)
-    currentSession.exercises.forEach(ex => {
+    for (const ex of currentSession.exercises) {
       const completedSets = ex.completedSets.filter(s => s.completed);
       
       // Save first exercise
@@ -413,7 +413,7 @@ export default function Workout() {
           weight: s.weight
         }));
 
-        addProgress({
+        await addProgress({
           exerciseId: ex.exerciseId,
           exerciseName: ex.exerciseName,
           muscle: ex.muscle,
@@ -426,9 +426,10 @@ export default function Workout() {
         });
       }
 
-      // Save second exercise (for superset)
-      if (ex.isSuperset && ex.completedSets2 && ex.exercise2Name && ex.muscle2) {
+      // Save second exercise (for superset) - check completedSets2 exists and has data
+      if (ex.isSuperset && ex.exercise2Name && ex.muscle2 && ex.completedSets2) {
         const completedSets2 = ex.completedSets2.filter(s => s.completed);
+        
         if (completedSets2.length > 0) {
           const maxWeight2 = Math.max(...completedSets2.map(s => s.weight));
           const avgReps2 = completedSets2.reduce((sum, s) => sum + s.reps, 0) / completedSets2.length;
@@ -438,7 +439,7 @@ export default function Workout() {
             weight: s.weight
           }));
 
-          addProgress({
+          await addProgress({
             exerciseId: ex.exerciseId + '-ex2',
             exerciseName: ex.exercise2Name,
             muscle: ex.muscle2,
@@ -451,7 +452,7 @@ export default function Workout() {
           });
         }
       }
-    });
+    }
 
     endSession();
     toast.success('Allenamento completato! 💪');
