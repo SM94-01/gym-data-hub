@@ -396,14 +396,11 @@ export default function Workout() {
     updateSession(updatedSession);
   };
 
-  const handleFinishWorkout = async () => {
+  const handleFinishWorkout = () => {
     if (!currentSession) return;
 
     // Save progress for each exercise (superset saves as 2 separate exercises)
-    for (const ex of currentSession.exercises) {
-      console.log('Processing exercise:', ex.exerciseName, 'isSuperset:', ex.isSuperset);
-      console.log('completedSets2:', ex.completedSets2);
-      
+    currentSession.exercises.forEach(ex => {
       const completedSets = ex.completedSets.filter(s => s.completed);
       
       // Save first exercise
@@ -416,8 +413,7 @@ export default function Workout() {
           weight: s.weight
         }));
 
-        console.log('Saving first exercise:', ex.exerciseName, setsData);
-        await addProgress({
+        addProgress({
           exerciseId: ex.exerciseId,
           exerciseName: ex.exerciseName,
           muscle: ex.muscle,
@@ -431,20 +427,8 @@ export default function Workout() {
       }
 
       // Save second exercise (for superset)
-      if (ex.isSuperset && ex.exercise2Name && ex.muscle2) {
-        console.log('Processing superset second exercise:', ex.exercise2Name);
-        
-        // For superset, use completedSets2 if available, otherwise derive from completedSets
-        const sets2 = ex.completedSets2 || ex.completedSets.map(s => ({
-          ...s,
-          reps: ex.targetReps2 || s.reps,
-          weight: ex.targetWeight2 || s.weight
-        }));
-        
-        console.log('sets2 before filter:', sets2);
-        const completedSets2 = sets2.filter(s => s.completed);
-        console.log('completedSets2 after filter:', completedSets2);
-        
+      if (ex.isSuperset && ex.completedSets2 && ex.exercise2Name && ex.muscle2) {
+        const completedSets2 = ex.completedSets2.filter(s => s.completed);
         if (completedSets2.length > 0) {
           const maxWeight2 = Math.max(...completedSets2.map(s => s.weight));
           const avgReps2 = completedSets2.reduce((sum, s) => sum + s.reps, 0) / completedSets2.length;
@@ -454,8 +438,7 @@ export default function Workout() {
             weight: s.weight
           }));
 
-          console.log('Saving second exercise:', ex.exercise2Name, setsData2);
-          await addProgress({
+          addProgress({
             exerciseId: ex.exerciseId + '-ex2',
             exerciseName: ex.exercise2Name,
             muscle: ex.muscle2,
@@ -466,11 +449,9 @@ export default function Workout() {
             notes: ex.notes,
             setsData: setsData2
           });
-        } else {
-          console.log('No completed sets for second exercise!');
         }
       }
-    }
+    });
 
     endSession();
     toast.success('Allenamento completato! 💪');
