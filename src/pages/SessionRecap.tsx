@@ -16,9 +16,38 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { ArrowLeft, Calendar, Dumbbell, MessageSquare, ChevronDown, Weight } from 'lucide-react';
-import { MONTHS, SetData } from '@/types/gym';
+import { ArrowLeft, Calendar, Dumbbell, MessageSquare, Zap } from 'lucide-react';
+import { MONTHS, SetData, WorkoutProgress } from '@/types/gym';
 import { AppVersion } from '@/components/gym/AppVersion';
+
+// Helper to detect if two progress entries are part of a superset (same date, same time within 1 minute)
+const arePartOfSameSuperset = (p1: WorkoutProgress, p2: WorkoutProgress): boolean => {
+  const date1 = new Date(p1.date).getTime();
+  const date2 = new Date(p2.date).getTime();
+  // Within 1 minute of each other and one has exerciseId ending with '-ex2'
+  return Math.abs(date1 - date2) < 60000 && 
+    (p1.exerciseId.endsWith('-ex2') || p2.exerciseId.endsWith('-ex2'));
+};
+
+interface GroupedExercise {
+  id: string;
+  exerciseName: string;
+  muscle: string;
+  setsCompleted: number;
+  weightUsed: number;
+  repsCompleted: number;
+  notes?: string;
+  setsData?: SetData[];
+  isSuperset?: boolean;
+  exercise2?: {
+    exerciseName: string;
+    muscle: string;
+    setsCompleted: number;
+    weightUsed: number;
+    repsCompleted: number;
+    setsData?: SetData[];
+  };
+}
 
 export default function SessionRecap() {
   const navigate = useNavigate();
@@ -36,7 +65,7 @@ export default function SessionRecap() {
     return yearsArray.length > 0 ? yearsArray : [new Date().getFullYear()];
   }, [progress]);
 
-  // Filter progress by month/year and group by date
+  // Filter progress by month/year and group by date, detecting supersets
   const sessionsByDate = useMemo(() => {
     const filtered = progress.filter((p) => {
       const date = new Date(p.date);
@@ -44,7 +73,7 @@ export default function SessionRecap() {
     });
 
     // Group by date
-    const grouped: Record<string, typeof filtered> = {};
+    const grouped: Record<string, WorkoutProgress[]> = {};
     filtered.forEach((p) => {
       const dateKey = new Date(p.date).toDateString();
       if (!grouped[dateKey]) {
@@ -53,17 +82,119 @@ export default function SessionRecap() {
       grouped[dateKey].push(p);
     });
 
-    // Convert to array and sort by date descending
+    // Convert to array and process supersets
     return Object.entries(grouped)
-      .map(([date, exercises]) => ({
-        date,
-        formattedDate: new Date(date).toLocaleDateString('it-IT', {
-          weekday: 'long',
-          day: 'numeric',
-          month: 'long',
-        }),
-        exercises: exercises.sort((a, b) => a.exerciseName.localeCompare(b.exerciseName)),
-      }))
+      .map(([date, exercises]) => {
+        // Sort by date timestamp to keep related exercises together
+        const sortedExercises = exercises.sort((a, b) => 
+          new Date(a.date).getTime() - new Date(b.date).getTime()
+        );
+
+        // Group supersets together
+        const groupedExercises: GroupedExercise[] = [];
+        const processedIds = new Set<string>();
+
+        sortedExercises.forEach((p) => {
+          if (processedIds.has(p.id)) return;
+
+          // Check if this is a secondary exercise of a superset
+          if (p.exerciseId.endsWith('-ex2')) {
+            // Find the primary exercise
+            const primaryId = p.exerciseId.replace('-ex2', '');
+            const primary = sortedExercises.find(
+              (e) => e.exerciseId === primaryId && arePartOfSameSuperset(p, e)
+            );
+            if (primary && !processedIds.has(primary.id)) {
+              processedIds.add(primary.id);
+              processedIds.add(p.id);
+              groupedExercises.push({
+                id: primary.id,
+                exerciseName: primary.exerciseName,
+                muscle: primary.muscle,
+                setsCompleted: primary.setsCompleted,
+                weightUsed: primary.weightUsed,
+                repsCompleted: primary.repsCompleted,
+                notes: primary.notes,
+                setsData: primary.setsData,
+                isSuperset: true,
+                exercise2: {
+                  exerciseName: p.exerciseName,
+                  muscle: p.muscle,
+                  setsCompleted: p.setsCompleted,
+                  weightUsed: p.weightUsed,
+                  repsCompleted: p.repsCompleted,
+                  setsData: p.setsData,
+                },
+              });
+            } else {
+              // No matching primary found, show as standalone
+              processedIds.add(p.id);
+              groupedExercises.push({
+                id: p.id,
+                exerciseName: p.exerciseName,
+                muscle: p.muscle,
+                setsCompleted: p.setsCompleted,
+                weightUsed: p.weightUsed,
+                repsCompleted: p.repsCompleted,
+                notes: p.notes,
+                setsData: p.setsData,
+              });
+            }
+            return;
+          }
+
+          // Check if this primary has a secondary
+          const secondary = sortedExercises.find(
+            (e) => e.exerciseId === p.exerciseId + '-ex2' && arePartOfSameSuperset(p, e)
+          );
+
+          if (secondary) {
+            processedIds.add(p.id);
+            processedIds.add(secondary.id);
+            groupedExercises.push({
+              id: p.id,
+              exerciseName: p.exerciseName,
+              muscle: p.muscle,
+              setsCompleted: p.setsCompleted,
+              weightUsed: p.weightUsed,
+              repsCompleted: p.repsCompleted,
+              notes: p.notes,
+              setsData: p.setsData,
+              isSuperset: true,
+              exercise2: {
+                exerciseName: secondary.exerciseName,
+                muscle: secondary.muscle,
+                setsCompleted: secondary.setsCompleted,
+                weightUsed: secondary.weightUsed,
+                repsCompleted: secondary.repsCompleted,
+                setsData: secondary.setsData,
+              },
+            });
+          } else {
+            processedIds.add(p.id);
+            groupedExercises.push({
+              id: p.id,
+              exerciseName: p.exerciseName,
+              muscle: p.muscle,
+              setsCompleted: p.setsCompleted,
+              weightUsed: p.weightUsed,
+              repsCompleted: p.repsCompleted,
+              notes: p.notes,
+              setsData: p.setsData,
+            });
+          }
+        });
+
+        return {
+          date,
+          formattedDate: new Date(date).toLocaleDateString('it-IT', {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+          }),
+          exercises: groupedExercises.sort((a, b) => a.exerciseName.localeCompare(b.exerciseName)),
+        };
+      })
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [progress, selectedMonth, selectedYear]);
 
@@ -71,6 +202,20 @@ export default function SessionRecap() {
     navigate('/auth');
     return null;
   }
+
+  const getDisplayName = (exercise: GroupedExercise) => {
+    if (exercise.isSuperset && exercise.exercise2) {
+      return `Superset (${exercise.exerciseName}+${exercise.exercise2.exerciseName})`;
+    }
+    return exercise.exerciseName;
+  };
+
+  const getDisplayMuscle = (exercise: GroupedExercise) => {
+    if (exercise.isSuperset && exercise.exercise2) {
+      return `${exercise.muscle} + ${exercise.exercise2.muscle}`;
+    }
+    return exercise.muscle;
+  };
 
   return (
     <div className="min-h-screen pt-20 pb-8">
@@ -174,11 +319,15 @@ export default function SessionRecap() {
                     >
                       <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-secondary/20">
                         <div className="flex items-center gap-3 text-left">
-                          <Dumbbell className="w-4 h-4 text-primary flex-shrink-0" />
+                          {exercise.isSuperset ? (
+                            <Zap className="w-4 h-4 text-warning flex-shrink-0" />
+                          ) : (
+                            <Dumbbell className="w-4 h-4 text-primary flex-shrink-0" />
+                          )}
                           <div>
-                            <p className="font-medium">{exercise.exerciseName}</p>
+                            <p className="font-medium">{getDisplayName(exercise)}</p>
                             <p className="text-xs text-muted-foreground">
-                              {exercise.muscle} • {exercise.setsCompleted} serie
+                              {getDisplayMuscle(exercise)} • {exercise.setsCompleted} serie
                               {exercise.setsData && exercise.setsData.length > 0 ? (
                                 <> @ {Math.min(...exercise.setsData.map((s: SetData) => s.weight))}-{Math.max(...exercise.setsData.map((s: SetData) => s.weight))}kg</>
                               ) : (
@@ -189,8 +338,11 @@ export default function SessionRecap() {
                         </div>
                       </AccordionTrigger>
                       <AccordionContent className="px-4 pb-4">
-                        <div className="space-y-3">
-                          {/* Detailed Sets Data */}
+                        <div className="space-y-4">
+                          {/* Exercise 1 Details */}
+                          {exercise.isSuperset && (
+                            <p className="text-sm font-semibold text-primary">{exercise.exerciseName} ({exercise.muscle})</p>
+                          )}
                           {exercise.setsData && exercise.setsData.length > 0 ? (
                             <div className="space-y-2">
                               <p className="text-xs font-medium text-muted-foreground mb-2">Dettaglio Serie</p>
@@ -215,7 +367,6 @@ export default function SessionRecap() {
                                 </div>
                               ))}
                               
-                              {/* Summary stats */}
                               <div className="mt-3 pt-3 border-t border-border/30 grid grid-cols-2 gap-2 text-sm">
                                 <div className="text-muted-foreground">
                                   Peso min: <span className="font-medium text-foreground">{Math.min(...exercise.setsData.map((s: SetData) => s.weight))}kg</span>
@@ -239,6 +390,62 @@ export default function SessionRecap() {
                                 <p className="text-lg font-bold text-primary">{exercise.weightUsed}kg</p>
                                 <p className="text-xs text-muted-foreground">Peso Max</p>
                               </div>
+                            </div>
+                          )}
+
+                          {/* Exercise 2 Details (for superset) */}
+                          {exercise.isSuperset && exercise.exercise2 && (
+                            <div className="mt-4 pt-4 border-t border-border/50">
+                              <p className="text-sm font-semibold text-warning mb-3">{exercise.exercise2.exerciseName} ({exercise.exercise2.muscle})</p>
+                              {exercise.exercise2.setsData && exercise.exercise2.setsData.length > 0 ? (
+                                <div className="space-y-2">
+                                  <p className="text-xs font-medium text-muted-foreground mb-2">Dettaglio Serie</p>
+                                  {exercise.exercise2.setsData.map((set: SetData, setIdx: number) => (
+                                    <div 
+                                      key={setIdx}
+                                      className="flex items-center gap-3 p-2 bg-warning/10 rounded-lg"
+                                    >
+                                      <span className="text-sm font-semibold text-muted-foreground w-8">
+                                        #{set.setNumber}
+                                      </span>
+                                      <div className="flex-1 flex items-center gap-4">
+                                        <span className="text-sm">
+                                          <span className="font-medium">{set.reps}</span>
+                                          <span className="text-muted-foreground"> reps</span>
+                                        </span>
+                                        <span className="text-sm">
+                                          <span className="font-medium">{set.weight}</span>
+                                          <span className="text-muted-foreground"> kg</span>
+                                        </span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                  
+                                  <div className="mt-3 pt-3 border-t border-border/30 grid grid-cols-2 gap-2 text-sm">
+                                    <div className="text-muted-foreground">
+                                      Peso min: <span className="font-medium text-foreground">{Math.min(...exercise.exercise2.setsData.map((s: SetData) => s.weight))}kg</span>
+                                    </div>
+                                    <div className="text-muted-foreground">
+                                      Peso max: <span className="font-medium text-warning">{Math.max(...exercise.exercise2.setsData.map((s: SetData) => s.weight))}kg</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="grid grid-cols-3 gap-3">
+                                  <div className="bg-warning/10 rounded-lg p-3 text-center">
+                                    <p className="text-lg font-bold text-warning">{exercise.exercise2.setsCompleted}</p>
+                                    <p className="text-xs text-muted-foreground">Serie</p>
+                                  </div>
+                                  <div className="bg-warning/10 rounded-lg p-3 text-center">
+                                    <p className="text-lg font-bold text-warning">{exercise.exercise2.repsCompleted}</p>
+                                    <p className="text-xs text-muted-foreground">Reps</p>
+                                  </div>
+                                  <div className="bg-warning/10 rounded-lg p-3 text-center">
+                                    <p className="text-lg font-bold text-warning">{exercise.exercise2.weightUsed}kg</p>
+                                    <p className="text-xs text-muted-foreground">Peso Max</p>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           )}
                           
