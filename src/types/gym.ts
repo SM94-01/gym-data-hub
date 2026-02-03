@@ -11,6 +11,12 @@ export interface Exercise {
   sets: number;
   reps: number;
   targetWeight: number;
+  // Superset fields
+  isSuperset?: boolean;
+  exercise2Name?: string;
+  muscle2?: string;
+  reps2?: number;
+  targetWeight2?: number;
 }
 
 export interface Workout {
@@ -62,6 +68,18 @@ export interface ExerciseSession {
   targetWeight: number;
   completedSets: SetRecord[];
   notes?: string;
+  // Superset fields
+  isSuperset?: boolean;
+  exercise2Name?: string;
+  muscle2?: string;
+  targetReps2?: number;
+  targetWeight2?: number;
+}
+
+// Extended SetRecord for superset
+export interface SupersetSetRecord extends SetRecord {
+  reps2?: number;
+  weight2?: number;
 }
 
 export interface SetRecord {
