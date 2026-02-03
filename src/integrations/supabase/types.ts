@@ -70,50 +70,35 @@ export type Database = {
       exercises: {
         Row: {
           created_at: string
-          exercise2_name: string | null
           id: string
-          is_superset: boolean
           muscle: string
-          muscle2: string | null
           name: string
           position: number
           reps: number
-          reps2: number | null
           sets: number
           target_weight: number
-          target_weight2: number | null
           workout_id: string
         }
         Insert: {
           created_at?: string
-          exercise2_name?: string | null
           id?: string
-          is_superset?: boolean
           muscle: string
-          muscle2?: string | null
           name: string
           position?: number
           reps?: number
-          reps2?: number | null
           sets?: number
           target_weight?: number
-          target_weight2?: number | null
           workout_id: string
         }
         Update: {
           created_at?: string
-          exercise2_name?: string | null
           id?: string
-          is_superset?: boolean
           muscle?: string
-          muscle2?: string | null
           name?: string
           position?: number
           reps?: number
-          reps2?: number | null
           sets?: number
           target_weight?: number
-          target_weight2?: number | null
           workout_id?: string
         }
         Relationships: [
