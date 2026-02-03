@@ -130,6 +130,11 @@ export function GymProvider({ children }: { children: ReactNode }) {
           sets: e.sets,
           reps: e.reps,
           targetWeight: Number(e.target_weight),
+          isSuperset: e.is_superset || false,
+          exercise2Name: e.exercise2_name || undefined,
+          muscle2: e.muscle2 || undefined,
+          reps2: e.reps2 || undefined,
+          targetWeight2: e.target_weight2 ? Number(e.target_weight2) : undefined,
         })),
     }));
     
@@ -251,6 +256,11 @@ export function GymProvider({ children }: { children: ReactNode }) {
         reps: ex.reps,
         target_weight: ex.targetWeight,
         position: idx,
+        is_superset: ex.isSuperset || false,
+        exercise2_name: ex.exercise2Name || null,
+        muscle2: ex.muscle2 || null,
+        reps2: ex.reps2 || null,
+        target_weight2: ex.targetWeight2 || null,
       }));
       
       const { error: exercisesError } = await supabase
@@ -294,6 +304,11 @@ export function GymProvider({ children }: { children: ReactNode }) {
         reps: ex.reps,
         target_weight: ex.targetWeight,
         position: idx,
+        is_superset: ex.isSuperset || false,
+        exercise2_name: ex.exercise2Name || null,
+        muscle2: ex.muscle2 || null,
+        reps2: ex.reps2 || null,
+        target_weight2: ex.targetWeight2 || null,
       }));
       
       await supabase.from('exercises').insert(exercisesToInsert);
