@@ -209,7 +209,7 @@ export default function Workout() {
         targetSets: ex.sets,
         targetReps: ex.reps,
         targetWeight: ex.targetWeight,
-        isSuperset: ex.isSuperset,
+        isSuperset: ex.isSuperset || false,
         exercise2Name: ex.exercise2Name,
         muscle2: ex.muscle2,
         targetReps2: ex.reps2,
@@ -352,6 +352,7 @@ export default function Workout() {
     // Save progress for each exercise
     for (const ex of currentSession.exercises) {
       const completedSets = ex.completedSets.filter(s => s.completed);
+      
       if (completedSets.length > 0) {
         // Save exercise 1 progress
         const maxWeight = Math.max(...completedSets.map(s => s.weight));
@@ -397,7 +398,7 @@ export default function Workout() {
           }));
 
           await addProgress({
-            exerciseId: ex.exerciseId + '-2',
+            exerciseId: crypto.randomUUID(),
             exerciseName: ex.exercise2Name,
             muscle: ex.muscle2,
             date: new Date().toISOString(),
