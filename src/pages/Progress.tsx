@@ -66,14 +66,6 @@ export default function Progress() {
     return Array.from(years).sort((a, b) => b - a);
   }, [progress]);
 
-  // Filter progress by month/year
-  const filteredProgress = useMemo(() => {
-    return progress.filter((p) => {
-      const date = new Date(p.date);
-      return date.getMonth() + 1 === selectedMonth && date.getFullYear() === selectedYear;
-    });
-  }, [progress, selectedMonth, selectedYear]);
-
   // Funzione per ottenere il numero della settimana del mese (1-5)
   function getWeekOfMonth(date: Date) {
     const firstDay = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
