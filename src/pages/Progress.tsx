@@ -405,12 +405,12 @@ export default function Progress() {
                   onValueChange={(v) => setSelectedWeek(v ? parseInt(v) : null)}
                 >
                   <SelectTrigger className="bg-secondary/50 border-border/50 w-24">
-                    <SelectValue placeholder="Settimana" />
+                    <SelectValue placeholder="Week" />
                   </SelectTrigger>
                   <SelectContent>
                     {weeksInMonth.map((week) => (
                       <SelectItem key={week} value={week.toString()}>
-                        Settimana {week}
+                        Week {week}
                       </SelectItem>
                     ))}
                   </SelectContent>
