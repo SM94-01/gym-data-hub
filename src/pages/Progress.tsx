@@ -1,18 +1,12 @@
-import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useGym } from '@/context/GymContext';
-import { useAuth } from '@/context/AuthContext';
-import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { ArrowLeft, TrendingUp, Calendar, Dumbbell, BarChart3, Target, Flame, Award, Activity } from 'lucide-react';
-import { MONTHS } from '@/types/gym';
-import { AppVersion } from '@/components/gym/AppVersion';
+import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { useGym } from "@/context/GymContext";
+import { useAuth } from "@/context/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ArrowLeft, TrendingUp, Calendar, Dumbbell, BarChart3, Target, Flame, Award, Activity } from "lucide-react";
+import { MONTHS } from "@/types/gym";
+import { AppVersion } from "@/components/gym/AppVersion";
 import {
   LineChart,
   Line,
@@ -28,17 +22,25 @@ import {
   PieChart,
   Pie,
   Cell,
-} from 'recharts';
+} from "recharts";
 
-const COLORS = ['hsl(160, 84%, 39%)', 'hsl(38, 92%, 50%)', 'hsl(280, 65%, 60%)', 'hsl(200, 80%, 50%)', 'hsl(340, 75%, 55%)', 'hsl(120, 60%, 45%)'];
+const COLORS = [
+  "hsl(160, 84%, 39%)",
+  "hsl(38, 92%, 50%)",
+  "hsl(280, 65%, 60%)",
+  "hsl(200, 80%, 50%)",
+  "hsl(340, 75%, 55%)",
+  "hsl(120, 60%, 45%)",
+];
 
 export default function Progress() {
   const navigate = useNavigate();
   const { getUserProgress } = useGym();
   const { user } = useAuth();
-  const [selectedExercise, setSelectedExercise] = useState<string>('');
+  const [selectedExercise, setSelectedExercise] = useState<string>("");
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
 
   const progress = getUserProgress();
 
@@ -52,9 +54,9 @@ export default function Progress() {
         uniqueExercises.set(normalizedName, p.exerciseName.trim());
       }
     });
-    return Array.from(uniqueExercises, ([normalizedName, displayName]) => ({ 
+    return Array.from(uniqueExercises, ([normalizedName, displayName]) => ({
       id: normalizedName, // Use normalized name as ID for grouping
-      name: displayName 
+      name: displayName,
     }));
   }, [progress]);
 
@@ -71,6 +73,36 @@ export default function Progress() {
       return date.getMonth() + 1 === selectedMonth && date.getFullYear() === selectedYear;
     });
   }, [progress, selectedMonth, selectedYear]);
+
+  // Funzione per ottenere il numero della settimana del mese (1-5)
+  function getWeekOfMonth(date: Date) {
+    const firstDay = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+    const day = date.getDate();
+    return Math.ceil((day + firstDay) / 7);
+  }
+
+  // Calcola le settimane disponibili nel mese selezionato
+  const weeksInMonth = useMemo(() => {
+    const year = selectedYear;
+    const month = selectedMonth - 1; // JS months 0-based
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    const weeks = new Set<number>();
+    for (let day = 1; day <= lastDay; day++) {
+      weeks.add(getWeekOfMonth(new Date(year, month, day)));
+    }
+    return Array.from(weeks).sort((a, b) => a - b);
+  }, [selectedMonth, selectedYear]);
+
+  // Filtro progress aggiornato con settimana
+  const filteredProgress = useMemo(() => {
+    return progress.filter((p) => {
+      const date = new Date(p.date);
+      const monthMatches = date.getMonth() + 1 === selectedMonth;
+      const yearMatches = date.getFullYear() === selectedYear;
+      const weekMatches = selectedWeek ? getWeekOfMonth(date) === selectedWeek : true;
+      return monthMatches && yearMatches && weekMatches;
+    });
+  }, [progress, selectedMonth, selectedYear, selectedWeek]);
 
   // Filter and format progress data for chart - SERIES BY SERIES (by exercise name - case insensitive)
   const chartData = useMemo(() => {
@@ -92,9 +124,9 @@ export default function Progress() {
     }> = [];
 
     exerciseProgress.forEach((p, sessionIdx) => {
-      const dateStr = new Date(p.date).toLocaleDateString('it-IT', {
-        day: 'numeric',
-        month: 'short',
+      const dateStr = new Date(p.date).toLocaleDateString("it-IT", {
+        day: "numeric",
+        month: "short",
       });
 
       if (p.setsData && p.setsData.length > 0) {
@@ -141,18 +173,18 @@ export default function Progress() {
         let totalReps = p.setsCompleted * p.repsCompleted;
         let volume = p.weightUsed * p.setsCompleted * p.repsCompleted;
         let setsCount = p.setsCompleted;
-        
+
         if (p.setsData && p.setsData.length > 0) {
-          maxWeight = Math.max(...p.setsData.map(s => s.weight));
+          maxWeight = Math.max(...p.setsData.map((s) => s.weight));
           totalReps = p.setsData.reduce((sum, s) => sum + s.reps, 0);
-          volume = p.setsData.reduce((sum, s) => sum + (s.weight * s.reps), 0);
+          volume = p.setsData.reduce((sum, s) => sum + s.weight * s.reps, 0);
           setsCount = p.setsData.length;
         }
-        
+
         return {
-          date: new Date(p.date).toLocaleDateString('it-IT', {
-            day: 'numeric',
-            month: 'short',
+          date: new Date(p.date).toLocaleDateString("it-IT", {
+            day: "numeric",
+            month: "short",
           }),
           peso: maxWeight,
           reps: setsCount > 0 ? Math.round(totalReps / setsCount) : 0,
@@ -165,11 +197,11 @@ export default function Progress() {
   // Calculate volume by muscle group
   const volumeByMuscle = useMemo(() => {
     const muscleVolume: Record<string, number> = {};
-    
+
     filteredProgress.forEach((p) => {
       let volume = p.weightUsed * p.setsCompleted * p.repsCompleted;
       if (p.setsData && p.setsData.length > 0) {
-        volume = p.setsData.reduce((sum, s) => sum + (s.weight * s.reps), 0);
+        volume = p.setsData.reduce((sum, s) => sum + s.weight * s.reps, 0);
       }
       muscleVolume[p.muscle] = (muscleVolume[p.muscle] || 0) + volume;
     });
@@ -182,7 +214,7 @@ export default function Progress() {
   // Calculate sets by muscle group
   const setsByMuscle = useMemo(() => {
     const muscleSets: Record<string, number> = {};
-    
+
     filteredProgress.forEach((p) => {
       muscleSets[p.muscle] = (muscleSets[p.muscle] || 0) + p.setsCompleted;
     });
@@ -206,7 +238,7 @@ export default function Progress() {
   // Exercise frequency
   const exerciseFrequency = useMemo(() => {
     const frequency: Record<string, number> = {};
-    
+
     filteredProgress.forEach((p) => {
       frequency[p.exerciseName] = (frequency[p.exerciseName] || 0) + 1;
     });
@@ -220,38 +252,38 @@ export default function Progress() {
   // Calculate stats - using max weight from setsData for accurate progress tracking
   const stats = useMemo(() => {
     if (!selectedExercise) return null;
-    
+
     // Get all progress entries for this exercise (by name, case insensitive)
     const exerciseProgress = progress
       .filter((p) => p.exerciseName.trim().toLowerCase() === selectedExercise)
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    
+
     if (exerciseProgress.length === 0) return null;
-    
+
     // Helper to get max weight from a progress entry
-    const getMaxWeight = (p: typeof exerciseProgress[0]) => {
+    const getMaxWeight = (p: (typeof exerciseProgress)[0]) => {
       if (p.setsData && p.setsData.length > 0) {
-        return Math.max(...p.setsData.map(s => s.weight));
+        return Math.max(...p.setsData.map((s) => s.weight));
       }
       return p.weightUsed;
     };
-    
+
     const weights = exerciseProgress.map(getMaxWeight);
     const maxWeight = Math.max(...weights);
     const lastWeight = weights[weights.length - 1];
     const firstWeight = weights[0];
-    
+
     // Calculate improvement based on first vs last session's max weight
     const improvement = firstWeight > 0 ? ((lastWeight - firstWeight) / firstWeight) * 100 : 0;
-    
+
     // Calculate total volume from all sessions
     const totalVolume = exerciseProgress.reduce((sum, p) => {
       if (p.setsData && p.setsData.length > 0) {
-        return sum + p.setsData.reduce((s, set) => s + (set.weight * set.reps), 0);
+        return sum + p.setsData.reduce((s, set) => s + set.weight * set.reps, 0);
       }
-      return sum + (p.weightUsed * p.setsCompleted * p.repsCompleted);
+      return sum + p.weightUsed * p.setsCompleted * p.repsCompleted;
     }, 0);
-    
+
     const avgVolume = totalVolume / exerciseProgress.length;
 
     return {
@@ -267,18 +299,18 @@ export default function Progress() {
   // Overall stats for the period
   const periodStats = useMemo(() => {
     const uniqueDates = new Set(filteredProgress.map((p) => new Date(p.date).toDateString()));
-    
+
     // Calculate max weight from setsData if available, otherwise use weightUsed
     let maxWeight = 0;
     filteredProgress.forEach((p) => {
       if (p.setsData && p.setsData.length > 0) {
-        const exerciseMax = Math.max(...p.setsData.map(s => s.weight));
+        const exerciseMax = Math.max(...p.setsData.map((s) => s.weight));
         if (exerciseMax > maxWeight) maxWeight = exerciseMax;
       } else if (p.weightUsed > maxWeight) {
         maxWeight = p.weightUsed;
       }
     });
-    
+
     // Calculate total reps from setsData if available
     let totalReps = 0;
     filteredProgress.forEach((p) => {
@@ -288,17 +320,17 @@ export default function Progress() {
         totalReps += p.setsCompleted * p.repsCompleted;
       }
     });
-    
+
     // Calculate total volume from setsData if available
     let totalVolume = 0;
     filteredProgress.forEach((p) => {
       if (p.setsData && p.setsData.length > 0) {
-        totalVolume += p.setsData.reduce((sum, s) => sum + (s.weight * s.reps), 0);
+        totalVolume += p.setsData.reduce((sum, s) => sum + s.weight * s.reps, 0);
       } else {
         totalVolume += p.weightUsed * p.setsCompleted * p.repsCompleted;
       }
     });
-    
+
     const totalSets = filteredProgress.reduce((sum, p) => {
       if (p.setsData && p.setsData.length > 0) {
         return sum + p.setsData.length;
@@ -321,7 +353,7 @@ export default function Progress() {
   }, [filteredProgress]);
 
   if (!user) {
-    navigate('/auth');
+    navigate("/auth");
     return null;
   }
 
@@ -329,21 +361,12 @@ export default function Progress() {
     <div className="min-h-screen pt-20 pb-8">
       <div className="container mx-auto px-4 max-w-2xl">
         <div className="mb-6">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate('/')}
-            className="text-muted-foreground mb-4"
-          >
+          <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="text-muted-foreground mb-4">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Torna alla Home
           </Button>
-          <h1 className="font-display text-3xl font-bold text-foreground">
-            📊 I Tuoi Progressi
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Visualizza l'andamento dei tuoi allenamenti
-          </p>
+          <h1 className="font-display text-3xl font-bold text-foreground">📊 I Tuoi Progressi</h1>
+          <p className="text-muted-foreground mt-2">Visualizza l'andamento dei tuoi allenamenti</p>
         </div>
 
         {progress.length === 0 ? (
@@ -351,28 +374,17 @@ export default function Progress() {
             <div className="w-16 h-16 bg-secondary rounded-full flex items-center justify-center mx-auto mb-4">
               <TrendingUp className="w-8 h-8 text-muted-foreground" />
             </div>
-            <h3 className="font-display text-lg font-semibold mb-2">
-              Nessun progresso registrato
-            </h3>
-            <p className="text-muted-foreground mb-6">
-              Completa il tuo primo allenamento per vedere i progressi
-            </p>
-            <Button onClick={() => navigate('/workout')}>
-              Inizia Allenamento
-            </Button>
+            <h3 className="font-display text-lg font-semibold mb-2">Nessun progresso registrato</h3>
+            <p className="text-muted-foreground mb-6">Completa il tuo primo allenamento per vedere i progressi</p>
+            <Button onClick={() => navigate("/workout")}>Inizia Allenamento</Button>
           </div>
         ) : (
           <div className="space-y-6">
             {/* Period Selector */}
             <div className="glass-card rounded-xl p-6 animate-fade-in">
-              <label className="text-sm font-medium text-muted-foreground mb-3 block">
-                Periodo
-              </label>
+              <label className="text-sm font-medium text-muted-foreground mb-3 block">Periodo</label>
               <div className="flex gap-3">
-                <Select 
-                  value={selectedMonth.toString()} 
-                  onValueChange={(v) => setSelectedMonth(parseInt(v))}
-                >
+                <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
                   <SelectTrigger className="bg-secondary/50 border-border/50 flex-1">
                     <SelectValue placeholder="Mese" />
                   </SelectTrigger>
@@ -384,10 +396,7 @@ export default function Progress() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Select 
-                  value={selectedYear.toString()} 
-                  onValueChange={(v) => setSelectedYear(parseInt(v))}
-                >
+                <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
                   <SelectTrigger className="bg-secondary/50 border-border/50 w-28">
                     <SelectValue placeholder="Anno" />
                   </SelectTrigger>
@@ -399,19 +408,35 @@ export default function Progress() {
                     ))}
                   </SelectContent>
                 </Select>
+                <Select
+                  value={selectedWeek?.toString() || ""}
+                  onValueChange={(v) => setSelectedWeek(v ? parseInt(v) : null)}
+                >
+                  <SelectTrigger className="bg-secondary/50 border-border/50 w-24">
+                    <SelectValue placeholder="Settimana" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {weeksInMonth.map((week) => (
+                      <SelectItem key={week} value={week.toString()}>
+                        Settimana {week}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
             {filteredProgress.length === 0 ? (
               <div className="glass-card rounded-xl p-6 text-center">
-                <p className="text-muted-foreground">
-                  Nessun dato per il periodo selezionato
-                </p>
+                <p className="text-muted-foreground">Nessun dato per il periodo selezionato</p>
               </div>
             ) : (
               <>
                 {/* Period Stats - Enhanced */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-fade-in" style={{ animationDelay: '50ms' }}>
+                <div
+                  className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-fade-in"
+                  style={{ animationDelay: "50ms" }}
+                >
                   <div className="glass-card rounded-xl p-4 text-center">
                     <Calendar className="w-5 h-5 text-primary mx-auto mb-2" />
                     <p className="font-display text-xl font-bold">{periodStats.totalSessions}</p>
@@ -435,7 +460,7 @@ export default function Progress() {
                 </div>
 
                 {/* Additional Stats Row */}
-                <div className="grid grid-cols-3 gap-4 animate-fade-in" style={{ animationDelay: '75ms' }}>
+                <div className="grid grid-cols-3 gap-4 animate-fade-in" style={{ animationDelay: "75ms" }}>
                   <div className="glass-card rounded-xl p-4 text-center">
                     <Activity className="w-5 h-5 text-warning mx-auto mb-2" />
                     <p className="font-display text-lg font-bold">{periodStats.uniqueExercises}</p>
@@ -455,7 +480,7 @@ export default function Progress() {
 
                 {/* Muscle Distribution Pie Chart */}
                 {muscleDistribution.length > 0 && (
-                  <div className="glass-card rounded-xl p-6 animate-fade-in" style={{ animationDelay: '100ms' }}>
+                  <div className="glass-card rounded-xl p-6 animate-fade-in" style={{ animationDelay: "100ms" }}>
                     <div className="flex items-center gap-2 mb-4">
                       <BarChart3 className="w-5 h-5 text-primary" />
                       <h3 className="font-semibold">Distribuzione Muscoli</h3>
@@ -478,27 +503,25 @@ export default function Progress() {
                           </Pie>
                           <Tooltip
                             contentStyle={{
-                              backgroundColor: 'hsl(220, 18%, 10%)',
-                              border: '1px solid hsl(220, 14%, 18%)',
-                              borderRadius: '8px',
-                              padding: '8px 12px',
+                              backgroundColor: "hsl(220, 18%, 10%)",
+                              border: "1px solid hsl(220, 14%, 18%)",
+                              borderRadius: "8px",
+                              padding: "8px 12px",
                             }}
                             content={({ active, payload }) => {
                               if (active && payload && payload.length) {
                                 const data = payload[0].payload;
                                 return (
-                                  <div 
+                                  <div
                                     style={{
-                                      backgroundColor: 'hsl(220, 18%, 10%)',
-                                      border: '1px solid hsl(220, 14%, 18%)',
-                                      borderRadius: '8px',
-                                      padding: '8px 12px',
+                                      backgroundColor: "hsl(220, 18%, 10%)",
+                                      border: "1px solid hsl(220, 14%, 18%)",
+                                      borderRadius: "8px",
+                                      padding: "8px 12px",
                                     }}
                                   >
-                                    <p style={{ color: data.fill, fontWeight: 500 }}>
-                                      {data.name}
-                                    </p>
-                                    <p style={{ color: data.fill, fontSize: '14px' }}>
+                                    <p style={{ color: data.fill, fontWeight: 500 }}>{data.name}</p>
+                                    <p style={{ color: data.fill, fontSize: "14px" }}>
                                       {data.value} serie ({data.percentage}%)
                                     </p>
                                   </div>
@@ -515,7 +538,7 @@ export default function Progress() {
 
                 {/* Volume by Muscle Chart */}
                 {volumeByMuscle.length > 0 && (
-                  <div className="glass-card rounded-xl p-6 animate-fade-in" style={{ animationDelay: '125ms' }}>
+                  <div className="glass-card rounded-xl p-6 animate-fade-in" style={{ animationDelay: "125ms" }}>
                     <div className="flex items-center gap-2 mb-4">
                       <BarChart3 className="w-5 h-5 text-primary" />
                       <h3 className="font-semibold">Volume per Gruppo Muscolare</h3>
@@ -525,26 +548,22 @@ export default function Progress() {
                         <BarChart data={volumeByMuscle} layout="vertical">
                           <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 14%, 18%)" />
                           <XAxis type="number" stroke="hsl(220, 10%, 55%)" fontSize={12} />
-                          <YAxis 
-                            dataKey="muscle" 
-                            type="category" 
-                            stroke="hsl(220, 10%, 55%)" 
+                          <YAxis
+                            dataKey="muscle"
+                            type="category"
+                            stroke="hsl(220, 10%, 55%)"
                             fontSize={11}
                             width={80}
                           />
                           <Tooltip
                             contentStyle={{
-                              backgroundColor: 'hsl(220, 18%, 10%)',
-                              border: '1px solid hsl(220, 14%, 18%)',
-                              borderRadius: '8px',
+                              backgroundColor: "hsl(220, 18%, 10%)",
+                              border: "1px solid hsl(220, 14%, 18%)",
+                              borderRadius: "8px",
                             }}
-                            formatter={(value: number) => [`${value} kg`, 'Volume']}
+                            formatter={(value: number) => [`${value} kg`, "Volume"]}
                           />
-                          <Bar 
-                            dataKey="volume" 
-                            fill="hsl(160, 84%, 39%)"
-                            radius={[0, 4, 4, 0]}
-                          />
+                          <Bar dataKey="volume" fill="hsl(160, 84%, 39%)" radius={[0, 4, 4, 0]} />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
@@ -553,7 +572,7 @@ export default function Progress() {
 
                 {/* Top Exercises */}
                 {exerciseFrequency.length > 0 && (
-                  <div className="glass-card rounded-xl p-6 animate-fade-in" style={{ animationDelay: '150ms' }}>
+                  <div className="glass-card rounded-xl p-6 animate-fade-in" style={{ animationDelay: "150ms" }}>
                     <div className="flex items-center gap-2 mb-4">
                       <Award className="w-5 h-5 text-primary" />
                       <h3 className="font-semibold">Esercizi più Frequenti</h3>
@@ -573,10 +592,8 @@ export default function Progress() {
                 )}
 
                 {/* Exercise Selector */}
-                <div className="glass-card rounded-xl p-6 animate-fade-in" style={{ animationDelay: '175ms' }}>
-                  <label className="text-sm font-medium text-muted-foreground mb-3 block">
-                    Dettaglio Esercizio
-                  </label>
+                <div className="glass-card rounded-xl p-6 animate-fade-in" style={{ animationDelay: "175ms" }}>
+                  <label className="text-sm font-medium text-muted-foreground mb-3 block">Dettaglio Esercizio</label>
                   <Select value={selectedExercise} onValueChange={setSelectedExercise}>
                     <SelectTrigger className="bg-secondary/50 border-border/50">
                       <SelectValue placeholder="Scegli un esercizio" />
@@ -594,7 +611,10 @@ export default function Progress() {
                 {selectedExercise && stats && (
                   <>
                     {/* Stats Cards */}
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 animate-fade-in" style={{ animationDelay: '200ms' }}>
+                    <div
+                      className="grid grid-cols-2 md:grid-cols-3 gap-4 animate-fade-in"
+                      style={{ animationDelay: "200ms" }}
+                    >
                       <div className="glass-card rounded-xl p-4 text-center">
                         <Dumbbell className="w-5 h-5 text-primary mx-auto mb-2" />
                         <p className="font-display text-xl font-bold">{stats.maxWeight}kg</p>
@@ -606,9 +626,12 @@ export default function Progress() {
                         <p className="text-xs text-muted-foreground">Ultimo</p>
                       </div>
                       <div className="glass-card rounded-xl p-4 text-center">
-                        <TrendingUp className={`w-5 h-5 mx-auto mb-2 ${parseFloat(stats.improvement) >= 0 ? 'text-primary' : 'text-destructive'}`} />
+                        <TrendingUp
+                          className={`w-5 h-5 mx-auto mb-2 ${parseFloat(stats.improvement) >= 0 ? "text-primary" : "text-destructive"}`}
+                        />
                         <p className="font-display text-xl font-bold">
-                          {parseFloat(stats.improvement) >= 0 ? '+' : ''}{stats.improvement}%
+                          {parseFloat(stats.improvement) >= 0 ? "+" : ""}
+                          {stats.improvement}%
                         </p>
                         <p className="text-xs text-muted-foreground">Progresso</p>
                       </div>
@@ -630,7 +653,7 @@ export default function Progress() {
                     </div>
 
                     {/* Weight Chart - Serie per Serie */}
-                    <div className="glass-card rounded-xl p-6 animate-fade-in" style={{ animationDelay: '250ms' }}>
+                    <div className="glass-card rounded-xl p-6 animate-fade-in" style={{ animationDelay: "250ms" }}>
                       <h3 className="font-semibold mb-2">Andamento Peso (kg) - Serie per Serie</h3>
                       <p className="text-xs text-muted-foreground mb-4">Ogni punto rappresenta una singola serie</p>
                       <div className="h-64">
@@ -652,19 +675,16 @@ export default function Progress() {
                               height={60}
                               interval="preserveStartEnd"
                             />
-                            <YAxis
-                              stroke="hsl(220, 10%, 55%)"
-                              fontSize={12}
-                            />
+                            <YAxis stroke="hsl(220, 10%, 55%)" fontSize={12} />
                             <Tooltip
                               contentStyle={{
-                                backgroundColor: 'hsl(220, 18%, 10%)',
-                                border: '1px solid hsl(220, 14%, 18%)',
-                                borderRadius: '8px',
+                                backgroundColor: "hsl(220, 18%, 10%)",
+                                border: "1px solid hsl(220, 14%, 18%)",
+                                borderRadius: "8px",
                               }}
                               formatter={(value: number, name: string) => {
-                                if (name === 'peso') return [`${value} kg`, 'Peso'];
-                                if (name === 'reps') return [value, 'Reps'];
+                                if (name === "peso") return [`${value} kg`, "Peso"];
+                                if (name === "reps") return [value, "Reps"];
                                 return [value, name];
                               }}
                               labelFormatter={(label) => `${label}`}
@@ -675,7 +695,7 @@ export default function Progress() {
                               stroke="hsl(160, 84%, 39%)"
                               strokeWidth={2}
                               fill="url(#colorWeight)"
-                              dot={{ fill: 'hsl(160, 84%, 39%)', r: 3 }}
+                              dot={{ fill: "hsl(160, 84%, 39%)", r: 3 }}
                             />
                           </AreaChart>
                         </ResponsiveContainer>
@@ -683,7 +703,7 @@ export default function Progress() {
                     </div>
 
                     {/* Volume Chart per Serie */}
-                    <div className="glass-card rounded-xl p-6 animate-fade-in" style={{ animationDelay: '275ms' }}>
+                    <div className="glass-card rounded-xl p-6 animate-fade-in" style={{ animationDelay: "275ms" }}>
                       <h3 className="font-semibold mb-2">Volume per Serie</h3>
                       <p className="text-xs text-muted-foreground mb-4">Peso × Reps per ogni serie</p>
                       <div className="h-48">
@@ -699,30 +719,23 @@ export default function Progress() {
                               height={60}
                               interval="preserveStartEnd"
                             />
-                            <YAxis
-                              stroke="hsl(220, 10%, 55%)"
-                              fontSize={12}
-                            />
+                            <YAxis stroke="hsl(220, 10%, 55%)" fontSize={12} />
                             <Tooltip
                               contentStyle={{
-                                backgroundColor: 'hsl(220, 18%, 10%)',
-                                border: '1px solid hsl(220, 14%, 18%)',
-                                borderRadius: '8px',
+                                backgroundColor: "hsl(220, 18%, 10%)",
+                                border: "1px solid hsl(220, 14%, 18%)",
+                                borderRadius: "8px",
                               }}
-                              formatter={(value: number) => [`${value} kg`, 'Volume']}
+                              formatter={(value: number) => [`${value} kg`, "Volume"]}
                             />
-                            <Bar
-                              dataKey="volume"
-                              fill="hsl(280, 65%, 60%)"
-                              radius={[4, 4, 0, 0]}
-                            />
+                            <Bar dataKey="volume" fill="hsl(280, 65%, 60%)" radius={[4, 4, 0, 0]} />
                           </BarChart>
                         </ResponsiveContainer>
                       </div>
                     </div>
 
                     {/* Volume Sessione - Aggregato */}
-                    <div className="glass-card rounded-xl p-6 animate-fade-in" style={{ animationDelay: '285ms' }}>
+                    <div className="glass-card rounded-xl p-6 animate-fade-in" style={{ animationDelay: "285ms" }}>
                       <h3 className="font-semibold mb-2">Volume Totale Sessione</h3>
                       <p className="text-xs text-muted-foreground mb-4">Somma di tutte le serie per sessione</p>
                       <div className="h-48">
@@ -735,22 +748,15 @@ export default function Progress() {
                               </linearGradient>
                             </defs>
                             <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 14%, 18%)" />
-                            <XAxis
-                              dataKey="date"
-                              stroke="hsl(220, 10%, 55%)"
-                              fontSize={12}
-                            />
-                            <YAxis
-                              stroke="hsl(220, 10%, 55%)"
-                              fontSize={12}
-                            />
+                            <XAxis dataKey="date" stroke="hsl(220, 10%, 55%)" fontSize={12} />
+                            <YAxis stroke="hsl(220, 10%, 55%)" fontSize={12} />
                             <Tooltip
                               contentStyle={{
-                                backgroundColor: 'hsl(220, 18%, 10%)',
-                                border: '1px solid hsl(220, 14%, 18%)',
-                                borderRadius: '8px',
+                                backgroundColor: "hsl(220, 18%, 10%)",
+                                border: "1px solid hsl(220, 14%, 18%)",
+                                borderRadius: "8px",
                               }}
-                              formatter={(value: number) => [`${value} kg`, 'Volume Totale']}
+                              formatter={(value: number) => [`${value} kg`, "Volume Totale"]}
                             />
                             <Area
                               type="monotone"
@@ -765,7 +771,7 @@ export default function Progress() {
                     </div>
 
                     {/* Reps Chart - Serie per Serie */}
-                    <div className="glass-card rounded-xl p-6 animate-fade-in" style={{ animationDelay: '300ms' }}>
+                    <div className="glass-card rounded-xl p-6 animate-fade-in" style={{ animationDelay: "300ms" }}>
                       <h3 className="font-semibold mb-2">Ripetizioni per Serie</h3>
                       <p className="text-xs text-muted-foreground mb-4">Reps effettuate in ogni serie</p>
                       <div className="h-48">
@@ -781,24 +787,21 @@ export default function Progress() {
                               height={60}
                               interval="preserveStartEnd"
                             />
-                            <YAxis
-                              stroke="hsl(220, 10%, 55%)"
-                              fontSize={12}
-                            />
+                            <YAxis stroke="hsl(220, 10%, 55%)" fontSize={12} />
                             <Tooltip
                               contentStyle={{
-                                backgroundColor: 'hsl(220, 18%, 10%)',
-                                border: '1px solid hsl(220, 14%, 18%)',
-                                borderRadius: '8px',
+                                backgroundColor: "hsl(220, 18%, 10%)",
+                                border: "1px solid hsl(220, 14%, 18%)",
+                                borderRadius: "8px",
                               }}
-                              formatter={(value: number) => [value, 'Reps']}
+                              formatter={(value: number) => [value, "Reps"]}
                             />
                             <Line
                               type="monotone"
                               dataKey="reps"
                               stroke="hsl(38, 92%, 50%)"
                               strokeWidth={2}
-                              dot={{ fill: 'hsl(38, 92%, 50%)', strokeWidth: 0, r: 3 }}
+                              dot={{ fill: "hsl(38, 92%, 50%)", strokeWidth: 0, r: 3 }}
                             />
                           </LineChart>
                         </ResponsiveContainer>
