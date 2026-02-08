@@ -498,32 +498,32 @@ export default function Progress() {
                               backgroundColor: "hsl(220, 18%, 10%)",
                               border: "1px solid hsl(220, 14%, 18%)",
                               borderRadius: "8px",
-                              padding: "8px 12px",
+                              padding: "8px",
                             }}
-                            content={({ active, payload }) => {
-                              if (active && payload && payload.length) {
-                                const data = payload[0].payload;
-                                return (
-                                  <div
-                                    style={{
-                                      backgroundColor: "hsl(220, 18%, 10%)",
-                                      border: "1px solid hsl(220, 14%, 18%)",
-                                      borderRadius: "8px",
-                                      padding: "8px 12px",
-                                    }}
-                                  >
-                                    <p style={{ color: data.fill, fontWeight: 500 }}>{data.name}</p>
-                                    <p style={{ color: data.fill, fontSize: "14px" }}>
-                                      {data.value} serie ({data.percentage}%)
-                                    </p>
-                                  </div>
-                                );
-                              }
-                              return null;
-                            }}
+                            formatter={(value, name, props) => [
+                              `${props.payload.sets} serie (${props.payload.percentage}%)`,
+                              props.payload.name,
+                            ]}
                           />
                         </PieChart>
                       </ResponsiveContainer>
+                    </div>
+                    {/* Muscle Legend */}
+                    <div className="mt-6 pt-4 border-t border-border/50">
+                      <div className="grid grid-cols-2 gap-3">
+                        {muscleDistribution.map((muscle) => (
+                          <div key={muscle.name} className="flex items-center gap-2">
+                            <div
+                              className="w-3 h-3 rounded-sm"
+                              style={{ backgroundColor: muscle.fill }}
+                            />
+                            <div className="text-xs">
+                              <p className="font-medium text-foreground">{muscle.name}</p>
+                              <p className="text-muted-foreground">{muscle.value} serie ({muscle.percentage}%)</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}
