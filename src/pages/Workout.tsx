@@ -109,15 +109,21 @@ export default function Workout() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Get workoutId from URL params
+  // Get workoutId and expand flag from URL params
   const urlWorkoutId = searchParams.get('workoutId');
+  const shouldExpand = searchParams.get('expand') === '1';
+  const [expandedWorkoutId, setExpandedWorkoutId] = useState<string | null>(null);
+
   useEffect(() => {
     if (currentSession && !selectedWorkoutId) {
       setSelectedWorkoutId(currentSession.workoutId);
     } else if (urlWorkoutId && !selectedWorkoutId && !currentSession) {
       setSelectedWorkoutId(urlWorkoutId);
+      if (shouldExpand) {
+        setExpandedWorkoutId(urlWorkoutId);
+      }
     }
-  }, [currentSession, urlWorkoutId, selectedWorkoutId]);
+  }, [currentSession, urlWorkoutId, selectedWorkoutId, shouldExpand]);
 
   // Recovery timer
   useEffect(() => {
@@ -891,7 +897,7 @@ export default function Workout() {
                 </div>
 
                 {workouts.map(workout => (
-                  <Collapsible key={workout.id}>
+                  <Collapsible key={workout.id} open={expandedWorkoutId === workout.id} onOpenChange={(open) => setExpandedWorkoutId(open ? workout.id : null)}>
                     <div
                       onClick={() => setSelectedWorkoutId(workout.id)}
                       className={`glass-card rounded-xl overflow-hidden cursor-pointer transition-all ${

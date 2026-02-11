@@ -1,7 +1,7 @@
 import { useGym } from '@/context/GymContext';
 import { useAuth } from '@/context/AuthContext';
 import { WorkoutCard } from '@/components/gym/WorkoutCard';
-import { AppVersion } from '@/components/gym/AppVersion';
+
 import { Button } from '@/components/ui/button';
 import { Plus, Play, Trophy, Flame, Target, Scale, User } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -27,7 +27,6 @@ export default function Home() {
     : undefined;
 
   const totalWorkouts = progress.length;
-  const totalExercises = workouts.reduce((acc, w) => acc + w.exercises.length, 0);
 
   // Calculate unique sessions (by date)
   const uniqueSessions = new Set(
@@ -77,16 +76,24 @@ export default function Home() {
 
           {/* Stats Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div className="glass-card rounded-xl p-4 text-center animate-slide-up" style={{ animationDelay: '150ms' }}>
+            <Link 
+              to="/workout"
+              className="glass-card rounded-xl p-4 text-center animate-slide-up hover:border-primary/30 transition-all cursor-pointer" 
+              style={{ animationDelay: '150ms' }}
+            >
               <Flame className="w-6 h-6 text-primary mx-auto mb-2" />
-              <p className="font-display text-2xl font-bold text-foreground">{workouts.length}</p>
-              <p className="text-xs text-muted-foreground">Schede</p>
-            </div>
-            <div className="glass-card rounded-xl p-4 text-center animate-slide-up" style={{ animationDelay: '200ms' }}>
+              <p className="font-display text-lg font-bold text-foreground">Allenamento</p>
+              <p className="text-xs text-muted-foreground">Vai →</p>
+            </Link>
+            <Link 
+              to="/progress"
+              className="glass-card rounded-xl p-4 text-center animate-slide-up hover:border-primary/30 transition-all cursor-pointer" 
+              style={{ animationDelay: '200ms' }}
+            >
               <Target className="w-6 h-6 text-primary mx-auto mb-2" />
-              <p className="font-display text-2xl font-bold text-foreground">{totalExercises}</p>
-              <p className="text-xs text-muted-foreground">Esercizi</p>
-            </div>
+              <p className="font-display text-lg font-bold text-foreground">Progressi</p>
+              <p className="text-xs text-muted-foreground">Vai →</p>
+            </Link>
             <Link 
               to="/sessions"
               className="glass-card rounded-xl p-4 text-center animate-slide-up hover:border-primary/30 transition-all cursor-pointer" 
@@ -137,12 +144,12 @@ export default function Home() {
         <section>
           <div className="flex items-center justify-between mb-6">
             <h2 className="font-display text-xl font-semibold text-foreground">
-              Le Tue Schede
+              Le Tue Schede ({workouts.length})
             </h2>
             <Button asChild variant="outline" size="sm">
               <Link to="/create">
                 <Plus className="w-4 h-4 mr-2" />
-                Nuova
+                Crea Scheda
               </Link>
             </Button>
           </div>
@@ -183,7 +190,7 @@ export default function Home() {
           )}
         </section>
 
-        <AppVersion />
+        {/* AppVersion is now in the Header */}
       </div>
 
       <ProfileModal open={showProfile} onOpenChange={setShowProfile} />

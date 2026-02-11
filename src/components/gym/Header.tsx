@@ -1,22 +1,14 @@
-import { Dumbbell, Menu } from 'lucide-react';
-import { useLocation, Link } from 'react-router-dom';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
-
-const navItems = [
-  { path: '/', label: 'Home' },
-  { path: '/create', label: 'Crea Scheda' },
-  { path: '/workout', label: 'Allenamento' },
-  { path: '/progress', label: 'Progressi' },
-];
+import { Dumbbell } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { APP_VERSION } from '@/components/gym/AppVersion';
 
 export function Header() {
-  const location = useLocation();
+  const today = new Date();
+  const formattedDate = today.toLocaleDateString('it-IT', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 glass-card border-b border-border/30">
@@ -32,47 +24,10 @@ export function Header() {
             </span>
           </Link>
 
-          {/* Desktop navigation */}
-          <nav className="hidden md:flex items-center gap-1">
-            {navItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
-                  location.pathname === item.path
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-
-          {/* Mobile navigation - dropdown menu */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild className="md:hidden">
-              <Button variant="ghost" size="icon">
-                <Menu className="w-6 h-6" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48 bg-background border border-border">
-              {navItems.map((item) => (
-                <DropdownMenuItem key={item.path} asChild>
-                  <Link
-                    to={item.path}
-                    className={`w-full ${
-                      location.pathname === item.path
-                        ? 'bg-primary/10 text-primary font-medium'
-                        : ''
-                    }`}
-                  >
-                    {item.label}
-                  </Link>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="text-right">
+            <p className="text-xs text-muted-foreground">{formattedDate}</p>
+            <p className="text-xs text-muted-foreground">v{APP_VERSION}</p>
+          </div>
         </div>
       </div>
     </header>
