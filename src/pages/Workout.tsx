@@ -825,7 +825,7 @@ export default function Workout() {
               <ChevronRight className="w-5 h-5" />
             </Button>
           </div>
-        </div>
+        <AppVersion />
       </div>
     );
   }
