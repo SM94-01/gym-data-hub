@@ -49,7 +49,6 @@ export interface WorkoutProgress {
   repsCompleted: number; // Average reps (for backwards compatibility)
   notes?: string;
   setsData?: SetData[]; // Detailed data for each set
-  isSuperset?: boolean;
 }
 
 export interface WorkoutSession {

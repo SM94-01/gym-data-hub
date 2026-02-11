@@ -16,7 +16,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { ArrowLeft, Calendar, Dumbbell, MessageSquare, ChevronDown, Weight, Zap } from 'lucide-react';
+import { ArrowLeft, Calendar, Dumbbell, MessageSquare, ChevronDown, Weight } from 'lucide-react';
 import { MONTHS, SetData } from '@/types/gym';
 import { AppVersion } from '@/components/gym/AppVersion';
 
@@ -174,16 +174,9 @@ export default function SessionRecap() {
                     >
                       <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-secondary/20">
                         <div className="flex items-center gap-3 text-left">
-                          {exercise.isSuperset ? (
-                            <Zap className="w-4 h-4 text-warning flex-shrink-0" />
-                          ) : (
-                            <Dumbbell className="w-4 h-4 text-primary flex-shrink-0" />
-                          )}
+                          <Dumbbell className="w-4 h-4 text-primary flex-shrink-0" />
                           <div>
-                            <p className="font-medium flex items-center gap-1">
-                              {exercise.isSuperset && <span className="text-xs text-warning">(Superset)</span>}
-                              {exercise.exerciseName}
-                            </p>
+                            <p className="font-medium">{exercise.exerciseName}</p>
                             <p className="text-xs text-muted-foreground">
                               {exercise.muscle} • {exercise.setsCompleted} serie
                               {exercise.setsData && exercise.setsData.length > 0 ? (

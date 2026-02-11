@@ -387,8 +387,7 @@ export default function Workout() {
           weightUsed: maxWeight,
           repsCompleted: Math.round(avgReps),
           notes: ex.notes,
-          setsData,
-          isSuperset: ex.isSuperset || false,
+          setsData
         });
 
         // Save exercise 2 progress for superset
@@ -413,8 +412,7 @@ export default function Workout() {
             weightUsed: maxWeight2,
             repsCompleted: Math.round(avgReps2),
             notes: ex.notes,
-            setsData: setsData2,
-            isSuperset: true,
+            setsData: setsData2
           });
         }
       }

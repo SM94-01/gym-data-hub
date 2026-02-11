@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Exercise, MUSCLE_GROUPS } from '@/types/gym';
-import { Trash2, GripVertical, Edit2, Check, X } from 'lucide-react';
+import { Trash2, GripVertical, Edit2, Check, X, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -122,7 +122,8 @@ export function ExerciseList({ exercises, onRemove, onUpdate, editable = false }
           ) : (
             <>
               <div className="flex-1">
-                <h4 className="font-medium text-foreground">
+                <h4 className="font-medium text-foreground flex items-center gap-2">
+                  {exercise.isSuperset && <Zap className="w-4 h-4 text-warning" />}
                   {exercise.name}
                 </h4>
                 <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground flex-wrap">
