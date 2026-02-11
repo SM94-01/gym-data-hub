@@ -401,16 +401,17 @@ export default function Progress() {
                   </SelectContent>
                 </Select>
                 <Select
-                  value={selectedWeek?.toString() || ""}
-                  onValueChange={(v) => setSelectedWeek(v ? parseInt(v) : null)}
+                  value={selectedWeek?.toString() || "all"}
+                  onValueChange={(v) => setSelectedWeek(v === "all" ? null : parseInt(v))}
                 >
-                  <SelectTrigger className="bg-secondary/50 border-border/50 w-24">
-                    <SelectValue placeholder="Week" />
+                  <SelectTrigger className="bg-secondary/50 border-border/50 w-28">
+                    <SelectValue placeholder="Settimana" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="all">Tutto</SelectItem>
                     {weeksInMonth.map((week) => (
                       <SelectItem key={week} value={week.toString()}>
-                        Week {week}
+                        Sett. {week}
                       </SelectItem>
                     ))}
                   </SelectContent>
