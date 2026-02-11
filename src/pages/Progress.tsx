@@ -408,10 +408,10 @@ export default function Progress() {
                     <SelectValue placeholder="Settimana" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Tutto</SelectItem>
+                    <SelectItem value="all">Week</SelectItem>
                     {weeksInMonth.map((week) => (
                       <SelectItem key={week} value={week.toString()}>
-                        Sett. {week}
+                        Week {week}
                       </SelectItem>
                     ))}
                   </SelectContent>
