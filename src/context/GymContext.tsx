@@ -171,6 +171,7 @@ export function GymProvider({ children }: { children: ReactNode }) {
       repsCompleted: p.reps_completed,
       notes: p.notes || undefined,
       setsData: p.sets_data ? (p.sets_data as unknown as SetData[]) : undefined,
+      isSuperset: (p as any).is_superset || false,
     })));
   }, [user]);
 
@@ -376,6 +377,7 @@ export function GymProvider({ children }: { children: ReactNode }) {
         reps_completed: progressEntry.repsCompleted,
         notes: progressEntry.notes || null,
         sets_data: progressEntry.setsData ? JSON.parse(JSON.stringify(progressEntry.setsData)) : null,
+        is_superset: progressEntry.isSuperset || false,
       } as any)
       .select()
       .single();
@@ -397,6 +399,7 @@ export function GymProvider({ children }: { children: ReactNode }) {
       repsCompleted: data.reps_completed,
       notes: data.notes || undefined,
       setsData: data.sets_data ? (data.sets_data as unknown as SetData[]) : undefined,
+      isSuperset: (data as any).is_superset || false,
     };
     
     setProgress((prev) => [...prev, newProgress]);

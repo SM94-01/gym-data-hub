@@ -150,6 +150,7 @@ export type Database = {
           exercise_id: string | null
           exercise_name: string
           id: string
+          is_superset: boolean | null
           muscle: string
           notes: string | null
           reps_completed: number
@@ -163,6 +164,7 @@ export type Database = {
           exercise_id?: string | null
           exercise_name: string
           id?: string
+          is_superset?: boolean | null
           muscle: string
           notes?: string | null
           reps_completed: number
@@ -176,6 +178,7 @@ export type Database = {
           exercise_id?: string | null
           exercise_name?: string
           id?: string
+          is_superset?: boolean | null
           muscle?: string
           notes?: string | null
           reps_completed?: number
