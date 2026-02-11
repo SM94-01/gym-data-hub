@@ -11,7 +11,7 @@ import { AppVersion } from '@/components/gym/AppVersion';
 import { toast } from 'sonner';
 import {
   UserPlus, Users, Trash2, Dumbbell, Target, ChevronLeft,
-  Plus, ArrowLeft
+  Plus, ArrowLeft, Edit2, Check, X
 } from 'lucide-react';
 import { Workout, Exercise, WorkoutProgress, SetData } from '@/types/gym';
 
@@ -38,6 +38,11 @@ export default function TrainerDashboard() {
   const [showCreateWorkout, setShowCreateWorkout] = useState(false);
   const [workoutName, setWorkoutName] = useState('');
   const [exercises, setExercises] = useState<Omit<Exercise, 'id'>[]>([]);
+
+  // Editing workout for client
+  const [editingWorkout, setEditingWorkout] = useState<Workout | null>(null);
+  const [editWorkoutName, setEditWorkoutName] = useState('');
+  const [editExercises, setEditExercises] = useState<Exercise[]>([]);
 
   const fetchClients = useCallback(async () => {
     if (!user) return;
@@ -268,6 +273,80 @@ export default function TrainerDashboard() {
     }
   };
 
+  const startEditWorkout = (workout: Workout) => {
+    setEditingWorkout(workout);
+    setEditWorkoutName(workout.name);
+    setEditExercises([...workout.exercises]);
+  };
+
+  const cancelEditWorkout = () => {
+    setEditingWorkout(null);
+    setEditWorkoutName('');
+    setEditExercises([]);
+  };
+
+  const updateEditExercise = (index: number, field: string, value: any) => {
+    setEditExercises(prev => prev.map((ex, i) => i === index ? { ...ex, [field]: value } : ex));
+  };
+
+  const removeEditExercise = (index: number) => {
+    setEditExercises(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSaveEditWorkout = async () => {
+    if (!editingWorkout || !editWorkoutName.trim() || editExercises.length === 0) {
+      toast.error('Inserisci nome e almeno un esercizio');
+      return;
+    }
+
+    // Update workout
+    const { error: updateError } = await supabase
+      .from('workouts')
+      .update({ name: editWorkoutName.trim() })
+      .eq('id', editingWorkout.id);
+
+    if (updateError) {
+      toast.error('Errore nell\'aggiornamento della scheda');
+      console.error(updateError);
+      return;
+    }
+
+    // Delete existing exercises
+    const { error: deleteError } = await supabase
+      .from('exercises')
+      .delete()
+      .eq('workout_id', editingWorkout.id);
+
+    if (deleteError) {
+      console.error(deleteError);
+    }
+
+    // Insert updated exercises
+    const exercisesToInsert = editExercises.map((ex, idx) => ({
+      workout_id: editingWorkout.id,
+      name: ex.name,
+      muscle: ex.muscle,
+      sets: ex.sets,
+      reps: ex.reps,
+      target_weight: ex.targetWeight,
+      is_superset: ex.isSuperset || false,
+      exercise2_name: ex.exercise2Name || null,
+      muscle2: ex.muscle2 || null,
+      reps2: ex.reps2 || null,
+      target_weight2: ex.targetWeight2 || null,
+      position: idx,
+    }));
+
+    const { error: insertError } = await supabase.from('exercises').insert(exercisesToInsert);
+    if (insertError) {
+      console.error(insertError);
+    }
+
+    toast.success('Scheda aggiornata!');
+    cancelEditWorkout();
+    if (selectedClient) loadClientData(selectedClient.client_id);
+  };
+
   if (trainerLoading) return null;
   if (!isTrainer) return <Navigate to="/" replace />;
 
@@ -458,28 +537,100 @@ export default function TrainerDashboard() {
                     ) : (
                       <div className="space-y-3">
                         {clientWorkouts.map(w => (
-                          <div key={w.id} className="p-3 rounded-lg border">
-                            <div className="flex items-center justify-between mb-2">
-                              <h3 className="font-medium">{w.name}</h3>
-                              <div className="flex items-center gap-2">
-                                {w.isActive && (
-                                  <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
-                                    Attiva
-                                  </span>
-                                )}
-                                <Button variant="ghost" size="icon"
-                                  onClick={() => handleDeleteWorkout(w.id)}>
-                                  <Trash2 className="w-4 h-4 text-destructive" />
+                          <div key={w.id}>
+                            {editingWorkout?.id === w.id ? (
+                              // Edit mode
+                              <div className="p-3 rounded-lg border border-primary/30 space-y-3">
+                                <Input
+                                  placeholder="Nome scheda..."
+                                  value={editWorkoutName}
+                                  onChange={e => setEditWorkoutName(e.target.value)}
+                                  className="font-medium"
+                                />
+                                
+                                {editExercises.map((ex, i) => (
+                                  <div key={i} className="p-3 rounded border bg-secondary/20 space-y-2">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-sm font-medium">Esercizio {i + 1}</span>
+                                      <Button variant="ghost" size="icon" onClick={() => removeEditExercise(i)}>
+                                        <Trash2 className="w-4 h-4 text-destructive" />
+                                      </Button>
+                                    </div>
+                                    <Input placeholder="Nome" value={ex.name}
+                                      onChange={e => updateEditExercise(i, 'name', e.target.value)} />
+                                    <select
+                                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                      value={ex.muscle}
+                                      onChange={e => updateEditExercise(i, 'muscle', e.target.value)}
+                                    >
+                                      {MUSCLES.map(m => <option key={m} value={m}>{m}</option>)}
+                                    </select>
+                                    <div className="grid grid-cols-3 gap-2">
+                                      <div>
+                                        <label className="text-xs text-muted-foreground">Serie</label>
+                                        <Input type="number" value={ex.sets} min={1}
+                                          onChange={e => updateEditExercise(i, 'sets', parseInt(e.target.value) || 1)} />
+                                      </div>
+                                      <div>
+                                        <label className="text-xs text-muted-foreground">Reps</label>
+                                        <Input type="number" value={ex.reps} min={1}
+                                          onChange={e => updateEditExercise(i, 'reps', parseInt(e.target.value) || 1)} />
+                                      </div>
+                                      <div>
+                                        <label className="text-xs text-muted-foreground">Peso (kg)</label>
+                                        <Input type="number" value={ex.targetWeight} min={0} step={0.5}
+                                          onChange={e => updateEditExercise(i, 'targetWeight', parseFloat(e.target.value) || 0)} />
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                                
+                                <Button variant="outline" onClick={() => {
+                                  setEditExercises(prev => [...prev, { id: crypto.randomUUID(), name: '', muscle: 'Pettorali', sets: 3, reps: 10, targetWeight: 0 }]);
+                                }} className="w-full">
+                                  <Plus className="w-4 h-4 mr-2" /> Aggiungi Esercizio
                                 </Button>
+
+                                <div className="flex gap-2">
+                                  <Button variant="outline" onClick={cancelEditWorkout} className="flex-1 gap-1">
+                                    <X className="w-4 h-4" /> Annulla
+                                  </Button>
+                                  <Button onClick={handleSaveEditWorkout} className="flex-1 gap-1"
+                                    disabled={!editWorkoutName.trim() || editExercises.length === 0}>
+                                    <Check className="w-4 h-4" /> Salva
+                                  </Button>
+                                </div>
                               </div>
-                            </div>
-                            <div className="space-y-1">
-                              {w.exercises.map((ex, i) => (
-                                <p key={i} className="text-sm text-muted-foreground">
-                                  {ex.name} — {ex.muscle} · {ex.sets}×{ex.reps} · {ex.targetWeight}kg
-                                </p>
-                              ))}
-                            </div>
+                            ) : (
+                              // View mode
+                              <div className="p-3 rounded-lg border">
+                                <div className="flex items-center justify-between mb-2">
+                                  <h3 className="font-medium">{w.name}</h3>
+                                  <div className="flex items-center gap-2">
+                                    {w.isActive && (
+                                      <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
+                                        Attiva
+                                      </span>
+                                    )}
+                                    <Button variant="ghost" size="icon"
+                                      onClick={() => startEditWorkout(w)}>
+                                      <Edit2 className="w-4 h-4 text-muted-foreground hover:text-primary" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon"
+                                      onClick={() => handleDeleteWorkout(w.id)}>
+                                      <Trash2 className="w-4 h-4 text-destructive" />
+                                    </Button>
+                                  </div>
+                                </div>
+                                <div className="space-y-1">
+                                  {w.exercises.map((ex, i) => (
+                                    <p key={i} className="text-sm text-muted-foreground">
+                                      {ex.name} — {ex.muscle} · {ex.sets}×{ex.reps} · {ex.targetWeight}kg
+                                    </p>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
