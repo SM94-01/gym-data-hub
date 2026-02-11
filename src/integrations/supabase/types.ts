@@ -144,6 +144,30 @@ export type Database = {
         }
         Relationships: []
       }
+      trainer_clients: {
+        Row: {
+          client_email: string
+          client_id: string
+          created_at: string
+          id: string
+          trainer_id: string
+        }
+        Insert: {
+          client_email: string
+          client_id: string
+          created_at?: string
+          id?: string
+          trainer_id: string
+        }
+        Update: {
+          client_email?: string
+          client_id?: string
+          created_at?: string
+          id?: string
+          trainer_id?: string
+        }
+        Relationships: []
+      }
       workout_progress: {
         Row: {
           date: string
@@ -240,7 +264,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_user_id_by_email: { Args: { _email: string }; Returns: string }
       is_email_allowed: { Args: { check_email: string }; Returns: boolean }
+      is_personal_trainer: { Args: { _user_id: string }; Returns: boolean }
+      is_trainer_of: { Args: { _client_id: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
