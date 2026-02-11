@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { useIsTrainer } from '@/hooks/useIsTrainer';
@@ -6,14 +6,26 @@ import { Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { AppVersion } from '@/components/gym/AppVersion';
 import { toast } from 'sonner';
 import {
   UserPlus, Users, Trash2, Dumbbell, Target, ChevronLeft,
-  Plus, ArrowLeft, Edit2, Check, X
+  Plus, ArrowLeft, Edit2, Check, X, Calendar, TrendingUp,
+  BarChart3, Flame, Award, Activity, MessageSquare
 } from 'lucide-react';
-import { Workout, Exercise, WorkoutProgress, SetData } from '@/types/gym';
+import { Workout, Exercise, WorkoutProgress, SetData, MONTHS } from '@/types/gym';
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, AreaChart, Area, BarChart, Bar,
+  PieChart, Pie, Cell,
+} from 'recharts';
+
+const COLORS = [
+  "hsl(160, 84%, 39%)", "hsl(38, 92%, 50%)", "hsl(280, 65%, 60%)",
+  "hsl(200, 80%, 50%)", "hsl(340, 75%, 55%)", "hsl(120, 60%, 45%)",
+];
 
 interface TrainerClient {
   id: string;
@@ -43,6 +55,18 @@ export default function TrainerDashboard() {
   const [editingWorkout, setEditingWorkout] = useState<Workout | null>(null);
   const [editWorkoutName, setEditWorkoutName] = useState('');
   const [editExercises, setEditExercises] = useState<Exercise[]>([]);
+
+  // Progress filters
+  const [progressMonth, setProgressMonth] = useState<number>(new Date().getMonth() + 1);
+  const [progressYear, setProgressYear] = useState<number>(new Date().getFullYear());
+  const [progressWeek, setProgressWeek] = useState<number | null>(null);
+  const [selectedExercise, setSelectedExercise] = useState<string>('');
+  const [selectedMuscle, setSelectedMuscle] = useState<string>('all');
+
+  // History filters
+  const [historyMonth, setHistoryMonth] = useState<number>(new Date().getMonth() + 1);
+  const [historyYear, setHistoryYear] = useState<number>(new Date().getFullYear());
+  const [historyExerciseFilter, setHistoryExerciseFilter] = useState<string>('all');
 
   const fetchClients = useCallback(async () => {
     if (!user) return;
@@ -147,8 +171,7 @@ export default function TrainerDashboard() {
         .from('workout_progress')
         .select('*')
         .eq('user_id', clientId)
-        .order('date', { ascending: false })
-        .limit(100),
+        .order('date', { ascending: false }),
     ]);
 
     if (workoutsRes.data) {
@@ -346,6 +369,157 @@ export default function TrainerDashboard() {
     cancelEditWorkout();
     if (selectedClient) loadClientData(selectedClient.client_id);
   };
+
+  // ===== Progress computed values =====
+  function getWeekOfMonth(date: Date) {
+    const firstDay = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+    return Math.ceil((date.getDate() + firstDay) / 7);
+  }
+
+  const availableProgressYears = useMemo(() => {
+    const years = new Set(clientProgress.map(p => new Date(p.date).getFullYear()));
+    const arr = Array.from(years).sort((a, b) => b - a);
+    return arr.length > 0 ? arr : [new Date().getFullYear()];
+  }, [clientProgress]);
+
+  const weeksInMonth = useMemo(() => {
+    const month = progressMonth - 1;
+    const lastDay = new Date(progressYear, month + 1, 0).getDate();
+    const weeks = new Set<number>();
+    for (let day = 1; day <= lastDay; day++) {
+      weeks.add(getWeekOfMonth(new Date(progressYear, month, day)));
+    }
+    return Array.from(weeks).sort((a, b) => a - b);
+  }, [progressMonth, progressYear]);
+
+  const filteredProgress = useMemo(() => {
+    return clientProgress.filter(p => {
+      const date = new Date(p.date);
+      const monthOk = date.getMonth() + 1 === progressMonth;
+      const yearOk = date.getFullYear() === progressYear;
+      const weekOk = progressWeek ? getWeekOfMonth(date) === progressWeek : true;
+      const muscleOk = selectedMuscle === 'all' || p.muscle === selectedMuscle;
+      return monthOk && yearOk && weekOk && muscleOk;
+    });
+  }, [clientProgress, progressMonth, progressYear, progressWeek, selectedMuscle]);
+
+  const progressExercises = useMemo(() => {
+    const map = new Map<string, string>();
+    filteredProgress.forEach(p => {
+      const key = p.exerciseName.trim().toLowerCase();
+      if (!map.has(key)) map.set(key, p.exerciseName.trim());
+    });
+    return Array.from(map, ([id, name]) => ({ id, name }));
+  }, [filteredProgress]);
+
+  const progressMuscles = useMemo(() => {
+    return Array.from(new Set(clientProgress.map(p => p.muscle))).sort();
+  }, [clientProgress]);
+
+  const periodStats = useMemo(() => {
+    const uniqueDates = new Set(filteredProgress.map(p => new Date(p.date).toDateString()));
+    let maxWeight = 0, totalReps = 0, totalVolume = 0;
+    filteredProgress.forEach(p => {
+      if (p.setsData?.length) {
+        const mx = Math.max(...p.setsData.map(s => s.weight));
+        if (mx > maxWeight) maxWeight = mx;
+        totalReps += p.setsData.reduce((s, d) => s + d.reps, 0);
+        totalVolume += p.setsData.reduce((s, d) => s + d.weight * d.reps, 0);
+      } else {
+        if (p.weightUsed > maxWeight) maxWeight = p.weightUsed;
+        totalReps += p.setsCompleted * p.repsCompleted;
+        totalVolume += p.weightUsed * p.setsCompleted * p.repsCompleted;
+      }
+    });
+    const totalSets = filteredProgress.reduce((s, p) => s + (p.setsData?.length || p.setsCompleted), 0);
+    return {
+      totalSessions: uniqueDates.size, maxWeight: maxWeight.toFixed(1),
+      totalSets, totalReps, totalVolume: Math.round(totalVolume),
+      uniqueExercises: new Set(filteredProgress.map(p => p.exerciseName.trim().toLowerCase())).size,
+      uniqueMuscles: new Set(filteredProgress.map(p => p.muscle)).size,
+    };
+  }, [filteredProgress]);
+
+  const muscleDistribution = useMemo(() => {
+    const muscleSets: Record<string, number> = {};
+    filteredProgress.forEach(p => { muscleSets[p.muscle] = (muscleSets[p.muscle] || 0) + (p.setsData?.length || p.setsCompleted); });
+    const total = Object.values(muscleSets).reduce((a, b) => a + b, 0);
+    return Object.entries(muscleSets)
+      .sort((a, b) => b[1] - a[1])
+      .map(([muscle, sets], i) => ({
+        name: muscle, value: sets,
+        percentage: total > 0 ? ((sets / total) * 100).toFixed(1) : '0',
+        fill: COLORS[i % COLORS.length],
+      }));
+  }, [filteredProgress]);
+
+  const volumeByMuscle = useMemo(() => {
+    const mv: Record<string, number> = {};
+    filteredProgress.forEach(p => {
+      const vol = p.setsData?.length
+        ? p.setsData.reduce((s, d) => s + d.weight * d.reps, 0)
+        : p.weightUsed * p.setsCompleted * p.repsCompleted;
+      mv[p.muscle] = (mv[p.muscle] || 0) + vol;
+    });
+    return Object.entries(mv).map(([muscle, volume]) => ({ muscle, volume: Math.round(volume) })).sort((a, b) => b.volume - a.volume);
+  }, [filteredProgress]);
+
+  const chartData = useMemo(() => {
+    if (!selectedExercise) return [];
+    const data: any[] = [];
+    filteredProgress
+      .filter(p => p.exerciseName.trim().toLowerCase() === selectedExercise)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .forEach((p, si) => {
+        const ds = new Date(p.date).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' });
+        if (p.setsData?.length) {
+          p.setsData.forEach(set => data.push({ date: `${ds} S${set.setNumber}`, peso: set.weight, reps: set.reps, volume: set.weight * set.reps }));
+        } else {
+          for (let i = 1; i <= p.setsCompleted; i++) data.push({ date: `${ds} S${i}`, peso: p.weightUsed, reps: p.repsCompleted, volume: p.weightUsed * p.repsCompleted });
+        }
+      });
+    return data;
+  }, [filteredProgress, selectedExercise]);
+
+  const exerciseStats = useMemo(() => {
+    if (!selectedExercise) return null;
+    const ep = clientProgress.filter(p => p.exerciseName.trim().toLowerCase() === selectedExercise).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    if (!ep.length) return null;
+    const getMax = (p: WorkoutProgress) => p.setsData?.length ? Math.max(...p.setsData.map(s => s.weight)) : p.weightUsed;
+    const weights = ep.map(getMax);
+    const maxW = Math.max(...weights), lastW = weights[weights.length - 1], firstW = weights[0];
+    const imp = firstW > 0 ? ((lastW - firstW) / firstW) * 100 : 0;
+    const totalVol = ep.reduce((s, p) => s + (p.setsData?.length ? p.setsData.reduce((a, d) => a + d.weight * d.reps, 0) : p.weightUsed * p.setsCompleted * p.repsCompleted), 0);
+    return { maxWeight: maxW, lastWeight: lastW, improvement: imp.toFixed(1), totalSessions: ep.length, totalVolume: Math.round(totalVol), avgVolume: Math.round(totalVol / ep.length) };
+  }, [clientProgress, selectedExercise]);
+
+  // ===== History computed values =====
+  const historyExerciseNames = useMemo(() => {
+    return Array.from(new Set(clientProgress.map(p => p.exerciseName.trim()))).sort();
+  }, [clientProgress]);
+
+  const sessionsByDate = useMemo(() => {
+    const filtered = clientProgress.filter(p => {
+      const date = new Date(p.date);
+      const monthOk = date.getMonth() + 1 === historyMonth;
+      const yearOk = date.getFullYear() === historyYear;
+      const exOk = historyExerciseFilter === 'all' || p.exerciseName.trim() === historyExerciseFilter;
+      return monthOk && yearOk && exOk;
+    });
+    const grouped: Record<string, typeof filtered> = {};
+    filtered.forEach(p => {
+      const key = new Date(p.date).toDateString();
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(p);
+    });
+    return Object.entries(grouped)
+      .map(([date, exercises]) => ({
+        date,
+        formattedDate: new Date(date).toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' }),
+        exercises: exercises.sort((a, b) => a.exerciseName.localeCompare(b.exerciseName)),
+      }))
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [clientProgress, historyMonth, historyYear, historyExerciseFilter]);
 
   if (trainerLoading) return null;
   if (!isTrainer) return <Navigate to="/" replace />;
@@ -638,44 +812,333 @@ export default function TrainerDashboard() {
                   </CardContent>
                 </Card>
 
-                {/* Client Progress */}
-                <Card>
+                {/* ===== PROGRESSI ===== */}
+                <Card className="mb-6">
                   <CardHeader>
                     <CardTitle className="text-lg flex items-center gap-2">
                       <Target className="w-5 h-5 text-primary" />
-                      Ultimi Progressi
+                      Progressi
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     {clientProgress.length === 0 ? (
                       <p className="text-muted-foreground text-center py-4">Nessun progresso registrato</p>
                     ) : (
-                      <div className="space-y-3">
-                        {clientProgress.slice(0, 20).map(p => (
-                          <div key={p.id} className="p-3 rounded-lg border">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <p className="font-medium text-sm">{p.exerciseName}</p>
-                                <p className="text-xs text-muted-foreground">{p.muscle}</p>
+                      <div className="space-y-6">
+                        {/* Filters */}
+                        <div className="flex gap-2 flex-wrap">
+                          <Select value={progressMonth.toString()} onValueChange={v => setProgressMonth(parseInt(v))}>
+                            <SelectTrigger className="bg-secondary/50 border-border/50 w-32">
+                              <SelectValue placeholder="Mese" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {MONTHS.map(m => <SelectItem key={m.value} value={m.value.toString()}>{m.label}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                          <Select value={progressYear.toString()} onValueChange={v => setProgressYear(parseInt(v))}>
+                            <SelectTrigger className="bg-secondary/50 border-border/50 w-24">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {availableProgressYears.map(y => <SelectItem key={y} value={y.toString()}>{y}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                          <Select value={progressWeek?.toString() || 'all'} onValueChange={v => setProgressWeek(v === 'all' ? null : parseInt(v))}>
+                            <SelectTrigger className="bg-secondary/50 border-border/50 w-28">
+                              <SelectValue placeholder="Settimana" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">Tutto</SelectItem>
+                              {weeksInMonth.map(w => <SelectItem key={w} value={w.toString()}>Week {w}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                          <Select value={selectedMuscle} onValueChange={setSelectedMuscle}>
+                            <SelectTrigger className="bg-secondary/50 border-border/50 w-36">
+                              <SelectValue placeholder="Muscolo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">Tutti i muscoli</SelectItem>
+                              {progressMuscles.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {filteredProgress.length === 0 ? (
+                          <p className="text-muted-foreground text-center py-4">Nessun dato per il periodo selezionato</p>
+                        ) : (
+                          <>
+                            {/* Period Stats */}
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                              <div className="p-3 rounded-lg bg-secondary/30 text-center">
+                                <Calendar className="w-4 h-4 text-primary mx-auto mb-1" />
+                                <p className="font-bold text-lg">{periodStats.totalSessions}</p>
+                                <p className="text-xs text-muted-foreground">Sessioni</p>
                               </div>
-                              <div className="text-right">
-                                <p className="text-sm font-medium">{p.weightUsed}kg</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {p.setsCompleted} serie · {new Date(p.date).toLocaleDateString('it-IT')}
-                                </p>
+                              <div className="p-3 rounded-lg bg-secondary/30 text-center">
+                                <Dumbbell className="w-4 h-4 text-primary mx-auto mb-1" />
+                                <p className="font-bold text-lg">{periodStats.maxWeight}kg</p>
+                                <p className="text-xs text-muted-foreground">Peso Max</p>
+                              </div>
+                              <div className="p-3 rounded-lg bg-secondary/30 text-center">
+                                <Target className="w-4 h-4 text-primary mx-auto mb-1" />
+                                <p className="font-bold text-lg">{periodStats.totalSets}</p>
+                                <p className="text-xs text-muted-foreground">Serie</p>
+                              </div>
+                              <div className="p-3 rounded-lg bg-secondary/30 text-center">
+                                <Flame className="w-4 h-4 text-primary mx-auto mb-1" />
+                                <p className="font-bold text-lg">{(periodStats.totalVolume / 1000).toFixed(1)}k</p>
+                                <p className="text-xs text-muted-foreground">Volume (kg)</p>
                               </div>
                             </div>
-                            {p.setsData && (
-                              <div className="mt-2 flex gap-2 flex-wrap">
-                                {p.setsData.map((s, i) => (
-                                  <span key={i} className="text-xs bg-secondary px-2 py-0.5 rounded">
-                                    S{s.setNumber}: {s.weight}kg × {s.reps}
-                                  </span>
-                                ))}
+
+                            {/* Muscle Distribution */}
+                            {muscleDistribution.length > 0 && (
+                              <div>
+                                <div className="flex items-center gap-2 mb-3">
+                                  <BarChart3 className="w-4 h-4 text-primary" />
+                                  <h4 className="font-semibold text-sm">Distribuzione Muscoli</h4>
+                                </div>
+                                <div className="h-52">
+                                  <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                      <Pie data={muscleDistribution} cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={2} dataKey="value">
+                                        {muscleDistribution.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
+                                      </Pie>
+                                      <Tooltip content={({ active, payload }) => {
+                                        if (active && payload?.length) {
+                                          const d = payload[0].payload;
+                                          return <div className="bg-background border rounded-lg p-2 text-sm"><p style={{ color: d.fill }} className="font-medium">{d.name}</p><p style={{ color: d.fill }}>{d.value} serie ({d.percentage}%)</p></div>;
+                                        }
+                                        return null;
+                                      }} />
+                                    </PieChart>
+                                  </ResponsiveContainer>
+                                </div>
                               </div>
                             )}
+
+                            {/* Volume by Muscle */}
+                            {volumeByMuscle.length > 0 && (
+                              <div>
+                                <div className="flex items-center gap-2 mb-3">
+                                  <BarChart3 className="w-4 h-4 text-primary" />
+                                  <h4 className="font-semibold text-sm">Volume per Muscolo</h4>
+                                </div>
+                                <div className="h-52">
+                                  <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={volumeByMuscle} layout="vertical">
+                                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 14%, 18%)" />
+                                      <XAxis type="number" stroke="hsl(220, 10%, 55%)" fontSize={12} />
+                                      <YAxis dataKey="muscle" type="category" stroke="hsl(220, 10%, 55%)" fontSize={11} width={80} />
+                                      <Tooltip contentStyle={{ backgroundColor: 'hsl(220, 18%, 10%)', border: '1px solid hsl(220, 14%, 18%)', borderRadius: '8px' }} formatter={(v: number) => [`${v} kg`, 'Volume']} />
+                                      <Bar dataKey="volume" fill="hsl(160, 84%, 39%)" radius={[0, 4, 4, 0]} />
+                                    </BarChart>
+                                  </ResponsiveContainer>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Exercise Detail Selector */}
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground mb-2 block">Dettaglio Esercizio</label>
+                              <Select value={selectedExercise} onValueChange={setSelectedExercise}>
+                                <SelectTrigger className="bg-secondary/50 border-border/50">
+                                  <SelectValue placeholder="Scegli un esercizio" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {progressExercises.map(ex => <SelectItem key={ex.id} value={ex.id}>{ex.name}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            {selectedExercise && exerciseStats && (
+                              <>
+                                <div className="grid grid-cols-3 gap-3">
+                                  <div className="p-3 rounded-lg bg-secondary/30 text-center">
+                                    <p className="font-bold text-lg">{exerciseStats.maxWeight}kg</p>
+                                    <p className="text-xs text-muted-foreground">Max</p>
+                                  </div>
+                                  <div className="p-3 rounded-lg bg-secondary/30 text-center">
+                                    <p className="font-bold text-lg">{exerciseStats.lastWeight}kg</p>
+                                    <p className="text-xs text-muted-foreground">Ultimo</p>
+                                  </div>
+                                  <div className="p-3 rounded-lg bg-secondary/30 text-center">
+                                    <p className={`font-bold text-lg ${parseFloat(exerciseStats.improvement) >= 0 ? 'text-primary' : 'text-destructive'}`}>
+                                      {parseFloat(exerciseStats.improvement) >= 0 ? '+' : ''}{exerciseStats.improvement}%
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">Progresso</p>
+                                  </div>
+                                </div>
+
+                                {/* Weight Chart */}
+                                {chartData.length > 0 && (
+                                  <div>
+                                    <h4 className="font-semibold text-sm mb-1">Andamento Peso - Serie per Serie</h4>
+                                    <div className="h-52">
+                                      <ResponsiveContainer width="100%" height="100%">
+                                        <AreaChart data={chartData}>
+                                          <defs>
+                                            <linearGradient id="trainerColorWeight" x1="0" y1="0" x2="0" y2="1">
+                                              <stop offset="5%" stopColor="hsl(160, 84%, 39%)" stopOpacity={0.3} />
+                                              <stop offset="95%" stopColor="hsl(160, 84%, 39%)" stopOpacity={0} />
+                                            </linearGradient>
+                                          </defs>
+                                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 14%, 18%)" />
+                                          <XAxis dataKey="date" stroke="hsl(220, 10%, 55%)" fontSize={10} angle={-45} textAnchor="end" height={60} interval="preserveStartEnd" />
+                                          <YAxis stroke="hsl(220, 10%, 55%)" fontSize={12} />
+                                          <Tooltip contentStyle={{ backgroundColor: 'hsl(220, 18%, 10%)', border: '1px solid hsl(220, 14%, 18%)', borderRadius: '8px' }}
+                                            formatter={(v: number, name: string) => name === 'peso' ? [`${v} kg`, 'Peso'] : [v, 'Reps']} />
+                                          <Area type="monotone" dataKey="peso" stroke="hsl(160, 84%, 39%)" strokeWidth={2} fill="url(#trainerColorWeight)" dot={{ fill: 'hsl(160, 84%, 39%)', r: 3 }} />
+                                        </AreaChart>
+                                      </ResponsiveContainer>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Reps Chart */}
+                                {chartData.length > 0 && (
+                                  <div>
+                                    <h4 className="font-semibold text-sm mb-1">Ripetizioni per Serie</h4>
+                                    <div className="h-40">
+                                      <ResponsiveContainer width="100%" height="100%">
+                                        <LineChart data={chartData}>
+                                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 14%, 18%)" />
+                                          <XAxis dataKey="date" stroke="hsl(220, 10%, 55%)" fontSize={10} angle={-45} textAnchor="end" height={60} interval="preserveStartEnd" />
+                                          <YAxis stroke="hsl(220, 10%, 55%)" fontSize={12} />
+                                          <Tooltip contentStyle={{ backgroundColor: 'hsl(220, 18%, 10%)', border: '1px solid hsl(220, 14%, 18%)', borderRadius: '8px' }}
+                                            formatter={(v: number) => [v, 'Reps']} />
+                                          <Line type="monotone" dataKey="reps" stroke="hsl(38, 92%, 50%)" strokeWidth={2} dot={{ fill: 'hsl(38, 92%, 50%)', r: 3 }} />
+                                        </LineChart>
+                                      </ResponsiveContainer>
+                                    </div>
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* ===== STORICO ===== */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Calendar className="w-5 h-5 text-primary" />
+                      Storico Allenamenti
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {clientProgress.length === 0 ? (
+                      <p className="text-muted-foreground text-center py-4">Nessun allenamento registrato</p>
+                    ) : (
+                      <div className="space-y-4">
+                        {/* History Filters */}
+                        <div className="flex gap-2 flex-wrap">
+                          <Select value={historyMonth.toString()} onValueChange={v => setHistoryMonth(parseInt(v))}>
+                            <SelectTrigger className="bg-secondary/50 border-border/50 w-32">
+                              <SelectValue placeholder="Mese" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {MONTHS.map(m => <SelectItem key={m.value} value={m.value.toString()}>{m.label}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                          <Select value={historyYear.toString()} onValueChange={v => setHistoryYear(parseInt(v))}>
+                            <SelectTrigger className="bg-secondary/50 border-border/50 w-24">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {availableProgressYears.map(y => <SelectItem key={y} value={y.toString()}>{y}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                          <Select value={historyExerciseFilter} onValueChange={setHistoryExerciseFilter}>
+                            <SelectTrigger className="bg-secondary/50 border-border/50 flex-1 min-w-[140px]">
+                              <SelectValue placeholder="Esercizio" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">Tutti gli esercizi</SelectItem>
+                              {historyExerciseNames.map(n => <SelectItem key={n} value={n}>{n}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {sessionsByDate.length === 0 ? (
+                          <p className="text-muted-foreground text-center py-4">Nessuna sessione per questo periodo</p>
+                        ) : (
+                          <div className="space-y-3">
+                            {sessionsByDate.map((session, si) => (
+                              <div key={session.date} className="rounded-lg border overflow-hidden">
+                                <div className="p-3 border-b bg-secondary/30">
+                                  <div className="flex items-center gap-2">
+                                    <Calendar className="w-4 h-4 text-primary" />
+                                    <span className="font-medium capitalize text-sm">{session.formattedDate}</span>
+                                    <span className="text-xs text-muted-foreground ml-auto">{session.exercises.length} esercizi</span>
+                                  </div>
+                                </div>
+                                <Accordion type="multiple" className="w-full">
+                                  {session.exercises.map((exercise, idx) => (
+                                    <AccordionItem key={`${exercise.id}-${idx}`} value={`${exercise.id}-${idx}`} className="border-b last:border-0">
+                                      <AccordionTrigger className="px-3 py-2 hover:no-underline hover:bg-secondary/20">
+                                        <div className="flex items-center gap-2 text-left">
+                                          <Dumbbell className="w-3 h-3 text-primary flex-shrink-0" />
+                                          <div>
+                                            <p className="font-medium text-sm">{exercise.exerciseName}</p>
+                                            <p className="text-xs text-muted-foreground">
+                                              {exercise.muscle} • {exercise.setsCompleted} serie
+                                              {exercise.setsData?.length ? (
+                                                <> @ {Math.min(...exercise.setsData.map(s => s.weight))}-{Math.max(...exercise.setsData.map(s => s.weight))}kg</>
+                                              ) : (
+                                                <> × {exercise.repsCompleted} reps @ {exercise.weightUsed}kg</>
+                                              )}
+                                            </p>
+                                          </div>
+                                        </div>
+                                      </AccordionTrigger>
+                                      <AccordionContent className="px-3 pb-3">
+                                        <div className="space-y-2">
+                                          {exercise.setsData?.length ? (
+                                            <div className="space-y-1">
+                                              {exercise.setsData.map((set, si) => (
+                                                <div key={si} className="flex items-center gap-3 p-2 bg-secondary/40 rounded text-sm">
+                                                  <span className="font-semibold text-muted-foreground w-6">#{set.setNumber}</span>
+                                                  <span><span className="font-medium">{set.reps}</span> reps</span>
+                                                  <span><span className="font-medium">{set.weight}</span> kg</span>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          ) : (
+                                            <div className="grid grid-cols-3 gap-2 text-center">
+                                              <div className="bg-secondary/40 rounded p-2">
+                                                <p className="font-bold text-primary">{exercise.setsCompleted}</p>
+                                                <p className="text-xs text-muted-foreground">Serie</p>
+                                              </div>
+                                              <div className="bg-secondary/40 rounded p-2">
+                                                <p className="font-bold text-primary">{exercise.repsCompleted}</p>
+                                                <p className="text-xs text-muted-foreground">Reps</p>
+                                              </div>
+                                              <div className="bg-secondary/40 rounded p-2">
+                                                <p className="font-bold text-primary">{exercise.weightUsed}kg</p>
+                                                <p className="text-xs text-muted-foreground">Peso</p>
+                                              </div>
+                                            </div>
+                                          )}
+                                          {exercise.notes && (
+                                            <div className="bg-secondary/30 rounded p-2 flex items-start gap-2">
+                                              <MessageSquare className="w-3 h-3 text-warning mt-0.5 flex-shrink-0" />
+                                              <p className="text-xs">{exercise.notes}</p>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </AccordionContent>
+                                    </AccordionItem>
+                                  ))}
+                                </Accordion>
+                              </div>
+                            ))}
                           </div>
-                        ))}
+                        )}
                       </div>
                     )}
                   </CardContent>
