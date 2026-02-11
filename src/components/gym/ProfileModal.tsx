@@ -10,10 +10,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Mail, User, Lock, Eye, EyeOff, Save, LogOut } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Mail, User, Lock, Eye, EyeOff, Save, LogOut, Moon, Sun } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
+import { useTheme } from "@/hooks/useTheme";
 
 const profileSchema = z.object({
   name: z.string().trim().min(1, "Inserisci il tuo nome").max(50, "Nome troppo lungo"),
@@ -31,6 +33,7 @@ interface ProfileModalProps {
 
 export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
   const { user, updateProfile, updatePassword, signOut } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -182,6 +185,20 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
             >
               {savingPassword ? "Aggiornamento..." : "Cambia Password"}
             </Button>
+          </div>
+
+          <Separator />
+
+          {/* Theme Toggle */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {isDark ? <Moon className="w-4 h-4 text-muted-foreground" /> : <Sun className="w-4 h-4 text-muted-foreground" />}
+              <div>
+                <p className="text-sm font-medium">Tema</p>
+                <p className="text-xs text-muted-foreground">{isDark ? "Scuro" : "Chiaro"}</p>
+              </div>
+            </div>
+            <Switch checked={isDark} onCheckedChange={toggleTheme} />
           </div>
 
           <Separator />
