@@ -1,6 +1,7 @@
 import { useGym } from '@/context/GymContext';
 import { useAuth } from '@/context/AuthContext';
 import { WorkoutCard } from '@/components/gym/WorkoutCard';
+import { AppVersion } from '@/components/gym/AppVersion';
 
 import { Button } from '@/components/ui/button';
 import { Plus, Play, Trophy, Flame, Target, Scale, User } from 'lucide-react';
@@ -190,7 +191,7 @@ export default function Home() {
           )}
         </section>
 
-        {/* AppVersion is now in the Header */}
+        <AppVersion />
       </div>
 
       <ProfileModal open={showProfile} onOpenChange={setShowProfile} />
