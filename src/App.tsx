@@ -13,6 +13,7 @@ import Workout from "./pages/Workout";
 import Progress from "./pages/Progress";
 import BodyWeight from "./pages/BodyWeight";
 import SessionRecap from "./pages/SessionRecap";
+import TrainerDashboard from "./pages/TrainerDashboard";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -44,6 +45,7 @@ function AppRoutes() {
         <Route path="/progress" element={<ProtectedRoute><Progress /></ProtectedRoute>} />
         <Route path="/sessions" element={<ProtectedRoute><SessionRecap /></ProtectedRoute>} />
         <Route path="/weight" element={<ProtectedRoute><BodyWeight /></ProtectedRoute>} />
+        <Route path="/trainer" element={<ProtectedRoute><TrainerDashboard /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </div>

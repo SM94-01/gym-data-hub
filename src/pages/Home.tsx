@@ -4,16 +4,24 @@ import { WorkoutCard } from '@/components/gym/WorkoutCard';
 import { AppVersion } from '@/components/gym/AppVersion';
 
 import { Button } from '@/components/ui/button';
-import { Plus, Play, Trophy, Flame, Target, Scale, User } from 'lucide-react';
+import { Plus, Play, Trophy, Flame, Target, Scale, User, GraduationCap } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { ProfileModal } from '@/components/gym/ProfileModal';
+import { useIsTrainer } from '@/hooks/useIsTrainer';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 export default function Home() {
   const { getUserWorkouts, getUserProgress, profile, currentSession } = useGym();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [showProfile, setShowProfile] = useState(false);
+  const { isTrainer } = useIsTrainer();
   
   const workouts = getUserWorkouts();
   const progress = getUserProgress();
@@ -53,15 +61,36 @@ export default function Home() {
               <p className="font-display font-semibold">{profile?.name || 'Utente'}</p>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowProfile(true)}
-            className="text-muted-foreground"
-          >
-            <User className="w-4 h-4 mr-2" />
-            Profilo
-          </Button>
+          {isTrainer ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="text-muted-foreground">
+                  <User className="w-4 h-4 mr-2" />
+                  Profilo
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setShowProfile(true)}>
+                  <User className="w-4 h-4 mr-2" />
+                  Utente
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/trainer')}>
+                  <GraduationCap className="w-4 h-4 mr-2" />
+                  Trainer
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowProfile(true)}
+              className="text-muted-foreground"
+            >
+              <User className="w-4 h-4 mr-2" />
+              Profilo
+            </Button>
+          )}
         </div>
 
         {/* Hero Section */}
