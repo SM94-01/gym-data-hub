@@ -22,7 +22,7 @@ export function WorkoutCard({ workout, isActive }: WorkoutCardProps) {
     : 'Mai usata';
 
   const handleCardClick = () => {
-    navigate(`/workout?workoutId=${workout.id}`);
+    navigate(`/workout?workoutId=${workout.id}&expand=1`);
   };
 
   return (
