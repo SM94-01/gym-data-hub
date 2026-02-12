@@ -30,6 +30,7 @@ import { ArrowLeft, Calendar, Dumbbell, MessageSquare, ChevronDown, Weight, Tras
 import { MONTHS, SetData } from '@/types/gym';
 import { AppVersion } from '@/components/gym/AppVersion';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export default function SessionRecap() {
   const navigate = useNavigate();
@@ -37,37 +38,36 @@ export default function SessionRecap() {
   const { user } = useAuth();
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
-  const [deletingDate, setDeletingDate] = useState<string | null>(null);
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const progress = getUserProgress();
+  const progress = getUserProgress().filter(p => !deletedIds.has(p.id));
 
   // Function to delete all exercises for a specific date
-  const handleDeleteDay = async () => {
-    if (!deletingDate || !user) return;
+  const handleDeleteDay = async (exerciseIds: string[]) => {
+    if (!user || exerciseIds.length === 0) return;
     
     setIsDeleting(true);
     try {
-      // Parse the date string to get the date in the format stored in DB
-      const date = new Date(deletingDate);
-      const dateString = date.toISOString().split('T')[0]; // YYYY-MM-DD format
-      
       const { error } = await supabase
         .from('workout_progress')
         .delete()
-        .eq('user_id', user.id)
-        .gte('date', dateString + 'T00:00:00')
-        .lt('date', new Date(date.getTime() + 86400000).toISOString().split('T')[0] + 'T00:00:00');
+        .in('id', exerciseIds);
       
       if (error) throw error;
       
-      // Refresh the progress data
-      window.location.reload();
+      // Update local state to remove deleted items
+      setDeletedIds(prev => {
+        const next = new Set(prev);
+        exerciseIds.forEach(id => next.add(id));
+        return next;
+      });
+      toast.success('Sessione eliminata con successo');
     } catch (error) {
       console.error('Error deleting day:', error);
+      toast.error('Errore durante l\'eliminazione');
     } finally {
       setIsDeleting(false);
-      setDeletingDate(null);
     }
   };
 
@@ -211,7 +211,6 @@ export default function SessionRecap() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => setDeletingDate(session.date)}
                           className="text-destructive hover:text-destructive hover:bg-destructive/10"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -225,7 +224,7 @@ export default function SessionRecap() {
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogAction 
-                          onClick={handleDeleteDay}
+                          onClick={() => handleDeleteDay(session.exercises.map(e => e.id))}
                           disabled={isDeleting}
                           className="bg-destructive hover:bg-destructive/90"
                         >
