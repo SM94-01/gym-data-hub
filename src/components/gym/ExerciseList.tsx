@@ -107,8 +107,15 @@ export function ExerciseList({ exercises, onRemove, onUpdate, editable = false }
                   placeholder="0"
                   className="bg-background/50"
                 />
-              </div>
-              <div className="flex gap-2">
+                </div>
+                <Input
+                  value={editForm.note || ''}
+                  onChange={(e) => setEditForm({ ...editForm, note: e.target.value.slice(0, 10) })}
+                  maxLength={10}
+                  placeholder="Nota (max 10)"
+                  className="bg-background/50"
+                />
+                <div className="flex gap-2">
                 <Button size="sm" onClick={saveEdit} className="gap-1">
                   <Check className="w-4 h-4" />
                   Salva

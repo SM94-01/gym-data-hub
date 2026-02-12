@@ -242,7 +242,12 @@ export default function SessionRecap() {
                         <div className="flex items-center gap-3 text-left">
                           <Dumbbell className="w-4 h-4 text-primary flex-shrink-0" />
                           <div>
-                            <p className="font-medium">{exercise.exerciseName}</p>
+                            <p className="font-medium">
+                              {exercise.exerciseName}
+                              {exercise.exerciseNote && (
+                                <span className="font-normal text-muted-foreground"> ({exercise.exerciseNote})</span>
+                              )}
+                            </p>
                             <p className="text-xs text-muted-foreground">
                               {exercise.muscle} • {exercise.setsCompleted} serie
                               {exercise.setsData && exercise.setsData.length > 0 ? (
