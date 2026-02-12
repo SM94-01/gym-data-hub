@@ -16,9 +16,20 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { ArrowLeft, Calendar, Dumbbell, MessageSquare, ChevronDown, Weight } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { ArrowLeft, Calendar, Dumbbell, MessageSquare, ChevronDown, Weight, Trash2 } from 'lucide-react';
 import { MONTHS, SetData } from '@/types/gym';
 import { AppVersion } from '@/components/gym/AppVersion';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function SessionRecap() {
   const navigate = useNavigate();
@@ -26,8 +37,39 @@ export default function SessionRecap() {
   const { user } = useAuth();
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [deletingDate, setDeletingDate] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const progress = getUserProgress();
+
+  // Function to delete all exercises for a specific date
+  const handleDeleteDay = async () => {
+    if (!deletingDate || !user) return;
+    
+    setIsDeleting(true);
+    try {
+      // Parse the date string to get the date in the format stored in DB
+      const date = new Date(deletingDate);
+      const dateString = date.toISOString().split('T')[0]; // YYYY-MM-DD format
+      
+      const { error } = await supabase
+        .from('workout_progress')
+        .delete()
+        .eq('user_id', user.id)
+        .gte('date', dateString + 'T00:00:00')
+        .lt('date', new Date(date.getTime() + 86400000).toISOString().split('T')[0] + 'T00:00:00');
+      
+      if (error) throw error;
+      
+      // Refresh the progress data
+      window.location.reload();
+    } catch (error) {
+      console.error('Error deleting day:', error);
+    } finally {
+      setIsDeleting(false);
+      setDeletingDate(null);
+    }
+  };
 
   // Get available years from progress
   const availableYears = useMemo(() => {
@@ -156,12 +198,42 @@ export default function SessionRecap() {
                 style={{ animationDelay: `${sessionIdx * 50}ms` }}
               >
                 <div className="p-4 border-b border-border/50 bg-secondary/30">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-primary" />
-                    <span className="font-medium capitalize">{session.formattedDate}</span>
-                    <span className="text-xs text-muted-foreground ml-auto">
-                      {session.exercises.length} esercizi
-                    </span>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-primary" />
+                      <span className="font-medium capitalize">{session.formattedDate}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {session.exercises.length} esercizi
+                      </span>
+                    </div>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDeletingDate(session.date)}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Elimina questa giornata</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Verranno eliminati tutti gli {session.exercises.length} esercizi di {session.formattedDate}. Questa azione non può essere annullata.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogAction 
+                          onClick={handleDeleteDay}
+                          disabled={isDeleting}
+                          className="bg-destructive hover:bg-destructive/90"
+                        >
+                          {isDeleting ? 'Eliminazione...' : 'Elimina'}
+                        </AlertDialogAction>
+                        <AlertDialogCancel>Annulla</AlertDialogCancel>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
 
