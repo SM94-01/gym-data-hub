@@ -76,6 +76,7 @@ export type Database = {
           muscle: string
           muscle2: string | null
           name: string
+          note: string | null
           position: number
           reps: number
           reps2: number | null
@@ -92,6 +93,7 @@ export type Database = {
           muscle: string
           muscle2?: string | null
           name: string
+          note?: string | null
           position?: number
           reps?: number
           reps2?: number | null
@@ -108,6 +110,7 @@ export type Database = {
           muscle?: string
           muscle2?: string | null
           name?: string
+          note?: string | null
           position?: number
           reps?: number
           reps2?: number | null

@@ -25,6 +25,7 @@ export function ExerciseForm({ onAdd }: ExerciseFormProps) {
   const [sets, setSets] = useState('');
   const [reps, setReps] = useState('');
   const [weight, setWeight] = useState('');
+  const [note, setNote] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -107,6 +108,7 @@ export function ExerciseForm({ onAdd }: ExerciseFormProps) {
         sets: parseInt(sets) || 3,
         reps: parseInt(reps) || 10,
         targetWeight: parseFloat(weight) || 0,
+        note: note.trim() || undefined,
         isSuperset: true,
         exercise2Name: name2,
         muscle2,
@@ -122,6 +124,7 @@ export function ExerciseForm({ onAdd }: ExerciseFormProps) {
         sets: parseInt(sets) || 3,
         reps: parseInt(reps) || 10,
         targetWeight: parseFloat(weight) || 0,
+        note: note.trim() || undefined,
       });
     }
 
@@ -131,6 +134,7 @@ export function ExerciseForm({ onAdd }: ExerciseFormProps) {
     setSets('');
     setReps('');
     setWeight('');
+    setNote('');
     setIsSuperset(false);
     setName2('');
     setMuscle2('');
@@ -273,6 +277,19 @@ export function ExerciseForm({ onAdd }: ExerciseFormProps) {
               className="bg-secondary/50 border-border/50"
             />
           </div>
+        </div>
+        
+        {/* Note field */}
+        <div className="space-y-2">
+          <Label htmlFor="exercise-note">Nota (max 10 caratteri)</Label>
+          <Input
+            id="exercise-note"
+            value={note}
+            onChange={(e) => setNote(e.target.value.slice(0, 10))}
+            maxLength={10}
+            placeholder="Es: 75% RMI"
+            className="bg-secondary/50 border-border/50"
+          />
         </div>
       </div>
 

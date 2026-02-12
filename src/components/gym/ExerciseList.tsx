@@ -125,6 +125,9 @@ export function ExerciseList({ exercises, onRemove, onUpdate, editable = false }
                 <h4 className="font-medium text-foreground flex items-center gap-2">
                   {exercise.isSuperset && <Zap className="w-4 h-4 text-warning" />}
                   {exercise.name}
+                  {exercise.note && (
+                    <span className="text-xs text-muted-foreground font-normal">({exercise.note})</span>
+                  )}
                 </h4>
                 <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground flex-wrap">
                   <span className="px-2 py-0.5 bg-primary/10 text-primary rounded text-xs">

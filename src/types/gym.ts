@@ -11,6 +11,7 @@ export interface Exercise {
   sets: number;
   reps: number;
   targetWeight: number;
+  note?: string; // Max 10 chars, visual label e.g. "75% RMI"
   // Superset fields
   isSuperset?: boolean;
   exercise2Name?: string;
@@ -68,6 +69,7 @@ export interface ExerciseSession {
   targetWeight: number;
   completedSets: SetRecord[];
   notes?: string;
+  exerciseNote?: string; // Label from exercise template (e.g. "75% RMI")
   // Superset fields
   isSuperset?: boolean;
   exercise2Name?: string;

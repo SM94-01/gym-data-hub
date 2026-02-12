@@ -215,6 +215,7 @@ export default function Workout() {
         targetSets: ex.sets,
         targetReps: ex.reps,
         targetWeight: ex.targetWeight,
+        exerciseNote: ex.note,
         isSuperset: ex.isSuperset || false,
         exercise2Name: ex.exercise2Name,
         muscle2: ex.muscle2,
@@ -621,6 +622,9 @@ export default function Workout() {
                 </div>
                 <h2 className="font-display text-2xl font-bold mt-3 text-foreground">
                   {currentExercise.exerciseName}
+                  {currentExercise.exerciseNote && (
+                    <span className="text-base font-normal text-muted-foreground ml-2">({currentExercise.exerciseNote})</span>
+                  )}
                 </h2>
                 <p className="text-muted-foreground mt-1">
                   {currentExercise.targetSets} × {currentExercise.targetReps} @ {currentExercise.targetWeight}kg
@@ -777,7 +781,7 @@ export default function Workout() {
                     }`}
                   >
                     {ex.isSuperset && <Zap className="w-3 h-3" />}
-                    {ex.exerciseName}
+                    {ex.exerciseName}{ex.exerciseNote && ` (${ex.exerciseNote})`}
                   </button>
                 ))}
               </div>
@@ -964,7 +968,10 @@ export default function Workout() {
                                       {ex.isSuperset ? <Zap className="w-4 h-4 text-warning" /> : `${idx + 1}.`}
                                     </span>
                                     <div className="flex-1">
-                                      <span className="font-medium">{ex.name}</span>
+                                      <span className="font-medium">
+                                        {ex.name}
+                                        {ex.note && <span className="font-normal text-muted-foreground"> ({ex.note})</span>}
+                                      </span>
                                       <span className="text-muted-foreground ml-2">({ex.muscle})</span>
                                     </div>
                                     <span className="text-xs text-muted-foreground">
