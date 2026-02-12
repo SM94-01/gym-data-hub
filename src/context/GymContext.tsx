@@ -172,6 +172,7 @@ export function GymProvider({ children }: { children: ReactNode }) {
       weightUsed: Number(p.weight_used),
       repsCompleted: p.reps_completed,
       notes: p.notes || undefined,
+      exerciseNote: (p as any).exercise_note || undefined,
       setsData: p.sets_data ? (p.sets_data as unknown as SetData[]) : undefined,
     })));
   }, [user]);
@@ -379,6 +380,7 @@ export function GymProvider({ children }: { children: ReactNode }) {
         weight_used: progressEntry.weightUsed,
         reps_completed: progressEntry.repsCompleted,
         notes: progressEntry.notes || null,
+        exercise_note: progressEntry.exerciseNote || null,
         sets_data: progressEntry.setsData ? JSON.parse(JSON.stringify(progressEntry.setsData)) : null,
       } as any)
       .select()
@@ -400,6 +402,7 @@ export function GymProvider({ children }: { children: ReactNode }) {
       weightUsed: Number(data.weight_used),
       repsCompleted: data.reps_completed,
       notes: data.notes || undefined,
+      exerciseNote: (data as any).exercise_note || undefined,
       setsData: data.sets_data ? (data.sets_data as unknown as SetData[]) : undefined,
     };
     

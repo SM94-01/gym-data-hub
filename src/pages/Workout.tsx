@@ -388,6 +388,7 @@ export default function Workout() {
           weightUsed: maxWeight,
           repsCompleted: Math.round(avgReps),
           notes: ex.notes,
+          exerciseNote: ex.exerciseNote,
           setsData
         });
 

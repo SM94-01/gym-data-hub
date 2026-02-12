@@ -1,0 +1,1 @@
+ALTER TABLE public.workout_progress ADD COLUMN exercise_note text DEFAULT NULL;
