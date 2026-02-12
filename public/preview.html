@@ -4,403 +4,79 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GymApp - Il Tuo Personal Trainer Digitale</title>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap"
-      rel="stylesheet"
-    />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
     <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-
-      :root {
-        --primary: #f97316;
-        --primary-glow: #fb923c;
-        --background: #0a0a0a;
-        --surface: #141414;
-        --surface-light: #1f1f1f;
-        --text: #ffffff;
-        --text-muted: #a1a1aa;
-        --border: rgba(255, 255, 255, 0.1);
-      }
-
-      body {
-        font-family: 'Inter', sans-serif;
-        background: var(--background);
-        color: var(--text);
-        line-height: 1.6;
-        overflow-x: hidden;
-      }
-
-      .font-display {
-        font-family: 'Space Grotesk', sans-serif;
-      }
-
-      /* Hero Section */
-      .hero {
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        padding: 2rem;
-        position: relative;
-        background: radial-gradient(ellipse at center top, rgba(249, 115, 22, 0.15) 0%, transparent 60%);
-      }
-
-      .hero::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.02'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-        pointer-events: none;
-      }
-
-      .logo {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: var(--primary);
-        margin-bottom: 2rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-      }
-
-      .logo-icon {
-        width: 40px;
-        height: 40px;
-        background: linear-gradient(135deg, var(--primary), var(--primary-glow));
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
-      }
-
-      .hero h1 {
-        font-size: clamp(2.5rem, 8vw, 5rem);
-        font-weight: 700;
-        margin-bottom: 1.5rem;
-        line-height: 1.1;
-      }
-
-      .text-gradient {
-        background: linear-gradient(135deg, var(--primary), var(--primary-glow));
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-      }
-
-      .hero p {
-        font-size: 1.25rem;
-        color: var(--text-muted);
-        max-width: 600px;
-        margin-bottom: 3rem;
-      }
-
-      .cta-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 1rem;
-      }
-
-      .btn-primary {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.75rem;
-        background: linear-gradient(135deg, var(--primary), var(--primary-glow));
-        color: white;
-        font-weight: 600;
-        font-size: 1.25rem;
-        padding: 1.25rem 2.5rem;
-        border-radius: 16px;
-        text-decoration: none;
-        transition: all 0.3s ease;
-        box-shadow: 0 0 40px rgba(249, 115, 22, 0.4);
-      }
-
-      .btn-primary:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 0 60px rgba(249, 115, 22, 0.6);
-      }
-
-      .price-tag {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        padding: 0.5rem 1.5rem;
-        border-radius: 100px;
-        font-size: 1rem;
-        color: var(--text-muted);
-      }
-
-      .price-tag strong {
-        color: var(--primary);
-        font-size: 1.5rem;
-      }
-
-      /* Features Section */
-      .features {
-        padding: 6rem 2rem;
-        max-width: 1200px;
-        margin: 0 auto;
-      }
-
-      .section-title {
-        text-align: center;
-        margin-bottom: 4rem;
-      }
-
-      .section-title h2 {
-        font-size: 2.5rem;
-        font-weight: 700;
-        margin-bottom: 1rem;
-      }
-
-      .section-title p {
-        color: var(--text-muted);
-        font-size: 1.1rem;
-      }
-
-      .features-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 2rem;
-      }
-
-      .feature-card {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 24px;
-        padding: 2rem;
-        transition: all 0.3s ease;
-      }
-
-      .feature-card:hover {
-        border-color: rgba(249, 115, 22, 0.3);
-        transform: translateY(-5px);
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-      }
-
-      .feature-icon {
-        width: 60px;
-        height: 60px;
-        background: linear-gradient(135deg, rgba(249, 115, 22, 0.2), rgba(249, 115, 22, 0.1));
-        border-radius: 16px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.75rem;
-        margin-bottom: 1.5rem;
-      }
-
-      .feature-card h3 {
-        font-size: 1.25rem;
-        font-weight: 600;
-        margin-bottom: 0.75rem;
-      }
-
-      .feature-card p {
-        color: var(--text-muted);
-        font-size: 0.95rem;
-      }
-
-      /* How It Works */
-      .how-it-works {
-        padding: 6rem 2rem;
-        background: var(--surface);
-      }
-
-      .how-it-works .container {
-        max-width: 1000px;
-        margin: 0 auto;
-      }
-
-      .steps {
-        display: flex;
-        flex-direction: column;
-        gap: 3rem;
-        margin-top: 3rem;
-      }
-
-      .step {
-        display: flex;
-        align-items: flex-start;
-        gap: 2rem;
-      }
-
-      .step-number {
-        width: 60px;
-        height: 60px;
-        background: linear-gradient(135deg, var(--primary), var(--primary-glow));
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
-        font-weight: 700;
-        flex-shrink: 0;
-      }
-
-      .step-content h3 {
-        font-size: 1.5rem;
-        font-weight: 600;
-        margin-bottom: 0.5rem;
-      }
-
-      .step-content p {
-        color: var(--text-muted);
-        font-size: 1rem;
-      }
-
-      /* Benefits */
-      .benefits {
-        padding: 6rem 2rem;
-        max-width: 1200px;
-        margin: 0 auto;
-      }
-
-      .benefits-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 1.5rem;
-        margin-top: 3rem;
-      }
-
-      .benefit-item {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        padding: 1.5rem;
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 16px;
-      }
-
-      .benefit-icon {
-        font-size: 1.5rem;
-      }
-
-      .benefit-item span {
-        font-weight: 500;
-      }
-
-      /* CTA Section */
-      .cta-section {
-        padding: 6rem 2rem;
-        text-align: center;
-        background: radial-gradient(ellipse at center, rgba(249, 115, 22, 0.1) 0%, transparent 70%);
-      }
-
-      .cta-section h2 {
-        font-size: 2.5rem;
-        font-weight: 700;
-        margin-bottom: 1rem;
-      }
-
-      .cta-section p {
-        color: var(--text-muted);
-        font-size: 1.1rem;
-        margin-bottom: 2rem;
-      }
-
-      .guarantee {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        background: rgba(34, 197, 94, 0.1);
-        border: 1px solid rgba(34, 197, 94, 0.3);
-        color: #22c55e;
-        padding: 0.75rem 1.5rem;
-        border-radius: 100px;
-        font-size: 0.9rem;
-        margin-top: 1.5rem;
-      }
-
-      /* Footer */
-      footer {
-        padding: 3rem 2rem;
-        text-align: center;
-        border-top: 1px solid var(--border);
-      }
-
-      footer p {
-        color: var(--text-muted);
-        font-size: 0.9rem;
-      }
-
-      footer a {
-        color: var(--primary);
-        text-decoration: none;
-      }
-
-      /* Responsive */
-      @media (max-width: 768px) {
-        .step {
-          flex-direction: column;
-          text-align: center;
-          align-items: center;
-        }
-
-        .features-grid {
-          grid-template-columns: 1fr;
-        }
-      }
-
-      /* Animations */
-      @keyframes float {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-10px); }
-      }
-
-      .floating {
-        animation: float 3s ease-in-out infinite;
-      }
+      * { margin:0; padding:0; box-sizing:border-box; }
+      :root { --primary:#f97316; --primary-glow:#fb923c; --background:#0a0a0a; --surface:#141414; --surface-light:#1f1f1f; --text:#ffffff; --text-muted:#a1a1aa; --border:rgba(255,255,255,0.1); }
+      body { font-family:'Inter',sans-serif; background:var(--background); color:var(--text); line-height:1.6; overflow-x:hidden; }
+      .font-display{font-family:'Space Grotesk',sans-serif;}
+      .hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2rem;position:relative;background:radial-gradient(ellipse at center top, rgba(249,115,22,0.15) 0%, transparent 60%);}      
+      .logo{font-size:1.5rem;font-weight:700;color:var(--primary);margin-bottom:2rem;display:flex;align-items:center;gap:.5rem;}
+      .logo-icon{width:40px;height:40px;background:linear-gradient(135deg,var(--primary),var(--primary-glow));border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;}
+      .hero h1{font-size:clamp(2.5rem,8vw,5rem);font-weight:700;margin-bottom:1.5rem;line-height:1.1;}
+      .text-gradient{background:linear-gradient(135deg,var(--primary),var(--primary-glow));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+      .hero p{font-size:1.25rem;color:var(--text-muted);max-width:600px;margin-bottom:2rem;}
+      .cta-container{display:flex;flex-direction:column;align-items:center;gap:1rem;}
+      .btn-primary{display:inline-flex;align-items:center;gap:.75rem;background:linear-gradient(135deg,var(--primary),var(--primary-glow));color:white;font-weight:600;font-size:1.25rem;padding:1.25rem 2.5rem;border-radius:16px;text-decoration:none;transition:.3s;box-shadow:0 0 40px rgba(249,115,22,.4);}      
+      .btn-primary:hover{transform:translateY(-3px);box-shadow:0 0 60px rgba(249,115,22,.6);}      
+      .price-tag{background:var(--surface);border:1px solid var(--border);padding:.75rem 1.5rem;border-radius:100px;font-size:1rem;color:var(--text-muted);text-align:center;}
+      .price-tag strong{color:var(--primary);font-size:1.3rem;}
+      .features,.benefits{padding:6rem 2rem;max-width:1200px;margin:0 auto;}
+      .section-title{text-align:center;margin-bottom:4rem;}
+      .section-title h2{font-size:2.5rem;font-weight:700;margin-bottom:1rem;}
+      .section-title p{color:var(--text-muted);font-size:1.1rem;}
+      .features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:2rem;}
+      .feature-card{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:2rem;transition:.3s;}      
+      .feature-card:hover{border-color:rgba(249,115,22,.3);transform:translateY(-5px);box-shadow:0 20px 40px rgba(0,0,0,.3);}      
+      .feature-icon{width:60px;height:60px;background:linear-gradient(135deg, rgba(249,115,22,.2), rgba(249,115,22,.1));border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:1.75rem;margin-bottom:1.5rem;}
+      .how-it-works{padding:6rem 2rem;background:var(--surface);}      
+      .container{max-width:1000px;margin:0 auto;}
+      .steps{display:flex;flex-direction:column;gap:3rem;margin-top:3rem;}      
+      .step{display:flex;align-items:flex-start;gap:2rem;}      
+      .step-number{width:60px;height:60px;background:linear-gradient(135deg,var(--primary),var(--primary-glow));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:700;}      
+      .benefits-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1.5rem;margin-top:3rem;}      
+      .benefit-item{display:flex;align-items:center;gap:1rem;padding:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:16px;}      
+      .cta-section{padding:6rem 2rem;text-align:center;background:radial-gradient(ellipse at center, rgba(249,115,22,.1) 0%, transparent 70%);}      
+      .guarantee{display:inline-flex;align-items:center;gap:.5rem;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:#22c55e;padding:.75rem 1.5rem;border-radius:100px;font-size:.9rem;margin-top:1.5rem;}      
+      footer{padding:3rem 2rem;text-align:center;border-top:1px solid var(--border);}      
+      footer p{color:var(--text-muted);font-size:.9rem;}      
+      footer a{color:var(--primary);text-decoration:none;}      
+      @media(max-width:768px){.step{flex-direction:column;text-align:center;align-items:center;}.features-grid{grid-template-columns:1fr;}}
     </style>
   </head>
-  <body>
+<body>
 
-    <section class="hero">
-      <div class="logo font-display">
-        <div class="logo-icon">🏋️</div>
-        GymApp
-      </div>
+<section class="hero">
+  <div class="logo font-display"><div class="logo-icon">🏋️</div>GymApp</div>
 
-      <h1 class="font-display">Il Tuo <span class="text-gradient">Personal Trainer</span><br />Sempre Con Te</h1>
+  <h1 class="font-display">Il Tuo <span class="text-gradient">Personal Trainer</span><br>Sempre Con Te</h1>
 
-      <p>
-        L'app definitiva per tracciare i tuoi allenamenti, monitorare i progressi e raggiungere i tuoi obiettivi
-        fitness. Semplice, intuitiva, potente.
-      </p>
+  <p>L'app definitiva per tracciare i tuoi allenamenti, monitorare i progressi e raggiungere i tuoi obiettivi fitness. Semplice, intuitiva, potente.</p>
 
-      <p style="font-size:1.15rem; color:var(--text-muted); max-width:600px; margin-bottom:1.5rem;">
-        ⚠️ <strong>ATTENZIONE</strong> ⚠️ <br> 
-        solo per i primi <strong>50 iscritti</strong> abbiamo una <strong>super promo</strong> <br> 
-        per ottenere GymApp a soli <strong>5€ per sempre</strong> 🔥 <br> 
-        Per tutti gli altri il prezzo passerà a <strong>10€ all'anno</strong> <br> 
-        (comunque meno di 1€ al mese 💸)  <br>
-        <br> 
-        Affrettati e clicca sul bottone per aderire all'offerta! 🚀
-      </p>
+  <p style="font-size:1.1rem; color:var(--text-muted); max-width:650px; margin-bottom:1.8rem;">
+    ---------------------------------------------------------<br>
+    🚨 <strong>PROMO LANCIO LIMITATA</strong> 🚨<br><br>
+    ✅ Solo per i <strong>PRIMI 20 UTENTI</strong>: <br>
+    <strong>GymApp a 5€ per sempre</strong> 🔥<br><br>
 
-      <div class="cta-container">
-        <a
-          href="mailto:my.gymapp26@gmail.com?subject=Founder%20Offer%20GymApp&body=Ciao!%0A%0AVorrei%20bloccare%20l'offerta%20Founder%20di%20GymApp:%0A%0A-%205€%20per%20sempre%20(lifetime)%0A%0AHo%20capito%20che%20successivamente%20il%20prezzo%20sarà%2010€%20all'anno.%0A%0APotete%20mandarmi%20le%20istruzioni%20per%20il%20pagamento%20PayPal?%0A%0AGrazie!"
-          class="btn-primary"
-        >
-          🔥 Blocca l'offerta Founder
-        </a>
-        <div class="price-tag">
-          🔥 Founder Offer: <strong>5€ per sempre</strong> <br>Poi: <strong>10€/anno</strong>
-        </div>
-      </div>
-    </section>
+    ⏳ Dopo i primi 20 accessi:<br>
+    👉 <strong>Prezzo definitivo: 10€/anno</strong><br>
+    ---------------------------------------------------------<br><br>
+    Nessun costo nascosto. Nessuna sorpresa. <br>
+    I primi 20 pagano una sola volta e hanno GymApp per sempre. <br>
+    Tutti gli altri accedono al piano annuale a un prezzo super competitivo. 💎 
+  </p>
+
+  <div class="cta-container">
+    <a href="mailto:my.gymapp26@gmail.com?subject=Founder%20Promo%20GymApp&body=Ciao,%0A%0ASono%20interessato%20a%20GymApp%20e%20vorrei%20aderire%20alla%20Founder%20Promo.%0A%0ASe%20rientro%20tra%20le%20prime%2020%20persone,%20vorrei%20bloccare%20l’accesso%20lifetime%20a%205€.%0AIn%20caso%20contrario,%20sono%20comunque%20interessato%20al%20prezzo%20standard%20di%2010€/anno.%0A%0APotete%20inviarmi%20le%20istruzioni%20per%20il%20pagamento%20tramite%20PayPal?%0A%0AGrazie!" class="btn-primary">🔥 Blocca la promo lancio</a>
+    
+    <div class="price-tag">
+      🎯 <strong>Promo attiva</strong><br>
+      Primi 20 utenti: <strong>5€ per sempre</strong><br>
+      Poi: <strong>10€/anno</strong>
+    </div>
+  </div>
+</section>
 
     <!-- Features Section -->
     <section class="features">
@@ -556,8 +232,50 @@
           <span>Statistiche avanzate</span>
         </div>
         <div class="benefit-item">
-          <span class="benefit-icon">🌙</span>
-          <span>Tema scuro elegante</span>
+          <span class="benefit-icon">🌓</span>
+          <span>Tema chiaro e scuro</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Personal Trainer Section -->
+    <section class="features" style="background:var(--surface); border-top:1px solid var(--border); border-bottom:1px solid var(--border);">
+      <div class="section-title">
+        <h2 class="font-display">GymApp per Personal Trainer</h2>
+        <p>Non solo un'app per utenti. Una piattaforma per professionisti.</p>
+      </div>
+
+      <div style="max-width:900px; margin:0 auto; text-align:center;">
+        <p style="font-size:1.15rem; color:var(--text-muted); line-height:1.8;">
+          Stiamo sviluppando una <strong>dashboard dedicata ai Personal Trainer</strong>, progettata per trasformare GymApp in
+          una vera piattaforma di coaching digitale.
+          <br><br>
+
+          Un sistema che ti permetterà di:
+          <br>
+
+          <strong>
+            • seguire i tuoi clienti in tempo reale<br>
+            • monitorare allenamenti e progressi live<br>
+            • creare schede personalizzate da remoto<br>
+            • gestire più utenti da un’unica dashboard<br>
+            • lavorare in modo digitale, professionale e scalabile
+          </strong>
+
+          <br><br>
+
+          🚀 Questa funzionalità <strong>non è ancora attiva</strong>,  
+          ma fa parte della visione futura di GymApp come ecosistema completo
+          per atleti e professionisti del fitness.
+        </p>
+        
+        <br><br>
+
+        <div class="cta-container">
+          <div class="price-tag">
+            🔔 <strong>GymApp</strong> for Coaches<br>
+            Feature <strong>in arrivo</strong> 🤫
+          </div>
         </div>
       </div>
     </section>
@@ -568,10 +286,10 @@
       <p style="color:var(--text-muted);margin-bottom:2rem;">Unisciti a chi ha già scelto di allenarsi in modo intelligente</p>
 
       <a
-        href="mailto:my.gymapp26@gmail.com?subject=Founder%20Offer%20GymApp&body=Ciao!%0A%0AVorrei%20bloccare%20l'offerta%20Founder%20di%20GymApp:%0A%0A-%205€%20per%20sempre%20(lifetime)%0A%0AHo%20capito%20che%20successivamente%20il%20prezzo%20sarà%2010€%20all'anno.%0A%0APotete%20mandarmi%20le%20istruzioni%20per%20il%20pagamento%20PayPal?%0A%0AGrazie!"
+        href="mailto:my.gymapp26@gmail.com?subject=Founder%20Promo%20GymApp&body=Ciao,%0A%0ASono%20interessato%20a%20GymApp%20e%20vorrei%20aderire%20alla%20Founder%20Promo.%0A%0ASe%20rientro%20tra%20le%20prime%2020%20persone,%20vorrei%20bloccare%20l’accesso%20lifetime%20a%205€.%0AIn%20caso%20contrario,%20sono%20comunque%20interessato%20al%20prezzo%20standard%20di%2010€/anno.%0A%0APotete%20inviarmi%20le%20istruzioni%20per%20il%20pagamento%20tramite%20PayPal?%0A%0AGrazie!"
         class="btn-primary"
       >
-        🚀 Blocca l'offerta Founder
+        🚀 Blocca la promo lancio
       </a>
       <br> 
       <div class="guarantee">🔒 Pagamento sicuro con PayPal · Protezione acquisti attiva</div>
