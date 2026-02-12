@@ -32,6 +32,7 @@ interface GymContextType {
   progress: WorkoutProgress[];
   addProgress: (progress: Omit<WorkoutProgress, 'id' | 'userId'>) => Promise<void>;
   getUserProgress: () => WorkoutProgress[];
+  refreshProgress: () => Promise<void>;
 
   // Session management
   currentSession: WorkoutSession | null;
@@ -508,6 +509,7 @@ export function GymProvider({ children }: { children: ReactNode }) {
         progress,
         addProgress,
         getUserProgress,
+        refreshProgress: fetchProgress,
         currentSession,
         startSession,
         endSession,
