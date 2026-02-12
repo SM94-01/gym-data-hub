@@ -34,14 +34,13 @@ import { toast } from 'sonner';
 
 export default function SessionRecap() {
   const navigate = useNavigate();
-  const { getUserProgress } = useGym();
+  const { getUserProgress, refreshProgress } = useGym();
   const { user } = useAuth();
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
-  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const progress = getUserProgress().filter(p => !deletedIds.has(p.id));
+  const progress = getUserProgress();
 
   // Function to delete all exercises for a specific date
   const handleDeleteDay = async (exerciseIds: string[]) => {
@@ -56,12 +55,8 @@ export default function SessionRecap() {
       
       if (error) throw error;
       
-      // Update local state to remove deleted items
-      setDeletedIds(prev => {
-        const next = new Set(prev);
-        exerciseIds.forEach(id => next.add(id));
-        return next;
-      });
+      // Refresh progress data from DB to sync all views
+      await refreshProgress();
       toast.success('Sessione eliminata con successo');
     } catch (error) {
       console.error('Error deleting day:', error);
