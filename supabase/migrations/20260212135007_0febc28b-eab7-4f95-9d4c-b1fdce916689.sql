@@ -1,0 +1,1 @@
+ALTER TABLE public.exercises ADD COLUMN note text DEFAULT NULL;
