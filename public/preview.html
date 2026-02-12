@@ -301,9 +301,13 @@
     <!-- Footer -->
     <footer>
       <p>
-        © {new Date().getFullYear()} GymApp. Hai domande? Scrivici a
+        © <span id="year"></span> GymApp. Hai domande? Scrivici a
         <a href="mailto:my.gymapp26@gmail.com">my.gymapp26@gmail.com</a>
       </p>
     </footer>
+    
+    <script>
+      document.getElementById("year").textContent = new Date().getFullYear();
+    </script>
   </body>
 </html>
