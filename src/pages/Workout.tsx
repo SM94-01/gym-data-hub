@@ -424,11 +424,13 @@ export default function Workout() {
     // Notify trainer if user has one
     try {
       if (user) {
-        const { data: trainerRelation } = await supabase
+        const { data: trainerRelations } = await supabase
           .from('trainer_clients')
           .select('trainer_id')
           .eq('client_id', user.id)
-          .maybeSingle();
+          .limit(1);
+
+        const trainerRelation = trainerRelations && trainerRelations.length > 0 ? trainerRelations[0] : null;
 
         if (trainerRelation) {
           const [profileRes, trainerProfileRes] = await Promise.all([
