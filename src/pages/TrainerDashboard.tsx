@@ -289,16 +289,12 @@ export default function TrainerDashboard() {
         .eq('id', user!.id)
         .maybeSingle();
 
-      const exerciseNames = exercises.map(ex => `${ex.name} (${ex.muscle}) - ${ex.sets}x${ex.reps}x${ex.targetWeight}kg`);
-
       await supabase.functions.invoke('notify-workout', {
         body: {
           type: 'workout_created',
           trainerName: trainerProfile?.name || 'Il tuo PT',
           clientName: selectedClient.client_name || 'Atleta',
           clientEmail: selectedClient.client_email,
-          workoutName: workoutName.trim(),
-          exercises: exerciseNames,
         },
       });
     } catch (e) {
