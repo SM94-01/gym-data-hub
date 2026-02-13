@@ -289,7 +289,7 @@ export default function TrainerDashboard() {
         .eq('id', user!.id)
         .maybeSingle();
 
-      await supabase.functions.invoke('notify-workout', {
+      const { data: invokeData, error: invokeError } = await supabase.functions.invoke('notify-workout', {
         body: {
           type: 'workout_created',
           trainerName: trainerProfile?.name || 'Il tuo PT',
@@ -297,6 +297,7 @@ export default function TrainerDashboard() {
           clientEmail: selectedClient.client_email,
         },
       });
+      console.log('notify-workout response:', invokeData, invokeError);
     } catch (e) {
       console.error('Error sending notification:', e);
     }
