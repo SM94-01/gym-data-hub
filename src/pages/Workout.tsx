@@ -453,22 +453,12 @@ export default function Workout() {
           }
 
           if (trainerEmail) {
-            const exerciseSummary = currentSession.exercises
-              .filter(ex => ex.completedSets.some(s => s.completed))
-              .map(ex => {
-                const completed = ex.completedSets.filter(s => s.completed);
-                const maxW = Math.max(...completed.map(s => s.weight));
-                return `${ex.exerciseName} - ${completed.length} serie, max ${maxW}kg`;
-              });
-
             await supabase.functions.invoke('notify-workout', {
               body: {
                 type: 'workout_completed',
                 trainerName: trainerProfileRes.data?.name || 'Trainer',
                 clientName: profileRes.data?.name || 'Atleta',
                 trainerEmail,
-                workoutName: currentSession.workoutName,
-                exercises: exerciseSummary,
               },
             });
           }

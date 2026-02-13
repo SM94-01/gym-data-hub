@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
 const corsHeaders = {
@@ -13,11 +12,11 @@ serve(async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { type, trainerName, clientName, clientEmail, trainerEmail, workoutName, exercises } = await req.json();
+    const { type, trainerName, clientName, clientEmail, trainerEmail } = await req.json();
 
-    if (!type || (!clientEmail && !trainerEmail)) {
+    if (!type) {
       return new Response(
-        JSON.stringify({ error: "Parametri mancanti" }),
+        JSON.stringify({ error: "Tipo mancante" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
@@ -38,14 +37,8 @@ serve(async (req: Request): Promise<Response> => {
     let htmlContent = "";
 
     if (type === "workout_created") {
-      // PT created a workout for client
       toEmail = clientEmail;
       subject = "GymApp - Nuova scheda di allenamento!";
-      
-      const exerciseList = exercises && exercises.length > 0
-        ? exercises.map((ex: string) => `<li style="padding: 4px 0;">${ex}</li>`).join("")
-        : "";
-
       htmlContent = `
         <html>
           <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -53,26 +46,15 @@ serve(async (req: Request): Promise<Response> => {
               <h1 style="color: #8b5cf6;">GymApp</h1>
             </div>
             <p>Ciao <strong>${clientName}</strong>,</p>
-            <p>Il tuo Personal Trainer <strong>${trainerName}</strong> ti ha creato una nuova scheda di allenamento!</p>
-            <div style="background: linear-gradient(135deg, #8b5cf6, #6366f1); padding: 20px; border-radius: 12px; margin: 20px 0;">
-              <p style="color: white; font-size: 20px; font-weight: bold; margin: 0 0 10px 0;">📋 ${workoutName}</p>
-              ${exerciseList ? `<ul style="color: white; margin: 0; padding-left: 20px;">${exerciseList}</ul>` : ""}
-            </div>
-            <p>Apri l'app per visualizzare la scheda e iniziare ad allenarti! 💪</p>
+            <p>il tuo Personal Trainer <strong>${trainerName}</strong> ha creato una nuova scheda per te! Vai a dare un'occhiata 💪</p>
             <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-            <p style="color: #888; font-size: 12px; text-align: center;">A presto,<br>Il team GymApp</p>
+            <p style="color: #888; font-size: 12px; text-align: center;">Il team GymApp</p>
           </body>
         </html>
       `;
     } else if (type === "workout_completed") {
-      // Client completed a workout, notify PT
       toEmail = trainerEmail;
-      subject = `GymApp - ${clientName} ha completato l'allenamento!`;
-      
-      const exerciseSummary = exercises && exercises.length > 0
-        ? exercises.map((ex: string) => `<li style="padding: 4px 0;">${ex}</li>`).join("")
-        : "";
-
+      subject = `GymApp - ${clientName} ha completato un allenamento!`;
       htmlContent = `
         <html>
           <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -80,20 +62,23 @@ serve(async (req: Request): Promise<Response> => {
               <h1 style="color: #8b5cf6;">GymApp</h1>
             </div>
             <p>Ciao <strong>${trainerName}</strong>,</p>
-            <p>Il tuo cliente <strong>${clientName}</strong> ha appena completato un allenamento!</p>
-            <div style="background: linear-gradient(135deg, #10b981, #059669); padding: 20px; border-radius: 12px; margin: 20px 0;">
-              <p style="color: white; font-size: 20px; font-weight: bold; margin: 0 0 10px 0;">✅ ${workoutName}</p>
-              ${exerciseSummary ? `<ul style="color: white; margin: 0; padding-left: 20px;">${exerciseSummary}</ul>` : ""}
-            </div>
-            <p>Accedi alla dashboard per vedere i dettagli della sessione.</p>
+            <p>il tuo cliente <strong>${clientName}</strong> ha aggiunto un nuovo allenamento nel suo storico. Vai a dare un'occhiata ai progressi 📊</p>
             <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-            <p style="color: #888; font-size: 12px; text-align: center;">A presto,<br>Il team GymApp</p>
+            <p style="color: #888; font-size: 12px; text-align: center;">Il team GymApp</p>
           </body>
         </html>
       `;
     } else {
       return new Response(
         JSON.stringify({ error: "Tipo notifica non valido" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (!toEmail) {
+      console.error("No recipient email for type:", type);
+      return new Response(
+        JSON.stringify({ error: "Email destinatario mancante" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
