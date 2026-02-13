@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useGym } from '@/context/GymContext';
 import { useAuth } from '@/context/AuthContext';
@@ -420,6 +421,63 @@ export default function Workout() {
       }
     }
     
+    // Notify trainer if user has one
+    try {
+      if (user) {
+        const { data: trainerRelation } = await supabase
+          .from('trainer_clients')
+          .select('trainer_id')
+          .eq('client_id', user.id)
+          .maybeSingle();
+
+        if (trainerRelation) {
+          const [profileRes, trainerProfileRes] = await Promise.all([
+            supabase.from('profiles').select('name').eq('id', user.id).maybeSingle(),
+            supabase.from('profiles').select('name').eq('id', trainerRelation.trainer_id).maybeSingle(),
+          ]);
+
+          const { data: trainerEmails } = await supabase
+            .from('allowed_emails')
+            .select('email')
+            .ilike('notes', '%Personal Trainer%');
+
+          let trainerEmail = '';
+          if (trainerEmails) {
+            for (const ae of trainerEmails) {
+              const { data: tid } = await supabase.rpc('get_user_id_by_email', { _email: ae.email });
+              if (tid === trainerRelation.trainer_id) {
+                trainerEmail = ae.email;
+                break;
+              }
+            }
+          }
+
+          if (trainerEmail) {
+            const exerciseSummary = currentSession.exercises
+              .filter(ex => ex.completedSets.some(s => s.completed))
+              .map(ex => {
+                const completed = ex.completedSets.filter(s => s.completed);
+                const maxW = Math.max(...completed.map(s => s.weight));
+                return `${ex.exerciseName} - ${completed.length} serie, max ${maxW}kg`;
+              });
+
+            await supabase.functions.invoke('notify-workout', {
+              body: {
+                type: 'workout_completed',
+                trainerName: trainerProfileRes.data?.name || 'Trainer',
+                clientName: profileRes.data?.name || 'Atleta',
+                trainerEmail,
+                workoutName: currentSession.workoutName,
+                exercises: exerciseSummary,
+              },
+            });
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Error sending workout completion notification:', e);
+    }
+
     endSession();
     toast.success('Allenamento completato! 💪');
     navigate('/');

@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.check-email-allowed]
 verify_jwt = false
+
+[functions.notify-workout]
+verify_jwt = false
