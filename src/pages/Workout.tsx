@@ -436,32 +436,15 @@ export default function Workout() {
             supabase.from('profiles').select('name').eq('id', trainerRelation.trainer_id).maybeSingle(),
           ]);
 
-          const { data: trainerEmails } = await supabase
-            .from('allowed_emails')
-            .select('email')
-            .ilike('notes', '%Personal Trainer%');
-
-          let trainerEmail = '';
-          if (trainerEmails) {
-            for (const ae of trainerEmails) {
-              const { data: tid } = await supabase.rpc('get_user_id_by_email', { _email: ae.email });
-              if (tid === trainerRelation.trainer_id) {
-                trainerEmail = ae.email;
-                break;
-              }
-            }
-          }
-
-          if (trainerEmail) {
-            await supabase.functions.invoke('notify-workout', {
-              body: {
-                type: 'workout_completed',
-                trainerName: trainerProfileRes.data?.name || 'Trainer',
-                clientName: profileRes.data?.name || 'Atleta',
-                trainerEmail,
-              },
-            });
-          }
+          const { data: invokeData, error: invokeError } = await supabase.functions.invoke('notify-workout', {
+            body: {
+              type: 'workout_completed',
+              trainerId: trainerRelation.trainer_id,
+              trainerName: trainerProfileRes.data?.name || 'Trainer',
+              clientName: profileRes.data?.name || 'Atleta',
+            },
+          });
+          console.log('notify-workout response:', invokeData, invokeError);
         }
       }
     } catch (e) {

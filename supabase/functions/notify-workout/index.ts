@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
 const corsHeaders = {
@@ -12,7 +13,8 @@ serve(async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { type, trainerName, clientName, clientEmail, trainerEmail } = await req.json();
+    const { type, trainerName, clientName, clientEmail, trainerId } = await req.json();
+    console.log("notify-workout called with:", { type, trainerName, clientName, clientEmail, trainerId });
 
     if (!type) {
       return new Response(
@@ -53,7 +55,30 @@ serve(async (req: Request): Promise<Response> => {
         </html>
       `;
     } else if (type === "workout_completed") {
-      toEmail = trainerEmail;
+      // Resolve trainer email server-side using service role (bypasses RLS)
+      if (!trainerId) {
+        console.error("trainerId missing for workout_completed");
+        return new Response(
+          JSON.stringify({ error: "trainerId mancante" }),
+          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+      // Get trainer's email from auth.users
+      const { data: userData, error: userError } = await supabase.auth.admin.getUserById(trainerId);
+      if (userError || !userData?.user?.email) {
+        console.error("Could not find trainer email:", userError);
+        return new Response(
+          JSON.stringify({ error: "Email trainer non trovata" }),
+          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      toEmail = userData.user.email;
       subject = `GymApp - ${clientName} ha completato un allenamento!`;
       htmlContent = `
         <html>
@@ -75,13 +100,7 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    if (!toEmail) {
-      console.error("No recipient email for type:", type);
-      return new Response(
-        JSON.stringify({ error: "Email destinatario mancante" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
-    }
+    console.log("Sending email to:", toEmail);
 
     const client = new SMTPClient({
       connection: {
