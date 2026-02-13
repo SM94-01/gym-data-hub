@@ -271,6 +271,7 @@ export default function TrainerDashboard() {
       sets: ex.sets,
       reps: ex.reps,
       target_weight: ex.targetWeight,
+      note: ex.note || null,
       position: idx,
     }));
 
@@ -374,6 +375,7 @@ export default function TrainerDashboard() {
       sets: ex.sets,
       reps: ex.reps,
       target_weight: ex.targetWeight,
+      note: ex.note || null,
       is_superset: ex.isSuperset || false,
       exercise2_name: ex.exercise2Name || null,
       muscle2: ex.muscle2 || null,
@@ -695,6 +697,9 @@ export default function TrainerDashboard() {
                             onChange={e => updateExercise(i, 'targetWeight', parseFloat(e.target.value) || 0)} />
                         </div>
                       </div>
+                      <Input placeholder="Nota (max 10 car.)" value={ex.note || ''}
+                        maxLength={10}
+                        onChange={e => updateExercise(i, 'note', e.target.value.slice(0, 10))} />
                     </div>
                   ))}
 
@@ -778,6 +783,9 @@ export default function TrainerDashboard() {
                                           onChange={e => updateEditExercise(i, 'targetWeight', parseFloat(e.target.value) || 0)} />
                                       </div>
                                     </div>
+                                    <Input placeholder="Nota (max 10 car.)" value={ex.note || ''}
+                                      maxLength={10}
+                                      onChange={e => updateEditExercise(i, 'note', e.target.value.slice(0, 10))} />
                                   </div>
                                 ))}
                                 
