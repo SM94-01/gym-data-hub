@@ -144,9 +144,10 @@ export default function Workout() {
     return () => clearInterval(interval);
   }, [timerActive, timeLeft]);
 
-  const startRecoveryTimer = () => {
+  const startRecoveryTimer = (exerciseRestTime?: number) => {
     if (currentSession) {
-      setTimeLeft(currentSession.recoveryTime);
+      const time = exerciseRestTime || currentSession.recoveryTime;
+      setTimeLeft(time);
       setTimerActive(true);
     }
   };
@@ -217,6 +218,7 @@ export default function Workout() {
         targetReps: ex.reps,
         targetWeight: ex.targetWeight,
         exerciseNote: ex.note,
+        restTime: ex.restTime,
         isSuperset: ex.isSuperset || false,
         exercise2Name: ex.exercise2Name,
         muscle2: ex.muscle2,
@@ -338,7 +340,8 @@ export default function Workout() {
     updateSession(updatedSession);
 
     if (!wasCompleted && isNowCompleted) {
-      startRecoveryTimer();
+      const currentEx = currentSession.exercises[exerciseIndex];
+      startRecoveryTimer(currentEx?.restTime);
     }
   };
 

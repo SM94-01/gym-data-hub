@@ -7,13 +7,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { AppVersion } from '@/components/gym/AppVersion';
 import { toast } from 'sonner';
 import {
   UserPlus, Users, Trash2, Dumbbell, Target, ChevronLeft,
   Plus, ArrowLeft, Edit2, Check, X, Calendar, TrendingUp,
-  BarChart3, Flame, Award, Activity, MessageSquare
+  BarChart3, Flame, Award, Activity, MessageSquare, Zap, Timer
 } from 'lucide-react';
 import { Workout, Exercise, WorkoutProgress, SetData, MONTHS } from '@/types/gym';
 import {
@@ -266,12 +268,18 @@ export default function TrainerDashboard() {
 
     const exercisesToInsert = exercises.map((ex, idx) => ({
       workout_id: workoutData.id,
-      name: ex.name,
+      name: ex.isSuperset ? `Superset (${ex.name}+${ex.exercise2Name})` : ex.name,
       muscle: ex.muscle,
       sets: ex.sets,
       reps: ex.reps,
       target_weight: ex.targetWeight,
       note: ex.note || null,
+      rest_time: ex.restTime || null,
+      is_superset: ex.isSuperset || false,
+      exercise2_name: ex.exercise2Name || null,
+      muscle2: ex.muscle2 || null,
+      reps2: ex.reps2 || null,
+      target_weight2: ex.targetWeight2 || null,
       position: idx,
     }));
 
@@ -370,12 +378,13 @@ export default function TrainerDashboard() {
     // Insert updated exercises
     const exercisesToInsert = editExercises.map((ex, idx) => ({
       workout_id: editingWorkout.id,
-      name: ex.name,
+      name: ex.isSuperset && ex.exercise2Name ? `Superset (${ex.name.startsWith('Superset (') ? (ex.name.match(/^Superset \((.+?)\+/)?.[1] || ex.name) : ex.name}+${ex.exercise2Name})` : ex.name,
       muscle: ex.muscle,
       sets: ex.sets,
       reps: ex.reps,
       target_weight: ex.targetWeight,
       note: ex.note || null,
+      rest_time: ex.restTime || null,
       is_superset: ex.isSuperset || false,
       exercise2_name: ex.exercise2Name || null,
       muscle2: ex.muscle2 || null,
@@ -671,6 +680,25 @@ export default function TrainerDashboard() {
                           <Trash2 className="w-4 h-4 text-destructive" />
                         </Button>
                       </div>
+                      {/* Superset & Rest Time */}
+                      <div className="flex items-center gap-4 p-2 bg-secondary/30 rounded-lg">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`superset-create-${i}`}
+                            checked={ex.isSuperset || false}
+                            onCheckedChange={(checked) => updateExercise(i, 'isSuperset', !!checked)}
+                          />
+                          <Label htmlFor={`superset-create-${i}`} className="flex items-center gap-1 cursor-pointer text-xs font-medium">
+                            <Zap className="w-3 h-3 text-warning" /> Superset
+                          </Label>
+                        </div>
+                        <div className="flex items-center gap-1 ml-auto">
+                          <Timer className="w-3 h-3 text-muted-foreground" />
+                          <Input type="number" value={ex.restTime || ''} placeholder="Rec. (s)"
+                            className="w-20 h-7 text-xs" min={0}
+                            onChange={e => updateExercise(i, 'restTime', parseInt(e.target.value) || undefined)} />
+                        </div>
+                      </div>
                       <Input placeholder="Nome esercizio" value={ex.name}
                         onChange={e => updateExercise(i, 'name', e.target.value)} />
                       <select
@@ -700,6 +728,35 @@ export default function TrainerDashboard() {
                       <Input placeholder="Nota (max 10 car.)" value={ex.note || ''}
                         maxLength={10}
                         onChange={e => updateExercise(i, 'note', e.target.value.slice(0, 10))} />
+                      {/* Superset Exercise 2 */}
+                      {ex.isSuperset && (
+                        <div className="p-2 border border-warning/30 rounded-lg bg-warning/5 space-y-2">
+                          <p className="text-xs font-medium text-warning flex items-center gap-1">
+                            <Zap className="w-3 h-3" /> Esercizio 2
+                          </p>
+                          <Input placeholder="Nome esercizio 2" value={ex.exercise2Name || ''}
+                            onChange={e => updateExercise(i, 'exercise2Name', e.target.value)} />
+                          <select
+                            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                            value={ex.muscle2 || 'Pettorali'}
+                            onChange={e => updateExercise(i, 'muscle2', e.target.value)}
+                          >
+                            {MUSCLES.map(m => <option key={m} value={m}>{m}</option>)}
+                          </select>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="text-xs text-muted-foreground">Reps</label>
+                              <Input type="number" value={ex.reps2 || ''} min={1} placeholder="10"
+                                onChange={e => updateExercise(i, 'reps2', parseInt(e.target.value) || 0)} />
+                            </div>
+                            <div>
+                              <label className="text-xs text-muted-foreground">Peso (kg)</label>
+                              <Input type="number" value={ex.targetWeight2 || ''} min={0} step={0.5} placeholder="0"
+                                onChange={e => updateExercise(i, 'targetWeight2', parseFloat(e.target.value) || 0)} />
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
 
@@ -757,6 +814,25 @@ export default function TrainerDashboard() {
                                         <Trash2 className="w-4 h-4 text-destructive" />
                                       </Button>
                                     </div>
+                                    {/* Superset & Rest Time */}
+                                    <div className="flex items-center gap-4 p-2 bg-secondary/30 rounded-lg">
+                                      <div className="flex items-center space-x-2">
+                                        <Checkbox
+                                          id={`superset-edit-${i}`}
+                                          checked={ex.isSuperset || false}
+                                          onCheckedChange={(checked) => updateEditExercise(i, 'isSuperset', !!checked)}
+                                        />
+                                        <Label htmlFor={`superset-edit-${i}`} className="flex items-center gap-1 cursor-pointer text-xs font-medium">
+                                          <Zap className="w-3 h-3 text-warning" /> Superset
+                                        </Label>
+                                      </div>
+                                      <div className="flex items-center gap-1 ml-auto">
+                                        <Timer className="w-3 h-3 text-muted-foreground" />
+                                        <Input type="number" value={ex.restTime || ''} placeholder="Rec. (s)"
+                                          className="w-20 h-7 text-xs" min={0}
+                                          onChange={e => updateEditExercise(i, 'restTime', parseInt(e.target.value) || undefined)} />
+                                      </div>
+                                    </div>
                                     <Input placeholder="Nome" value={ex.name}
                                       onChange={e => updateEditExercise(i, 'name', e.target.value)} />
                                     <select
@@ -786,6 +862,35 @@ export default function TrainerDashboard() {
                                     <Input placeholder="Nota (max 10 car.)" value={ex.note || ''}
                                       maxLength={10}
                                       onChange={e => updateEditExercise(i, 'note', e.target.value.slice(0, 10))} />
+                                    {/* Superset Exercise 2 */}
+                                    {ex.isSuperset && (
+                                      <div className="p-2 border border-warning/30 rounded-lg bg-warning/5 space-y-2">
+                                        <p className="text-xs font-medium text-warning flex items-center gap-1">
+                                          <Zap className="w-3 h-3" /> Esercizio 2
+                                        </p>
+                                        <Input placeholder="Nome esercizio 2" value={ex.exercise2Name || ''}
+                                          onChange={e => updateEditExercise(i, 'exercise2Name', e.target.value)} />
+                                        <select
+                                          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                          value={ex.muscle2 || 'Pettorali'}
+                                          onChange={e => updateEditExercise(i, 'muscle2', e.target.value)}
+                                        >
+                                          {MUSCLES.map(m => <option key={m} value={m}>{m}</option>)}
+                                        </select>
+                                        <div className="grid grid-cols-2 gap-2">
+                                          <div>
+                                            <label className="text-xs text-muted-foreground">Reps</label>
+                                            <Input type="number" value={ex.reps2 || ''} min={1} placeholder="10"
+                                              onChange={e => updateEditExercise(i, 'reps2', parseInt(e.target.value) || 0)} />
+                                          </div>
+                                          <div>
+                                            <label className="text-xs text-muted-foreground">Peso (kg)</label>
+                                            <Input type="number" value={ex.targetWeight2 || ''} min={0} step={0.5} placeholder="0"
+                                              onChange={e => updateEditExercise(i, 'targetWeight2', parseFloat(e.target.value) || 0)} />
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
                                   </div>
                                 ))}
                                 
