@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Zap } from 'lucide-react';
+import { Plus, Zap, Timer } from 'lucide-react';
 
 interface ExerciseFormProps {
   onAdd: (exercise: Omit<Exercise, 'id'>) => void;
@@ -26,6 +26,7 @@ export function ExerciseForm({ onAdd }: ExerciseFormProps) {
   const [reps, setReps] = useState('');
   const [weight, setWeight] = useState('');
   const [note, setNote] = useState('');
+  const [restTime, setRestTime] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -109,6 +110,7 @@ export function ExerciseForm({ onAdd }: ExerciseFormProps) {
         reps: parseInt(reps) || 10,
         targetWeight: parseFloat(weight) || 0,
         note: note.trim() || undefined,
+        restTime: parseInt(restTime) || undefined,
         isSuperset: true,
         exercise2Name: name2,
         muscle2,
@@ -125,6 +127,7 @@ export function ExerciseForm({ onAdd }: ExerciseFormProps) {
         reps: parseInt(reps) || 10,
         targetWeight: parseFloat(weight) || 0,
         note: note.trim() || undefined,
+        restTime: parseInt(restTime) || undefined,
       });
     }
 
@@ -135,6 +138,7 @@ export function ExerciseForm({ onAdd }: ExerciseFormProps) {
     setReps('');
     setWeight('');
     setNote('');
+    setRestTime('');
     setIsSuperset(false);
     setName2('');
     setMuscle2('');
@@ -160,20 +164,33 @@ export function ExerciseForm({ onAdd }: ExerciseFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Superset Checkbox */}
-      <div className="flex items-center space-x-2 p-3 bg-secondary/30 rounded-lg">
-        <Checkbox
-          id="superset"
-          checked={isSuperset}
-          onCheckedChange={(checked) => setIsSuperset(!!checked)}
-        />
-        <Label 
-          htmlFor="superset" 
-          className="flex items-center gap-2 cursor-pointer text-sm font-medium"
-        >
-          <Zap className="w-4 h-4 text-warning" />
-          Superset
-        </Label>
+      {/* Superset & Rest Time Row */}
+      <div className="flex items-center gap-4 p-3 bg-secondary/30 rounded-lg">
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="superset"
+            checked={isSuperset}
+            onCheckedChange={(checked) => setIsSuperset(!!checked)}
+          />
+          <Label 
+            htmlFor="superset" 
+            className="flex items-center gap-2 cursor-pointer text-sm font-medium"
+          >
+            <Zap className="w-4 h-4 text-warning" />
+            Superset
+          </Label>
+        </div>
+        <div className="flex items-center gap-2 ml-auto">
+          <Timer className="w-4 h-4 text-muted-foreground" />
+          <Input
+            type="number"
+            value={restTime}
+            onChange={(e) => setRestTime(e.target.value)}
+            placeholder="Rec. (s)"
+            className="bg-secondary/50 border-border/50 w-24 h-8 text-sm"
+            min="0"
+          />
+        </div>
       </div>
 
       {/* Exercise 1 */}

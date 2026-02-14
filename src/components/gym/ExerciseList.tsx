@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Exercise, MUSCLE_GROUPS } from '@/types/gym';
-import { Trash2, GripVertical, Edit2, Check, X, Zap } from 'lucide-react';
+import { Trash2, GripVertical, Edit2, Check, X, Zap, Timer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -151,6 +151,12 @@ export function ExerciseList({ exercises, onRemove, onUpdate, editable = false }
                   )}
                   {exercise.isSuperset && exercise.targetWeight2 !== undefined && exercise.targetWeight2 > 0 && (
                     <span className="text-warning">{exercise.targetWeight2} kg</span>
+                  )}
+                  {exercise.restTime && (
+                    <span className="flex items-center gap-1">
+                      <Timer className="w-3 h-3" />
+                      {exercise.restTime}s
+                    </span>
                   )}
                 </div>
               </div>

@@ -80,6 +80,7 @@ export type Database = {
           position: number
           reps: number
           reps2: number | null
+          rest_time: number | null
           sets: number
           target_weight: number
           target_weight2: number | null
@@ -97,6 +98,7 @@ export type Database = {
           position?: number
           reps?: number
           reps2?: number | null
+          rest_time?: number | null
           sets?: number
           target_weight?: number
           target_weight2?: number | null
@@ -114,6 +116,7 @@ export type Database = {
           position?: number
           reps?: number
           reps2?: number | null
+          rest_time?: number | null
           sets?: number
           target_weight?: number
           target_weight2?: number | null

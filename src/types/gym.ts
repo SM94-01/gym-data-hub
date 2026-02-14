@@ -12,6 +12,7 @@ export interface Exercise {
   reps: number;
   targetWeight: number;
   note?: string; // Max 10 chars, visual label e.g. "75% RMI"
+  restTime?: number; // Per-exercise rest time in seconds
   // Superset fields
   isSuperset?: boolean;
   exercise2Name?: string;
@@ -71,6 +72,7 @@ export interface ExerciseSession {
   completedSets: SetRecord[];
   notes?: string;
   exerciseNote?: string; // Label from exercise template (e.g. "75% RMI")
+  restTime?: number; // Per-exercise rest time in seconds
   // Superset fields
   isSuperset?: boolean;
   exercise2Name?: string;
