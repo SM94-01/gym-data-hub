@@ -1,4 +1,4 @@
-export const APP_VERSION = "2.0.0";
+export const APP_VERSION = "2.1.2";
 
 export function AppVersion() {
   const currentYear = new Date().getFullYear();
