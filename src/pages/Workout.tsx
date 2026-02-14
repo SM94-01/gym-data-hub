@@ -427,26 +427,33 @@ export default function Workout() {
         const { data: trainerRelations } = await supabase
           .from('trainer_clients')
           .select('trainer_id')
-          .eq('client_id', user.id)
-          .limit(1);
+          .eq('client_id', user.id);
 
-        const trainerRelation = trainerRelations && trainerRelations.length > 0 ? trainerRelations[0] : null;
+        if (trainerRelations && trainerRelations.length > 0) {
+          const profileRes = await supabase.from('profiles').select('name').eq('id', user.id).maybeSingle();
+          const clientName = profileRes.data?.name || 'Atleta';
 
-        if (trainerRelation) {
-          const [profileRes, trainerProfileRes] = await Promise.all([
-            supabase.from('profiles').select('name').eq('id', user.id).maybeSingle(),
-            supabase.from('profiles').select('name').eq('id', trainerRelation.trainer_id).maybeSingle(),
-          ]);
+          // Fetch all trainer profiles in parallel
+          const trainerProfilesRes = await Promise.all(
+            trainerRelations.map(tr => supabase.from('profiles').select('name').eq('id', tr.trainer_id).maybeSingle())
+          );
 
-          const { data: invokeData, error: invokeError } = await supabase.functions.invoke('notify-workout', {
-            body: {
-              type: 'workout_completed',
-              trainerId: trainerRelation.trainer_id,
-              trainerName: trainerProfileRes.data?.name || 'Trainer',
-              clientName: profileRes.data?.name || 'Atleta',
-            },
+          // Send notification to each trainer in parallel
+          const notifyResults = await Promise.all(
+            trainerRelations.map((tr, i) =>
+              supabase.functions.invoke('notify-workout', {
+                body: {
+                  type: 'workout_completed',
+                  trainerId: tr.trainer_id,
+                  trainerName: trainerProfilesRes[i].data?.name || 'Trainer',
+                  clientName,
+                },
+              })
+            )
+          );
+          notifyResults.forEach((res, i) => {
+            console.log(`notify-workout to trainer ${trainerRelations[i].trainer_id}:`, res.data, res.error);
           });
-          console.log('notify-workout response:', invokeData, invokeError);
         }
       }
     } catch (e) {
