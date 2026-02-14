@@ -683,27 +683,27 @@ export default function TrainerDashboard() {
                       {/* Superset & Rest Time */}
                       <div className="grid grid-cols-2 gap-2">
                         <div className="space-y-1">
-                          <label className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Zap className="w-3 h-3 text-warning" /> Superset
-                          </label>
-                          <div className="flex items-center h-9 px-3 rounded-md border border-input bg-background">
+                          <label className="text-xs text-muted-foreground">Superset</label>
+                          <div className="flex items-center h-9 px-3 rounded-md border border-input bg-background cursor-pointer"
+                            onClick={() => updateExercise(i, 'isSuperset', !ex.isSuperset)}>
+                            <Zap className={`w-3 h-3 mr-2 ${ex.isSuperset ? 'text-warning' : 'text-muted-foreground'}`} />
+                            <span className="text-xs flex-1">Superset</span>
                             <Checkbox
                               id={`superset-create-${i}`}
                               checked={ex.isSuperset || false}
                               onCheckedChange={(checked) => updateExercise(i, 'isSuperset', !!checked)}
+                              onClick={(e: React.MouseEvent) => e.stopPropagation()}
                             />
-                            <Label htmlFor={`superset-create-${i}`} className="ml-2 cursor-pointer text-xs">
-                              {ex.isSuperset ? 'Sì' : 'No'}
-                            </Label>
                           </div>
                         </div>
                         <div className="space-y-1">
-                          <label className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Timer className="w-3 h-3" /> Recupero (s)
-                          </label>
-                          <Input type="number" value={ex.restTime || ''} placeholder="Default"
-                            className="h-9" min={0}
-                            onChange={e => updateExercise(i, 'restTime', parseInt(e.target.value) || undefined)} />
+                          <label className="text-xs text-muted-foreground">Recupero</label>
+                          <div className="relative">
+                            <Timer className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
+                            <Input type="number" value={ex.restTime || ''} placeholder="Recupero (s)"
+                              className="h-9 pl-7" min={0}
+                              onChange={e => updateExercise(i, 'restTime', e.target.value ? parseInt(e.target.value) : undefined)} />
+                          </div>
                         </div>
                       </div>
                       <Input placeholder="Nome esercizio" value={ex.name}
@@ -718,18 +718,18 @@ export default function TrainerDashboard() {
                       <div className="grid grid-cols-3 gap-2">
                         <div>
                           <label className="text-xs text-muted-foreground">Serie</label>
-                          <Input type="number" value={ex.sets} min={1}
-                            onChange={e => updateExercise(i, 'sets', parseInt(e.target.value) || 1)} />
+                          <Input type="number" value={ex.sets || ''} min={1} placeholder="3"
+                            onChange={e => updateExercise(i, 'sets', e.target.value ? parseInt(e.target.value) : 0)} />
                         </div>
                         <div>
                           <label className="text-xs text-muted-foreground">Reps</label>
-                          <Input type="number" value={ex.reps} min={1}
-                            onChange={e => updateExercise(i, 'reps', parseInt(e.target.value) || 1)} />
+                          <Input type="number" value={ex.reps || ''} min={1} placeholder="10"
+                            onChange={e => updateExercise(i, 'reps', e.target.value ? parseInt(e.target.value) : 0)} />
                         </div>
                         <div>
                           <label className="text-xs text-muted-foreground">Peso (kg)</label>
-                          <Input type="number" value={ex.targetWeight} min={0} step={0.5}
-                            onChange={e => updateExercise(i, 'targetWeight', parseFloat(e.target.value) || 0)} />
+                          <Input type="number" value={ex.targetWeight || ''} min={0} step={0.5} placeholder="0"
+                            onChange={e => updateExercise(i, 'targetWeight', e.target.value ? parseFloat(e.target.value) : 0)} />
                         </div>
                       </div>
                       <Input placeholder="Nota (max 10 car.)" value={ex.note || ''}
@@ -824,27 +824,27 @@ export default function TrainerDashboard() {
                                     {/* Superset & Rest Time */}
                                     <div className="grid grid-cols-2 gap-2">
                                       <div className="space-y-1">
-                                        <label className="text-xs text-muted-foreground flex items-center gap-1">
-                                          <Zap className="w-3 h-3 text-warning" /> Superset
-                                        </label>
-                                        <div className="flex items-center h-9 px-3 rounded-md border border-input bg-background">
+                                        <label className="text-xs text-muted-foreground">Superset</label>
+                                        <div className="flex items-center h-9 px-3 rounded-md border border-input bg-background cursor-pointer"
+                                          onClick={() => updateEditExercise(i, 'isSuperset', !ex.isSuperset)}>
+                                          <Zap className={`w-3 h-3 mr-2 ${ex.isSuperset ? 'text-warning' : 'text-muted-foreground'}`} />
+                                          <span className="text-xs flex-1">Superset</span>
                                           <Checkbox
                                             id={`superset-edit-${i}`}
                                             checked={ex.isSuperset || false}
                                             onCheckedChange={(checked) => updateEditExercise(i, 'isSuperset', !!checked)}
+                                            onClick={(e: React.MouseEvent) => e.stopPropagation()}
                                           />
-                                          <Label htmlFor={`superset-edit-${i}`} className="ml-2 cursor-pointer text-xs">
-                                            {ex.isSuperset ? 'Sì' : 'No'}
-                                          </Label>
                                         </div>
                                       </div>
                                       <div className="space-y-1">
-                                        <label className="text-xs text-muted-foreground flex items-center gap-1">
-                                          <Timer className="w-3 h-3" /> Recupero (s)
-                                        </label>
-                                        <Input type="number" value={ex.restTime || ''} placeholder="Default"
-                                          className="h-9" min={0}
-                                          onChange={e => updateEditExercise(i, 'restTime', parseInt(e.target.value) || undefined)} />
+                                        <label className="text-xs text-muted-foreground">Recupero</label>
+                                        <div className="relative">
+                                          <Timer className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
+                                          <Input type="number" value={ex.restTime || ''} placeholder="Recupero (s)"
+                                            className="h-9 pl-7" min={0}
+                                            onChange={e => updateEditExercise(i, 'restTime', e.target.value ? parseInt(e.target.value) : undefined)} />
+                                        </div>
                                       </div>
                                     </div>
                                     <Input placeholder="Nome" value={ex.name}
@@ -859,18 +859,18 @@ export default function TrainerDashboard() {
                                     <div className="grid grid-cols-3 gap-2">
                                       <div>
                                         <label className="text-xs text-muted-foreground">Serie</label>
-                                        <Input type="number" value={ex.sets} min={1}
-                                          onChange={e => updateEditExercise(i, 'sets', parseInt(e.target.value) || 1)} />
+                                        <Input type="number" value={ex.sets || ''} min={1} placeholder="3"
+                                          onChange={e => updateEditExercise(i, 'sets', e.target.value ? parseInt(e.target.value) : 0)} />
                                       </div>
                                       <div>
                                         <label className="text-xs text-muted-foreground">Reps</label>
-                                        <Input type="number" value={ex.reps} min={1}
-                                          onChange={e => updateEditExercise(i, 'reps', parseInt(e.target.value) || 1)} />
+                                        <Input type="number" value={ex.reps || ''} min={1} placeholder="10"
+                                          onChange={e => updateEditExercise(i, 'reps', e.target.value ? parseInt(e.target.value) : 0)} />
                                       </div>
                                       <div>
                                         <label className="text-xs text-muted-foreground">Peso (kg)</label>
-                                        <Input type="number" value={ex.targetWeight} min={0} step={0.5}
-                                          onChange={e => updateEditExercise(i, 'targetWeight', parseFloat(e.target.value) || 0)} />
+                                        <Input type="number" value={ex.targetWeight || ''} min={0} step={0.5} placeholder="0"
+                                          onChange={e => updateEditExercise(i, 'targetWeight', e.target.value ? parseFloat(e.target.value) : 0)} />
                                       </div>
                                     </div>
                                     <Input placeholder="Nota (max 10 car.)" value={ex.note || ''}
