@@ -154,37 +154,29 @@ export function ExerciseForm({ onAdd }: ExerciseFormProps) {
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Superset & Rest Time Row */}
       <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="superset" className="text-sm">
-            Superset
-          </Label>
-          <div
-            className="flex items-center h-10 px-3 rounded-md border border-border/50 bg-secondary/50 cursor-pointer"
-            onClick={() => setIsSuperset(!isSuperset)}
-          >
-            <Zap className={`w-4 h-4 mr-2 ${isSuperset ? "text-warning" : "text-muted-foreground"}`} />
-            <span className="text-sm flex-1">Superset</span>
-            <Checkbox
-              id="superset"
-              checked={isSuperset}
-              onCheckedChange={(checked) => setIsSuperset(!!checked)}
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
+        <div
+          className="flex items-center h-10 px-3 rounded-md border border-border/50 bg-secondary/50 cursor-pointer"
+          onClick={() => setIsSuperset(!isSuperset)}
+        >
+          <Zap className={`w-4 h-4 mr-2 ${isSuperset ? "text-warning" : "text-muted-foreground"}`} />
+          <span className="text-sm flex-1">Superset</span>
+          <Checkbox
+            id="superset"
+            checked={isSuperset}
+            onCheckedChange={(checked) => setIsSuperset(!!checked)}
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
-        <div className="space-y-2">
-          <Label className="text-sm">Recupero</Label>
-          <div className="relative">
-            <Timer className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-            <Input
-              type="number"
-              value={restTime}
-              onChange={(e) => setRestTime(e.target.value)}
-              placeholder="Recupero (s)"
-              className="bg-secondary/50 border-border/50 pl-9"
-              min="0"
-            />
-          </div>
+        <div className="relative">
+          <Timer className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+          <Input
+            type="number"
+            value={restTime}
+            onChange={(e) => setRestTime(e.target.value)}
+            placeholder="Recupero (s)"
+            className="bg-secondary/50 border-border/50 pl-9 h-10"
+            min="0"
+          />
         </div>
       </div>
 
