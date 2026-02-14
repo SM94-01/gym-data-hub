@@ -165,29 +165,34 @@ export function ExerciseForm({ onAdd }: ExerciseFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Superset & Rest Time Row */}
-      <div className="flex items-center gap-4 p-3 bg-secondary/30 rounded-lg">
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="superset"
-            checked={isSuperset}
-            onCheckedChange={(checked) => setIsSuperset(!!checked)}
-          />
-          <Label 
-            htmlFor="superset" 
-            className="flex items-center gap-2 cursor-pointer text-sm font-medium"
-          >
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label className="text-sm flex items-center gap-2">
             <Zap className="w-4 h-4 text-warning" />
             Superset
           </Label>
+          <div className="flex items-center h-10 px-3 rounded-md border border-border/50 bg-secondary/50">
+            <Checkbox
+              id="superset"
+              checked={isSuperset}
+              onCheckedChange={(checked) => setIsSuperset(!!checked)}
+            />
+            <Label htmlFor="superset" className="ml-2 cursor-pointer text-sm">
+              {isSuperset ? 'Attivo' : 'No'}
+            </Label>
+          </div>
         </div>
-        <div className="flex items-center gap-2 ml-auto">
-          <Timer className="w-4 h-4 text-muted-foreground" />
+        <div className="space-y-2">
+          <Label className="text-sm flex items-center gap-2">
+            <Timer className="w-4 h-4 text-muted-foreground" />
+            Recupero (s)
+          </Label>
           <Input
             type="number"
             value={restTime}
             onChange={(e) => setRestTime(e.target.value)}
-            placeholder="Rec. (s)"
-            className="bg-secondary/50 border-border/50 w-24 h-8 text-sm"
+            placeholder="Default"
+            className="bg-secondary/50 border-border/50"
             min="0"
           />
         </div>

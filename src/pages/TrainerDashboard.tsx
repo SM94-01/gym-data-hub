@@ -681,21 +681,28 @@ export default function TrainerDashboard() {
                         </Button>
                       </div>
                       {/* Superset & Rest Time */}
-                      <div className="flex items-center gap-4 p-2 bg-secondary/30 rounded-lg">
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`superset-create-${i}`}
-                            checked={ex.isSuperset || false}
-                            onCheckedChange={(checked) => updateExercise(i, 'isSuperset', !!checked)}
-                          />
-                          <Label htmlFor={`superset-create-${i}`} className="flex items-center gap-1 cursor-pointer text-xs font-medium">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <label className="text-xs text-muted-foreground flex items-center gap-1">
                             <Zap className="w-3 h-3 text-warning" /> Superset
-                          </Label>
+                          </label>
+                          <div className="flex items-center h-9 px-3 rounded-md border border-input bg-background">
+                            <Checkbox
+                              id={`superset-create-${i}`}
+                              checked={ex.isSuperset || false}
+                              onCheckedChange={(checked) => updateExercise(i, 'isSuperset', !!checked)}
+                            />
+                            <Label htmlFor={`superset-create-${i}`} className="ml-2 cursor-pointer text-xs">
+                              {ex.isSuperset ? 'Sì' : 'No'}
+                            </Label>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1 ml-auto">
-                          <Timer className="w-3 h-3 text-muted-foreground" />
-                          <Input type="number" value={ex.restTime || ''} placeholder="Rec. (s)"
-                            className="w-20 h-7 text-xs" min={0}
+                        <div className="space-y-1">
+                          <label className="text-xs text-muted-foreground flex items-center gap-1">
+                            <Timer className="w-3 h-3" /> Recupero (s)
+                          </label>
+                          <Input type="number" value={ex.restTime || ''} placeholder="Default"
+                            className="h-9" min={0}
                             onChange={e => updateExercise(i, 'restTime', parseInt(e.target.value) || undefined)} />
                         </div>
                       </div>
@@ -815,21 +822,28 @@ export default function TrainerDashboard() {
                                       </Button>
                                     </div>
                                     {/* Superset & Rest Time */}
-                                    <div className="flex items-center gap-4 p-2 bg-secondary/30 rounded-lg">
-                                      <div className="flex items-center space-x-2">
-                                        <Checkbox
-                                          id={`superset-edit-${i}`}
-                                          checked={ex.isSuperset || false}
-                                          onCheckedChange={(checked) => updateEditExercise(i, 'isSuperset', !!checked)}
-                                        />
-                                        <Label htmlFor={`superset-edit-${i}`} className="flex items-center gap-1 cursor-pointer text-xs font-medium">
+                                    <div className="grid grid-cols-2 gap-2">
+                                      <div className="space-y-1">
+                                        <label className="text-xs text-muted-foreground flex items-center gap-1">
                                           <Zap className="w-3 h-3 text-warning" /> Superset
-                                        </Label>
+                                        </label>
+                                        <div className="flex items-center h-9 px-3 rounded-md border border-input bg-background">
+                                          <Checkbox
+                                            id={`superset-edit-${i}`}
+                                            checked={ex.isSuperset || false}
+                                            onCheckedChange={(checked) => updateEditExercise(i, 'isSuperset', !!checked)}
+                                          />
+                                          <Label htmlFor={`superset-edit-${i}`} className="ml-2 cursor-pointer text-xs">
+                                            {ex.isSuperset ? 'Sì' : 'No'}
+                                          </Label>
+                                        </div>
                                       </div>
-                                      <div className="flex items-center gap-1 ml-auto">
-                                        <Timer className="w-3 h-3 text-muted-foreground" />
-                                        <Input type="number" value={ex.restTime || ''} placeholder="Rec. (s)"
-                                          className="w-20 h-7 text-xs" min={0}
+                                      <div className="space-y-1">
+                                        <label className="text-xs text-muted-foreground flex items-center gap-1">
+                                          <Timer className="w-3 h-3" /> Recupero (s)
+                                        </label>
+                                        <Input type="number" value={ex.restTime || ''} placeholder="Default"
+                                          className="h-9" min={0}
                                           onChange={e => updateEditExercise(i, 'restTime', parseInt(e.target.value) || undefined)} />
                                       </div>
                                     </div>
