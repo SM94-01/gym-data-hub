@@ -1,42 +1,36 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
-import { Exercise, MUSCLE_GROUPS } from '@/types/gym';
-import { useGym } from '@/context/GymContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Plus, Zap, Timer } from 'lucide-react';
+import { useState, useMemo, useRef, useEffect } from "react";
+import { Exercise, MUSCLE_GROUPS } from "@/types/gym";
+import { useGym } from "@/context/GymContext";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Zap, Timer } from "lucide-react";
 
 interface ExerciseFormProps {
-  onAdd: (exercise: Omit<Exercise, 'id'>) => void;
+  onAdd: (exercise: Omit<Exercise, "id">) => void;
 }
 
 export function ExerciseForm({ onAdd }: ExerciseFormProps) {
   const { getUserProgress } = useGym();
-  const [name, setName] = useState('');
-  const [muscle, setMuscle] = useState('');
-  const [sets, setSets] = useState('');
-  const [reps, setReps] = useState('');
-  const [weight, setWeight] = useState('');
-  const [note, setNote] = useState('');
-  const [restTime, setRestTime] = useState('');
+  const [name, setName] = useState("");
+  const [muscle, setMuscle] = useState("");
+  const [sets, setSets] = useState("");
+  const [reps, setReps] = useState("");
+  const [weight, setWeight] = useState("");
+  const [note, setNote] = useState("");
+  const [restTime, setRestTime] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Superset state
   const [isSuperset, setIsSuperset] = useState(false);
-  const [name2, setName2] = useState('');
-  const [muscle2, setMuscle2] = useState('');
-  const [reps2, setReps2] = useState('');
-  const [weight2, setWeight2] = useState('');
+  const [name2, setName2] = useState("");
+  const [muscle2, setMuscle2] = useState("");
+  const [reps2, setReps2] = useState("");
+  const [weight2, setWeight2] = useState("");
   const [showSuggestions2, setShowSuggestions2] = useState(false);
   const inputRef2 = useRef<HTMLInputElement>(null);
   const dropdownRef2 = useRef<HTMLDivElement>(null);
@@ -48,7 +42,7 @@ export function ExerciseForm({ onAdd }: ExerciseFormProps) {
     progress.forEach((p) => {
       if (p.exerciseName) {
         // Exclude superset names from suggestions
-        if (!p.exerciseName.startsWith('Superset (')) {
+        if (!p.exerciseName.startsWith("Superset (")) {
           uniqueNames.add(p.exerciseName);
         }
       }
@@ -60,17 +54,13 @@ export function ExerciseForm({ onAdd }: ExerciseFormProps) {
   const filteredSuggestions = useMemo(() => {
     if (!name.trim()) return exerciseSuggestions;
     const lowerName = name.toLowerCase();
-    return exerciseSuggestions.filter((s) =>
-      s.toLowerCase().includes(lowerName)
-    );
+    return exerciseSuggestions.filter((s) => s.toLowerCase().includes(lowerName));
   }, [name, exerciseSuggestions]);
 
   const filteredSuggestions2 = useMemo(() => {
     if (!name2.trim()) return exerciseSuggestions;
     const lowerName = name2.toLowerCase();
-    return exerciseSuggestions.filter((s) =>
-      s.toLowerCase().includes(lowerName)
-    );
+    return exerciseSuggestions.filter((s) => s.toLowerCase().includes(lowerName));
   }, [name2, exerciseSuggestions]);
 
   // Close dropdown when clicking outside
@@ -93,16 +83,16 @@ export function ExerciseForm({ onAdd }: ExerciseFormProps) {
         setShowSuggestions2(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (isSuperset) {
       if (!name || !muscle || !name2 || !muscle2) return;
-      
+
       onAdd({
         name: `Superset (${name}+${name2})`,
         muscle,
@@ -119,7 +109,7 @@ export function ExerciseForm({ onAdd }: ExerciseFormProps) {
       });
     } else {
       if (!name || !muscle) return;
-      
+
       onAdd({
         name,
         muscle,
@@ -132,18 +122,18 @@ export function ExerciseForm({ onAdd }: ExerciseFormProps) {
     }
 
     // Reset form
-    setName('');
-    setMuscle('');
-    setSets('');
-    setReps('');
-    setWeight('');
-    setNote('');
-    setRestTime('');
+    setName("");
+    setMuscle("");
+    setSets("");
+    setReps("");
+    setWeight("");
+    setNote("");
+    setRestTime("");
     setIsSuperset(false);
-    setName2('');
-    setMuscle2('');
-    setReps2('');
-    setWeight2('');
+    setName2("");
+    setMuscle2("");
+    setReps2("");
+    setWeight2("");
   };
 
   const handleSelectSuggestion = (suggestion: string) => {
@@ -158,19 +148,21 @@ export function ExerciseForm({ onAdd }: ExerciseFormProps) {
     inputRef2.current?.focus();
   };
 
-  const isFormValid = isSuperset 
-    ? name && muscle && name2 && muscle2
-    : name && muscle;
+  const isFormValid = isSuperset ? name && muscle && name2 && muscle2 : name && muscle;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Superset & Rest Time Row */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="superset" className="text-sm">Superset</Label>
-          <div className="flex items-center h-10 px-3 rounded-md border border-border/50 bg-secondary/50 cursor-pointer"
-            onClick={() => setIsSuperset(!isSuperset)}>
-            <Zap className={`w-4 h-4 mr-2 ${isSuperset ? 'text-warning' : 'text-muted-foreground'}`} />
+          <Label htmlFor="superset" className="text-sm">
+            Superset
+          </Label>
+          <div
+            className="flex items-center h-10 px-3 rounded-md border border-border/50 bg-secondary/50 cursor-pointer"
+            onClick={() => setIsSuperset(!isSuperset)}
+          >
+            <Zap className={`w-4 h-4 mr-2 ${isSuperset ? "text-warning" : "text-muted-foreground"}`} />
             <span className="text-sm flex-1">Superset</span>
             <Checkbox
               id="superset"
@@ -197,11 +189,9 @@ export function ExerciseForm({ onAdd }: ExerciseFormProps) {
       </div>
 
       {/* Exercise 1 */}
-      <div className={`space-y-4 ${isSuperset ? 'p-4 border border-border/50 rounded-lg bg-secondary/20' : ''}`}>
-        {isSuperset && (
-          <p className="text-sm font-medium text-muted-foreground">Esercizio 1</p>
-        )}
-        
+      <div className={`space-y-4 ${isSuperset ? "p-4 border border-border/50 rounded-lg bg-secondary/20" : ""}`}>
+        {isSuperset && <p className="text-sm font-medium text-muted-foreground">Esercizio 1</p>}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2 relative">
             <Label htmlFor="exercise-name">Nome Esercizio</Label>
@@ -226,9 +216,7 @@ export function ExerciseForm({ onAdd }: ExerciseFormProps) {
                 className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto"
               >
                 <div className="p-1">
-                  <p className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
-                    Esercizi precedenti
-                  </p>
+                  <p className="px-2 py-1.5 text-xs font-medium text-muted-foreground">Esercizi precedenti</p>
                   {filteredSuggestions.map((suggestion) => (
                     <button
                       key={suggestion}
@@ -298,7 +286,7 @@ export function ExerciseForm({ onAdd }: ExerciseFormProps) {
             />
           </div>
         </div>
-        
+
         {/* Note field */}
         <div className="space-y-2">
           <Label htmlFor="exercise-note">Nota (max 10 caratteri)</Label>
@@ -307,7 +295,7 @@ export function ExerciseForm({ onAdd }: ExerciseFormProps) {
             value={note}
             onChange={(e) => setNote(e.target.value.slice(0, 10))}
             maxLength={10}
-            placeholder="Es: 75% RMI"
+            placeholder="Es: 75% RM1"
             className="bg-secondary/50 border-border/50"
           />
         </div>
@@ -320,7 +308,7 @@ export function ExerciseForm({ onAdd }: ExerciseFormProps) {
             <Zap className="w-4 h-4" />
             Esercizio 2
           </p>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2 relative">
               <Label htmlFor="exercise-name-2">Nome Esercizio</Label>
@@ -345,9 +333,7 @@ export function ExerciseForm({ onAdd }: ExerciseFormProps) {
                   className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto"
                 >
                   <div className="p-1">
-                    <p className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
-                      Esercizi precedenti
-                    </p>
+                    <p className="px-2 py-1.5 text-xs font-medium text-muted-foreground">Esercizi precedenti</p>
                     {filteredSuggestions2.map((suggestion) => (
                       <button
                         key={suggestion}
@@ -410,7 +396,7 @@ export function ExerciseForm({ onAdd }: ExerciseFormProps) {
 
       <Button type="submit" className="w-full" disabled={!isFormValid}>
         <Plus className="w-4 h-4 mr-2" />
-        {isSuperset ? 'Aggiungi Superset' : 'Aggiungi Esercizio'}
+        {isSuperset ? "Aggiungi Superset" : "Aggiungi Esercizio"}
       </Button>
     </form>
   );

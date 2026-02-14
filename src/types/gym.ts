@@ -11,7 +11,7 @@ export interface Exercise {
   sets: number;
   reps: number;
   targetWeight: number;
-  note?: string; // Max 10 chars, visual label e.g. "75% RMI"
+  note?: string; // Max 10 chars, visual label e.g. "75% RM1"
   restTime?: number; // Per-exercise rest time in seconds
   // Superset fields
   isSuperset?: boolean;
@@ -50,7 +50,7 @@ export interface WorkoutProgress {
   weightUsed: number; // Max weight used (for backwards compatibility)
   repsCompleted: number; // Average reps (for backwards compatibility)
   notes?: string;
-  exerciseNote?: string; // Visual label from exercise template (e.g. "75% RMI")
+  exerciseNote?: string; // Visual label from exercise template (e.g. "75% RM1")
   setsData?: SetData[]; // Detailed data for each set
 }
 
@@ -71,7 +71,7 @@ export interface ExerciseSession {
   targetWeight: number;
   completedSets: SetRecord[];
   notes?: string;
-  exerciseNote?: string; // Label from exercise template (e.g. "75% RMI")
+  exerciseNote?: string; // Label from exercise template (e.g. "75% RM1")
   restTime?: number; // Per-exercise rest time in seconds
   // Superset fields
   isSuperset?: boolean;
