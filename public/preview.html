@@ -4,310 +4,402 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GymApp - Il Tuo Personal Trainer Digitale</title>
+    <meta name="description" content="L'app definitiva per tracciare allenamenti, monitorare progressi e gestire clienti. Per atleti, personal trainer e palestre." />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
     <style>
-      * { margin:0; padding:0; box-sizing:border-box; }
-      :root { --primary:#f97316; --primary-glow:#fb923c; --background:#0a0a0a; --surface:#141414; --surface-light:#1f1f1f; --text:#ffffff; --text-muted:#a1a1aa; --border:rgba(255,255,255,0.1); }
-      body { font-family:'Inter',sans-serif; background:var(--background); color:var(--text); line-height:1.6; overflow-x:hidden; }
+      *{margin:0;padding:0;box-sizing:border-box;}
+      :root{--primary:#f97316;--primary-glow:#fb923c;--bg:#0a0a0a;--surface:#141414;--surface-light:#1f1f1f;--text:#fff;--text-muted:#a1a1aa;--border:rgba(255,255,255,.1);--green:#22c55e;--blue:#3b82f6;--purple:#a855f7;}
+      body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden;}
       .font-display{font-family:'Space Grotesk',sans-serif;}
-      .hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2rem;position:relative;background:radial-gradient(ellipse at center top, rgba(249,115,22,0.15) 0%, transparent 60%);}      
+      .container{max-width:1200px;margin:0 auto;padding:0 2rem;}
+      .text-gradient{background:linear-gradient(135deg,var(--primary),var(--primary-glow));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+
+      /* HERO */
+      .hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2rem;background:radial-gradient(ellipse at center top,rgba(249,115,22,.15) 0%,transparent 60%);}
       .logo{font-size:1.5rem;font-weight:700;color:var(--primary);margin-bottom:2rem;display:flex;align-items:center;gap:.5rem;}
       .logo-icon{width:40px;height:40px;background:linear-gradient(135deg,var(--primary),var(--primary-glow));border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;}
       .hero h1{font-size:clamp(2.5rem,8vw,5rem);font-weight:700;margin-bottom:1.5rem;line-height:1.1;}
-      .text-gradient{background:linear-gradient(135deg,var(--primary),var(--primary-glow));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
       .hero p{font-size:1.25rem;color:var(--text-muted);max-width:600px;margin-bottom:2rem;}
-      .cta-container{display:flex;flex-direction:column;align-items:center;gap:1rem;}
-      .btn-primary{display:inline-flex;align-items:center;gap:.75rem;background:linear-gradient(135deg,var(--primary),var(--primary-glow));color:white;font-weight:600;font-size:1.25rem;padding:1.25rem 2.5rem;border-radius:16px;text-decoration:none;transition:.3s;box-shadow:0 0 40px rgba(249,115,22,.4);}      
-      .btn-primary:hover{transform:translateY(-3px);box-shadow:0 0 60px rgba(249,115,22,.6);}      
-      .price-tag{background:var(--surface);border:1px solid var(--border);padding:.75rem 1.5rem;border-radius:100px;font-size:1rem;color:var(--text-muted);text-align:center;}
-      .price-tag strong{color:var(--primary);font-size:1.3rem;}
-      .features,.benefits{padding:6rem 2rem;max-width:1200px;margin:0 auto;}
+      .btn-primary{display:inline-flex;align-items:center;gap:.75rem;background:linear-gradient(135deg,var(--primary),var(--primary-glow));color:white;font-weight:600;font-size:1.25rem;padding:1.25rem 2.5rem;border-radius:16px;text-decoration:none;transition:.3s;box-shadow:0 0 40px rgba(249,115,22,.4);}
+      .btn-primary:hover{transform:translateY(-3px);box-shadow:0 0 60px rgba(249,115,22,.6);}
+      .promo-box{background:var(--surface);border:1px solid var(--border);padding:1.5rem 2rem;border-radius:20px;max-width:550px;margin:0 auto 2rem;text-align:center;}
+      .promo-box strong{color:var(--primary);}
+
+      /* SECTIONS */
+      section{padding:6rem 2rem;}
       .section-title{text-align:center;margin-bottom:4rem;}
       .section-title h2{font-size:2.5rem;font-weight:700;margin-bottom:1rem;}
       .section-title p{color:var(--text-muted);font-size:1.1rem;}
-      .features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:2rem;}
-      .feature-card{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:2rem;transition:.3s;}      
-      .feature-card:hover{border-color:rgba(249,115,22,.3);transform:translateY(-5px);box-shadow:0 20px 40px rgba(0,0,0,.3);}      
-      .feature-icon{width:60px;height:60px;background:linear-gradient(135deg, rgba(249,115,22,.2), rgba(249,115,22,.1));border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:1.75rem;margin-bottom:1.5rem;}
-      .how-it-works{padding:6rem 2rem;background:var(--surface);}      
-      .container{max-width:1000px;margin:0 auto;}
-      .steps{display:flex;flex-direction:column;gap:3rem;margin-top:3rem;}      
-      .step{display:flex;align-items:flex-start;gap:2rem;}      
-      .step-number{width:60px;height:60px;background:linear-gradient(135deg,var(--primary),var(--primary-glow));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:700;}      
-      .benefits-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1.5rem;margin-top:3rem;}      
-      .benefit-item{display:flex;align-items:center;gap:1rem;padding:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:16px;}      
-      .cta-section{padding:6rem 2rem;text-align:center;background:radial-gradient(ellipse at center, rgba(249,115,22,.1) 0%, transparent 70%);}      
-      .guarantee{display:inline-flex;align-items:center;gap:.5rem;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:#22c55e;padding:.75rem 1.5rem;border-radius:100px;font-size:.9rem;margin-top:1.5rem;}      
-      footer{padding:3rem 2rem;text-align:center;border-top:1px solid var(--border);}      
-      footer p{color:var(--text-muted);font-size:.9rem;}      
-      footer a{color:var(--primary);text-decoration:none;}      
-      @media(max-width:768px){.step{flex-direction:column;text-align:center;align-items:center;}.features-grid{grid-template-columns:1fr;}}
+
+      /* FEATURES */
+      .features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:2rem;max-width:1200px;margin:0 auto;}
+      .feature-card{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:2rem;transition:.3s;}
+      .feature-card:hover{border-color:rgba(249,115,22,.3);transform:translateY(-5px);box-shadow:0 20px 40px rgba(0,0,0,.3);}
+      .feature-icon{width:60px;height:60px;background:linear-gradient(135deg,rgba(249,115,22,.2),rgba(249,115,22,.1));border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:1.75rem;margin-bottom:1.5rem;}
+
+      /* HOW IT WORKS */
+      .steps{display:flex;flex-direction:column;gap:3rem;margin-top:3rem;max-width:800px;margin-left:auto;margin-right:auto;}
+      .step{display:flex;align-items:flex-start;gap:2rem;}
+      .step-number{width:60px;height:60px;min-width:60px;background:linear-gradient(135deg,var(--primary),var(--primary-glow));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:700;}
+
+      /* PRICING */
+      .pricing-section{background:var(--surface);}
+      .pricing-category{margin-bottom:4rem;}
+      .pricing-category h3{font-size:1.5rem;font-weight:700;margin-bottom:.5rem;text-align:center;}
+      .pricing-category>p{color:var(--text-muted);text-align:center;margin-bottom:2rem;font-size:.95rem;}
+      .pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem;max-width:1000px;margin:0 auto;}
+      .price-card{background:var(--bg);border:1px solid var(--border);border-radius:24px;padding:2rem;text-align:center;transition:.3s;position:relative;}
+      .price-card:hover{border-color:rgba(249,115,22,.3);transform:translateY(-3px);}
+      .price-card.popular{border-color:var(--primary);box-shadow:0 0 30px rgba(249,115,22,.15);}
+      .price-card .badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--primary);color:#fff;font-size:.75rem;font-weight:600;padding:.35rem 1rem;border-radius:100px;}
+      .price-card .tier{font-size:1.25rem;font-weight:700;margin-bottom:.5rem;}
+      .price-card .price{font-size:2.5rem;font-weight:700;margin:.5rem 0;}
+      .price-card .price span{font-size:1rem;font-weight:400;color:var(--text-muted);}
+      .price-card ul{list-style:none;text-align:left;margin:1.5rem 0;padding:0;}
+      .price-card ul li{padding:.4rem 0;font-size:.9rem;display:flex;align-items:center;gap:.5rem;}
+      .price-card ul li::before{content:'✅';font-size:.75rem;}
+
+      /* BENEFITS */
+      .benefits-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1.5rem;max-width:1200px;margin:0 auto;}
+      .benefit-item{display:flex;align-items:center;gap:1rem;padding:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:16px;}
+
+      /* EMAIL */
+      .email-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem;max-width:1000px;margin:0 auto;}
+      .email-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.5rem;display:flex;align-items:flex-start;gap:1rem;}
+      .email-icon{font-size:1.5rem;min-width:32px;}
+
+      /* CTA */
+      .cta-section{text-align:center;background:radial-gradient(ellipse at center,rgba(249,115,22,.1) 0%,transparent 70%);}
+      .guarantee{display:inline-flex;align-items:center;gap:.5rem;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:var(--green);padding:.75rem 1.5rem;border-radius:100px;font-size:.9rem;margin-top:1.5rem;}
+
+      /* FOOTER */
+      footer{padding:3rem 2rem;text-align:center;border-top:1px solid var(--border);}
+      footer p{color:var(--text-muted);font-size:.9rem;}
+      footer a{color:var(--primary);text-decoration:none;}
+
+      @media(max-width:768px){
+        .step{flex-direction:column;text-align:center;align-items:center;}
+        .features-grid,.pricing-grid{grid-template-columns:1fr;}
+        .pricing-grid{max-width:400px;}
+      }
     </style>
   </head>
 <body>
 
+<!-- HERO -->
 <section class="hero">
   <div class="logo font-display"><div class="logo-icon">🏋️</div>GymApp</div>
-
   <h1 class="font-display">Il Tuo <span class="text-gradient">Personal Trainer</span><br>Sempre Con Te</h1>
-
   <p>L'app definitiva per tracciare i tuoi allenamenti, monitorare i progressi e raggiungere i tuoi obiettivi fitness. Semplice, intuitiva, potente.</p>
 
-  <p style="font-size:1.1rem; color:var(--text-muted); max-width:650px; margin-bottom:1.8rem;">
-    ---------------------------------------------------------<br>
-    🚨 <strong>PROMO LANCIO LIMITATA</strong> 🚨<br><br>
-    ✅ Solo per i <strong>PRIMI 20 UTENTI</strong>: <br>
-    <strong>GymApp a 5€ per sempre</strong> 🔥<br><br>
+  <div class="promo-box">
+    <p style="font-size:1.1rem;margin-bottom:.8rem;">🚨 <strong>PROMO LANCIO LIMITATA</strong> 🚨</p>
+    <p>✅ <strong>Primi 20 utenti</strong>: GymApp a <strong>5€ per sempre</strong> 🔥</p>
+    <p>⏳ Dopo i primi 20: <strong>10€/anno</strong></p>
+    <hr style="border-color:var(--border);margin:1rem 0;">
+    <p style="font-size:.9rem;">🎓 <strong>Primi 5 PT</strong> e <strong>prime 2 Palestre</strong>:<br>2 mesi di abbonamento gratuito inclusi!</p>
+    <p style="font-size:.8rem;color:var(--text-muted);margin-top:.5rem;">Acquisti il piano annuale e lo usi per 14 mesi.</p>
+  </div>
 
-    ⏳ Dopo i primi 20 accessi:<br>
-    👉 <strong>Prezzo definitivo: 10€/anno</strong><br>
-    ---------------------------------------------------------<br><br>
-    Nessun costo nascosto. Nessuna sorpresa. <br>
-    I primi 20 pagano una sola volta e hanno GymApp per sempre. <br>
-    Tutti gli altri accedono al piano annuale a un prezzo super competitivo. 💎 
-  </p>
+  <a href="mailto:my.gymapp26@gmail.com?subject=Promo%20Lancio%20GymApp&body=Ciao,%0A%0ASono%20interessato%20a%20GymApp.%0A%0AVorrei%20sapere%20se%20rientro%20nella%20promo%20lancio%20e%20ricevere%20le%20istruzioni%20per%20il%20pagamento.%0A%0AGrazie!" class="btn-primary">🔥 Blocca la promo lancio</a>
+</section>
 
-  <div class="cta-container">
-    <a href="mailto:my.gymapp26@gmail.com?subject=Founder%20Promo%20GymApp&body=Ciao,%0A%0ASono%20interessato%20a%20GymApp%20e%20vorrei%20aderire%20alla%20Founder%20Promo.%0A%0ASe%20rientro%20tra%20le%20prime%2020%20persone,%20vorrei%20bloccare%20l’accesso%20lifetime%20a%205€.%0AIn%20caso%20contrario,%20sono%20comunque%20interessato%20al%20prezzo%20standard%20di%2010€/anno.%0A%0APotete%20inviarmi%20le%20istruzioni%20per%20il%20pagamento%20tramite%20PayPal?%0A%0AGrazie!" class="btn-primary">🔥 Blocca la promo lancio</a>
-    
-    <div class="price-tag">
-      🎯 <strong>Promo attiva</strong><br>
-      Primi 20 utenti: <strong>5€ per sempre</strong><br>
-      Poi: <strong>10€/anno</strong>
+<!-- FEATURES -->
+<section>
+  <div class="section-title">
+    <h2 class="font-display">Tutto Ciò di Cui Hai Bisogno</h2>
+    <p>Funzionalità pensate per chi si allena seriamente</p>
+  </div>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">📋</div>
+      <h3 class="font-display">Schede Personalizzate</h3>
+      <p>Crea schede di allenamento con esercizi, serie, ripetizioni, peso target e gruppo muscolare. Supporto per superset e note.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🏃</div>
+      <h3 class="font-display">Modalità Allenamento</h3>
+      <p>Traccia ogni serie in tempo reale con timer di recupero automatico, note per ogni esercizio e feedback immediato.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⚡</div>
+      <h3 class="font-display">Workout Custom</h3>
+      <p>Inizia una sessione vuota e aggiungi esercizi al volo. Perfetto per improvvisare o provare qualcosa di nuovo.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📊</div>
+      <h3 class="font-display">Grafici Progressi</h3>
+      <p>Andamento di ogni esercizio con grafici dettagliati: peso massimo, volume, ripetizioni, distribuzione muscolare.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⚖️</div>
+      <h3 class="font-display">Peso Corporeo</h3>
+      <p>Monitora il tuo peso con statistiche avanzate: media, variazione percentuale, peso minimo/massimo e grafici.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📅</div>
+      <h3 class="font-display">Storico Sessioni</h3>
+      <p>Rivedi tutte le sessioni passate con ogni dettaglio: serie, note, pesi. Tutto organizzato per data con filtri avanzati.</p>
     </div>
   </div>
 </section>
 
-    <!-- Features Section -->
-    <section class="features">
-      <div class="section-title">
-        <h2 class="font-display">Tutto Ciò di Cui Hai Bisogno</h2>
-        <p>Funzionalità pensate per chi si allena seriamente</p>
+<!-- HOW IT WORKS -->
+<section style="background:var(--surface);">
+  <div class="section-title">
+    <h2 class="font-display">Come Funziona</h2>
+    <p>Iniziare è semplicissimo</p>
+  </div>
+  <div class="steps">
+    <div class="step">
+      <div class="step-number font-display">1</div>
+      <div>
+        <h3 class="font-display">Crea il Tuo Profilo</h3>
+        <p>Registrati con la tua email, verifica l'account e imposta il tuo nome. In pochi secondi sei pronto.</p>
       </div>
-
-      <div class="features-grid">
-        <div class="feature-card">
-          <div class="feature-icon">📋</div>
-          <h3 class="font-display">Crea Schede Personalizzate</h3>
-          <p>
-            Crea le tue schede di allenamento con esercizi personalizzati. Specifica serie, ripetizioni, peso target e
-            gruppo muscolare per ogni esercizio.
-          </p>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon">🏃</div>
-          <h3 class="font-display">Modalità Allenamento</h3>
-          <p>
-            Avvia una sessione di allenamento e traccia ogni serie in tempo reale. Timer di recupero automatico, note
-            per ogni esercizio e feedback immediato.
-          </p>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon">⚡</div>
-          <h3 class="font-display">Workout Custom</h3>
-          <p>
-            Inizia una sessione vuota e aggiungi esercizi al volo. Perfetto per quando vuoi improvvisare o provare
-            qualcosa di nuovo.
-          </p>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon">📊</div>
-          <h3 class="font-display">Grafici Progressi</h3>
-          <p>
-            Visualizza l'andamento di ogni esercizio con grafici dettagliati. Traccia il peso massimo, le ripetizioni e
-            identifica i tuoi miglioramenti.
-          </p>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon">⚖️</div>
-          <h3 class="font-display">Traccia Peso Corporeo</h3>
-          <p>
-            Monitora il tuo peso nel tempo con statistiche avanzate: media, variazione percentuale, peso minimo/massimo
-            e grafico dell'andamento.
-          </p>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon">📅</div>
-          <h3 class="font-display">Storico Sessioni</h3>
-          <p>
-            Rivedi tutte le tue sessioni passate nel dettaglio. Ogni serie, ogni nota, ogni peso utilizzato - tutto
-            salvato e organizzato per data.
-          </p>
-        </div>
+    </div>
+    <div class="step">
+      <div class="step-number font-display">2</div>
+      <div>
+        <h3 class="font-display">Costruisci le Tue Schede</h3>
+        <p>Aggiungi esercizi con tutti i dettagli: nome, gruppo muscolare, serie, ripetizioni, peso target e note.</p>
       </div>
-    </section>
-
-    <!-- How It Works -->
-    <section class="how-it-works">
-      <div class="container">
-        <div class="section-title">
-          <h2 class="font-display">Come Funziona</h2>
-          <p>Iniziare è semplicissimo</p>
-        </div>
-
-        <div class="steps">
-          <div class="step">
-            <div class="step-number font-display">1</div>
-            <div class="step-content">
-              <h3 class="font-display">Crea il Tuo Profilo</h3>
-              <p>Registrati con la tua email e imposta il tuo nome. In pochi secondi sei pronto per iniziare.</p>
-            </div>
-          </div>
-
-          <div class="step">
-            <div class="step-number font-display">2</div>
-            <div class="step-content">
-              <h3 class="font-display">Costruisci le Tue Schede</h3>
-              <p>
-                Crea le schede di allenamento aggiungendo esercizi con tutti i dettagli: nome, gruppo muscolare, serie,
-                ripetizioni e peso target.
-              </p>
-            </div>
-          </div>
-
-          <div class="step">
-            <div class="step-number font-display">3</div>
-            <div class="step-content">
-              <h3 class="font-display">Allenati e Traccia</h3>
-              <p>
-                Avvia una sessione, completa le serie una ad una e l'app registrerà tutto automaticamente. Aggiungi note
-                se vuoi ricordare qualcosa.
-              </p>
-            </div>
-          </div>
-
-          <div class="step">
-            <div class="step-number font-display">4</div>
-            <div class="step-content">
-              <h3 class="font-display">Monitora i Progressi</h3>
-              <p>
-                Controlla i grafici per vedere come stai migliorando nel tempo. Celebra i tuoi record e individua le
-                aree da potenziare.
-              </p>
-            </div>
-          </div>
-        </div>
+    </div>
+    <div class="step">
+      <div class="step-number font-display">3</div>
+      <div>
+        <h3 class="font-display">Allenati e Traccia</h3>
+        <p>Avvia una sessione, completa le serie e l'app registra tutto automaticamente. Timer di recupero integrato.</p>
       </div>
-    </section>
-
-    <!-- Benefits -->
-    <section class="benefits">
-      <div class="section-title">
-        <h2 class="font-display">Perché Scegliere GymApp</h2>
-        <p>I vantaggi che fanno la differenza</p>
+    </div>
+    <div class="step">
+      <div class="step-number font-display">4</div>
+      <div>
+        <h3 class="font-display">Monitora i Progressi</h3>
+        <p>Grafici dettagliati per ogni esercizio, distribuzione muscolare, volume totale e andamento nel tempo.</p>
       </div>
+    </div>
+  </div>
+</section>
 
-      <div class="benefits-grid">
-        <div class="benefit-item">
-          <span class="benefit-icon">☁️</span>
-          <span>Dati sincronizzati nel cloud</span>
-        </div>
-        <div class="benefit-item">
-          <span class="benefit-icon">📱</span>
-          <span>Ottimizzata per mobile</span>
-        </div>
-        <div class="benefit-item">
-          <span class="benefit-icon">🔒</span>
-          <span>Account personale sicuro</span>
-        </div>
-        <div class="benefit-item">
-          <span class="benefit-icon">⏱️</span>
-          <span>Timer recupero integrato</span>
-        </div>
-        <div class="benefit-item">
-          <span class="benefit-icon">📝</span>
-          <span>Note per ogni esercizio</span>
-        </div>
-        <div class="benefit-item">
-          <span class="benefit-icon">🎯</span>
-          <span>Obiettivi personalizzabili</span>
-        </div>
-        <div class="benefit-item">
-          <span class="benefit-icon">📈</span>
-          <span>Statistiche avanzate</span>
-        </div>
-        <div class="benefit-item">
-          <span class="benefit-icon">🌓</span>
-          <span>Tema chiaro e scuro</span>
-        </div>
+<!-- PRICING -->
+<section class="pricing-section">
+  <div class="section-title">
+    <h2 class="font-display">Piani e Prezzi</h2>
+    <p>Scegli il piano perfetto per le tue esigenze</p>
+  </div>
+
+  <!-- UTENTE -->
+  <div class="pricing-category">
+    <h3 class="font-display">👤 Per gli Atleti</h3>
+    <p>Tutto ciò che ti serve per allenarti al meglio</p>
+    <div style="max-width:380px;margin:0 auto;">
+      <div class="price-card popular">
+        <div class="badge">Promo Lancio</div>
+        <div class="tier">Utente</div>
+        <div class="price">€10<span>/anno</span></div>
+        <p style="color:var(--primary);font-weight:600;font-size:.9rem;">🔥 Primi 20: <strong>5€ per sempre!</strong></p>
+        <ul>
+          <li>Schede illimitate</li>
+          <li>Workout custom</li>
+          <li>Tracking progressi avanzato</li>
+          <li>Grafici e statistiche</li>
+          <li>Peso corporeo</li>
+          <li>Storico completo sessioni</li>
+          <li>Tema chiaro/scuro</li>
+          <li>PWA (installabile su mobile)</li>
+        </ul>
       </div>
-    </section>
+    </div>
+  </div>
 
-    <!-- Personal Trainer Section -->
-    <section class="features" style="background:var(--surface); border-top:1px solid var(--border); border-bottom:1px solid var(--border);">
-      <div class="section-title">
-        <h2 class="font-display">GymApp per Personal Trainer</h2>
-        <p>Non solo un'app per utenti. Una piattaforma per professionisti.</p>
+  <!-- PT -->
+  <div class="pricing-category">
+    <h3 class="font-display">🎓 Per Personal Trainer</h3>
+    <p>Gestisci i tuoi clienti in modo professionale e digitale</p>
+    <p style="color:var(--primary);text-align:center;font-size:.85rem;margin-bottom:1.5rem;">🎁 Primi 5 PT: 2 mesi gratuiti inclusi (14 mesi al prezzo di 12)</p>
+    <div class="pricing-grid">
+      <div class="price-card">
+        <div class="tier">Starter</div>
+        <div class="price">€49<span>/anno</span></div>
+        <ul>
+          <li>Fino a 5 clienti</li>
+          <li>Dashboard trainer</li>
+          <li>Gestione schede</li>
+          <li>Monitoraggio progressi</li>
+          <li>Email automatiche</li>
+        </ul>
       </div>
-
-      <div style="max-width:900px; margin:0 auto; text-align:center;">
-        <p style="font-size:1.15rem; color:var(--text-muted); line-height:1.8;">
-          Stiamo sviluppando una <strong>dashboard dedicata ai Personal Trainer</strong>, progettata per trasformare GymApp in
-          una vera piattaforma di coaching digitale.
-          <br><br>
-
-          Un sistema che ti permetterà di:
-          <br>
-
-          <strong>
-            • seguire i tuoi clienti in tempo reale<br>
-            • monitorare allenamenti e progressi live<br>
-            • creare schede personalizzate da remoto<br>
-            • gestire più utenti da un’unica dashboard<br>
-            • lavorare in modo digitale, professionale e scalabile
-          </strong>
-
-          <br><br>
-
-          🚀 Questa funzionalità <strong>non è ancora attiva</strong>,  
-          ma fa parte della visione futura di GymApp come ecosistema completo
-          per atleti e professionisti del fitness.
-        </p>
-        
-        <br><br>
-
-        <div class="cta-container">
-          <div class="price-tag">
-            🔔 <strong>GymApp</strong> for Coaches<br>
-            Feature <strong>in arrivo</strong> 🤫
-          </div>
-        </div>
+      <div class="price-card popular">
+        <div class="badge">Più popolare</div>
+        <div class="tier">Pro</div>
+        <div class="price">€89<span>/anno</span></div>
+        <ul>
+          <li>Fino a 15 clienti</li>
+          <li>Dashboard trainer</li>
+          <li>Gestione schede</li>
+          <li>Monitoraggio progressi</li>
+          <li>Email automatiche</li>
+          <li>Analytics avanzate</li>
+          <li>Report Excel/PDF 📊</li>
+        </ul>
       </div>
-    </section>
+      <div class="price-card">
+        <div class="tier">Elite</div>
+        <div class="price">€149<span>/anno</span></div>
+        <ul>
+          <li>Fino a 40 clienti</li>
+          <li>Dashboard trainer</li>
+          <li>Gestione schede</li>
+          <li>Monitoraggio progressi</li>
+          <li>Email automatiche</li>
+          <li>Analytics avanzate</li>
+          <li>Report Excel/PDF 📊</li>
+          <li>Supporto prioritario 🌟</li>
+        </ul>
+      </div>
+    </div>
+  </div>
 
-    <!-- CTA Section -->
-    <section class="cta-section" style="text-align:center;padding:6rem 2rem;">
-      <h2 class="font-display">Pronto a Trasformare i Tuoi Allenamenti?</h2>
-      <p style="color:var(--text-muted);margin-bottom:2rem;">Unisciti a chi ha già scelto di allenarsi in modo intelligente</p>
+  <!-- PALESTRA -->
+  <div class="pricing-category">
+    <h3 class="font-display">🏢 Per Palestre</h3>
+    <p>Dashboard centralizzata per gestire staff e iscritti</p>
+    <p style="color:var(--primary);text-align:center;font-size:.85rem;margin-bottom:1.5rem;">🎁 Prime 2 Palestre: 2 mesi gratuiti inclusi (14 mesi al prezzo di 12)</p>
+    <div class="pricing-grid">
+      <div class="price-card">
+        <div class="tier">Starter</div>
+        <div class="price">€199<span>/anno</span></div>
+        <ul>
+          <li>Fino a 3 PT</li>
+          <li>Fino a 50 utenti</li>
+          <li>Dashboard palestra</li>
+          <li>Monitoraggio attività</li>
+          <li>Email automatiche</li>
+        </ul>
+      </div>
+      <div class="price-card popular">
+        <div class="badge">Più popolare</div>
+        <div class="tier">Pro</div>
+        <div class="price">€399<span>/anno</span></div>
+        <ul>
+          <li>Fino a 10 PT</li>
+          <li>Fino a 150 utenti</li>
+          <li>Dashboard palestra</li>
+          <li>Monitoraggio attività</li>
+          <li>Email automatiche</li>
+          <li>Analytics avanzate</li>
+          <li>Report Excel/PDF 📊</li>
+        </ul>
+      </div>
+      <div class="price-card">
+        <div class="tier">Elite</div>
+        <div class="price">€699<span>/anno</span></div>
+        <ul>
+          <li>Fino a 25 PT</li>
+          <li>Fino a 500 utenti</li>
+          <li>Dashboard palestra</li>
+          <li>Monitoraggio attività</li>
+          <li>Email automatiche</li>
+          <li>Analytics avanzate</li>
+          <li>Report Excel/PDF 📊</li>
+          <li>Supporto prioritario 🌟</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
 
-      <a
-        href="mailto:my.gymapp26@gmail.com?subject=Founder%20Promo%20GymApp&body=Ciao,%0A%0ASono%20interessato%20a%20GymApp%20e%20vorrei%20aderire%20alla%20Founder%20Promo.%0A%0ASe%20rientro%20tra%20le%20prime%2020%20persone,%20vorrei%20bloccare%20l’accesso%20lifetime%20a%205€.%0AIn%20caso%20contrario,%20sono%20comunque%20interessato%20al%20prezzo%20standard%20di%2010€/anno.%0A%0APotete%20inviarmi%20le%20istruzioni%20per%20il%20pagamento%20tramite%20PayPal?%0A%0AGrazie!"
-        class="btn-primary"
-      >
-        🚀 Blocca la promo lancio
-      </a>
-      <br> 
-      <div class="guarantee">🔒 Pagamento sicuro con PayPal · Protezione acquisti attiva</div>
-      <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem;">
-        Il pagamento avviene tramite PayPal, garantendo protezione, sicurezza e rimborso secondo le policy PayPal.
-      </p>
-    </section>
+<!-- EMAILS & AUTOMAZIONI -->
+<section>
+  <div class="section-title">
+    <h2 class="font-display">📧 Email Automatiche</h2>
+    <p>GymApp ti tiene sempre aggiornato con notifiche intelligenti</p>
+  </div>
+  <div class="email-grid">
+    <div class="email-card">
+      <div class="email-icon">📨</div>
+      <div>
+        <h4 class="font-display" style="margin-bottom:.3rem;">Inviti</h4>
+        <p style="font-size:.85rem;color:var(--text-muted);">Quando un PT o una palestra ti aggiunge, ricevi una mail di conferma con le istruzioni.</p>
+      </div>
+    </div>
+    <div class="email-card">
+      <div class="email-icon">📋</div>
+      <div>
+        <h4 class="font-display" style="margin-bottom:.3rem;">Nuove Schede</h4>
+        <p style="font-size:.85rem;color:var(--text-muted);">Notifica immediata quando il tuo PT crea una nuova scheda personalizzata per te.</p>
+      </div>
+    </div>
+    <div class="email-card">
+      <div class="email-icon">💪</div>
+      <div>
+        <h4 class="font-display" style="margin-bottom:.3rem;">Allenamento Completato</h4>
+        <p style="font-size:.85rem;color:var(--text-muted);">Il tuo PT viene notificato automaticamente quando completi un allenamento.</p>
+      </div>
+    </div>
+    <div class="email-card">
+      <div class="email-icon">🔔</div>
+      <div>
+        <h4 class="font-display" style="margin-bottom:.3rem;">Promemoria Scadenza</h4>
+        <p style="font-size:.85rem;color:var(--text-muted);">Ricevi un avviso un mese prima della scadenza del tuo abbonamento.</p>
+      </div>
+    </div>
+    <div class="email-card">
+      <div class="email-icon">🔑</div>
+      <div>
+        <h4 class="font-display" style="margin-bottom:.3rem;">Reset Password</h4>
+        <p style="font-size:.85rem;color:var(--text-muted);">Link sicuro per ripristinare la password direttamente via email.</p>
+      </div>
+    </div>
+    <div class="email-card">
+      <div class="email-icon">🔄</div>
+      <div>
+        <h4 class="font-display" style="margin-bottom:.3rem;">Cambio Piano</h4>
+        <p style="font-size:.85rem;color:var(--text-muted);">Richiedi un upgrade o downgrade del tuo piano direttamente dalla dashboard.</p>
+      </div>
+    </div>
+  </div>
+</section>
 
-    <!-- Footer -->
-    <footer>
-      <p>
-        © <span id="year"></span> GymApp. Hai domande? Scrivici a
-        <a href="mailto:my.gymapp26@gmail.com">my.gymapp26@gmail.com</a>
-      </p>
-    </footer>
-    
-    <script>
-      document.getElementById("year").textContent = new Date().getFullYear();
-    </script>
-  </body>
+<!-- BENEFITS -->
+<section style="background:var(--surface);">
+  <div class="section-title">
+    <h2 class="font-display">Perché Scegliere GymApp</h2>
+    <p>I vantaggi che fanno la differenza</p>
+  </div>
+  <div class="benefits-grid">
+    <div class="benefit-item"><span>☁️</span><span>Dati sincronizzati nel cloud</span></div>
+    <div class="benefit-item"><span>📱</span><span>Ottimizzata per mobile (PWA)</span></div>
+    <div class="benefit-item"><span>🔒</span><span>Account personale sicuro</span></div>
+    <div class="benefit-item"><span>⏱️</span><span>Timer recupero integrato</span></div>
+    <div class="benefit-item"><span>📝</span><span>Note per ogni esercizio</span></div>
+    <div class="benefit-item"><span>🎯</span><span>Obiettivi personalizzabili</span></div>
+    <div class="benefit-item"><span>📈</span><span>Statistiche e grafici avanzati</span></div>
+    <div class="benefit-item"><span>🌓</span><span>Tema chiaro e scuro</span></div>
+    <div class="benefit-item"><span>📊</span><span>Report Excel/PDF (Pro & Elite)</span></div>
+    <div class="benefit-item"><span>📧</span><span>Email automatiche</span></div>
+    <div class="benefit-item"><span>🔄</span><span>Cambio piano dalla dashboard</span></div>
+    <div class="benefit-item"><span>🛡️</span><span>Supporto dedicato via email</span></div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <h2 class="font-display" style="font-size:2.5rem;margin-bottom:1rem;">Pronto a Trasformare i Tuoi Allenamenti?</h2>
+  <p style="color:var(--text-muted);margin-bottom:2rem;font-size:1.1rem;">Unisciti a chi ha già scelto di allenarsi in modo intelligente</p>
+  <a href="mailto:my.gymapp26@gmail.com?subject=Promo%20Lancio%20GymApp&body=Ciao,%0A%0ASono%20interessato%20a%20GymApp.%0A%0AVorrei%20sapere%20se%20rientro%20nella%20promo%20lancio%20e%20ricevere%20le%20istruzioni%20per%20il%20pagamento.%0A%0AGrazie!" class="btn-primary">🚀 Blocca la promo lancio</a>
+  <br>
+  <div class="guarantee">🔒 Pagamento sicuro con PayPal · Protezione acquisti attiva</div>
+  <p style="color:var(--text-muted);font-size:.85rem;margin-top:.5rem;">Il pagamento avviene tramite PayPal, garantendo protezione, sicurezza e rimborso secondo le policy PayPal.</p>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p>© <span id="year"></span> GymApp. Hai domande? Scrivici a <a href="mailto:my.gymapp26@gmail.com">my.gymapp26@gmail.com</a></p>
+  <p style="margin-top:.5rem;font-size:.8rem;color:var(--text-muted);">Atleti · Personal Trainer · Palestre</p>
+</footer>
+
+<script>document.getElementById("year").textContent=new Date().getFullYear();</script>
+</body>
 </html>

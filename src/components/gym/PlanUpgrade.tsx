@@ -24,14 +24,14 @@ const PT_PLANS = [
     role: 'Personal Trainer Pro',
     tier: 'Pro',
     price: ROLE_PRICING['Personal Trainer Pro'],
-    features: [`Fino a ${ROLE_LIMITS['Personal Trainer Pro']?.clients} clienti`, 'Dashboard trainer', 'Gestione schede', 'Monitoraggio progressi', 'Analytics avanzate'],
+    features: [`Fino a ${ROLE_LIMITS['Personal Trainer Pro']?.clients} clienti`, 'Dashboard trainer', 'Gestione schede', 'Monitoraggio progressi', 'Analytics avanzate', 'Report Excel/PDF'],
     popular: true,
   },
   {
     role: 'Personal Trainer Elite',
     tier: 'Elite',
     price: ROLE_PRICING['Personal Trainer Elite'],
-    features: [`Fino a ${ROLE_LIMITS['Personal Trainer Elite']?.clients} clienti`, 'Dashboard trainer', 'Gestione schede', 'Monitoraggio progressi', 'Analytics avanzate', 'Supporto prioritario'],
+    features: [`Fino a ${ROLE_LIMITS['Personal Trainer Elite']?.clients} clienti`, 'Dashboard trainer', 'Gestione schede', 'Monitoraggio progressi', 'Analytics avanzate', 'Report Excel/PDF', 'Supporto prioritario'],
   },
 ];
 
@@ -46,14 +46,14 @@ const GYM_PLANS = [
     role: 'Palestra Pro',
     tier: 'Pro',
     price: ROLE_PRICING['Palestra Pro'],
-    features: [`Fino a ${ROLE_LIMITS['Palestra Pro']?.pts} PT`, `Fino a ${ROLE_LIMITS['Palestra Pro']?.users} utenti`, 'Dashboard palestra', 'Monitoraggio attività', 'Analytics avanzate'],
+    features: [`Fino a ${ROLE_LIMITS['Palestra Pro']?.pts} PT`, `Fino a ${ROLE_LIMITS['Palestra Pro']?.users} utenti`, 'Dashboard palestra', 'Monitoraggio attività', 'Analytics avanzate', 'Report Excel/PDF'],
     popular: true,
   },
   {
     role: 'Palestra Elite',
     tier: 'Elite',
     price: ROLE_PRICING['Palestra Elite'],
-    features: [`Fino a ${ROLE_LIMITS['Palestra Elite']?.pts} PT`, `Fino a ${ROLE_LIMITS['Palestra Elite']?.users} utenti`, 'Dashboard palestra', 'Monitoraggio attività', 'Analytics avanzate', 'Supporto prioritario'],
+    features: [`Fino a ${ROLE_LIMITS['Palestra Elite']?.pts} PT`, `Fino a ${ROLE_LIMITS['Palestra Elite']?.users} utenti`, 'Dashboard palestra', 'Monitoraggio attività', 'Analytics avanzate', 'Report Excel/PDF', 'Supporto prioritario'],
   },
 ];
 

@@ -13,12 +13,13 @@ import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { PlanUpgrade } from '@/components/gym/PlanUpgrade';
+import { exportClientsExcel, exportClientsPDF } from '@/lib/reportGenerator';
 import { AppVersion } from '@/components/gym/AppVersion';
 import { toast } from 'sonner';
 import {
   UserPlus, Users, Trash2, Dumbbell, Target, ChevronLeft,
   Plus, ArrowLeft, Edit2, Check, X, Calendar, TrendingUp,
-  BarChart3, Flame, Award, Activity, MessageSquare, Zap, Timer, Crown } from
+  BarChart3, Flame, Award, Activity, MessageSquare, Zap, Timer, Crown, FileDown } from
 'lucide-react';
 import { Workout, Exercise, WorkoutProgress, SetData, MONTHS } from '@/types/gym';
 import {
@@ -597,6 +598,36 @@ export default function TrainerDashboard() {
               {limits?.role && <PlanUpgrade currentRole={limits.role} type="pt" />}
             </DialogContent>
           </Dialog>
+          {limits?.role && (limits.role.includes('Pro') || limits.role.includes('Elite')) && (
+            <div className="flex gap-1">
+              <Button variant="outline" size="sm" onClick={() => {
+                const clientData = clients.map(c => ({
+                  name: c.client_name || c.client_email,
+                  email: c.client_email,
+                  totalWorkouts: 0,
+                  totalSessions: 0,
+                  lastActive: null as string | null,
+                }));
+                exportClientsExcel(clientData, user?.email || 'Trainer');
+              }}>
+                <FileDown className="w-4 h-4 mr-1" />
+                Excel
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => {
+                const clientData = clients.map(c => ({
+                  name: c.client_name || c.client_email,
+                  email: c.client_email,
+                  totalWorkouts: 0,
+                  totalSessions: 0,
+                  lastActive: null as string | null,
+                }));
+                exportClientsPDF(clientData, user?.email || 'Trainer');
+              }}>
+                <FileDown className="w-4 h-4 mr-1" />
+                PDF
+              </Button>
+            </div>
+          )}
         </div>
 
         {!selectedClient ?
