@@ -586,7 +586,8 @@ export default function AdminDashboard() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {activities
+                    {activities
+                        .filter((act) => !act.role.startsWith('Palestra'))
                         .sort((a, b) => b.sessions_count - a.sessions_count)
                         .map((act) => {
                           const status = getActivityStatus(act.last_activity);
