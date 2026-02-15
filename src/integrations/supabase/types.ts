@@ -351,6 +351,7 @@ export type Database = {
         | "Palestra Starter"
         | "Palestra Pro"
         | "Palestra Elite"
+        | "Admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -486,6 +487,7 @@ export const Constants = {
         "Palestra Starter",
         "Palestra Pro",
         "Palestra Elite",
+        "Admin",
       ],
     },
   },
