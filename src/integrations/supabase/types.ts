@@ -135,6 +135,60 @@ export type Database = {
           },
         ]
       }
+      gym_members: {
+        Row: {
+          created_at: string
+          gym_id: string
+          id: string
+          member_email: string
+          member_id: string | null
+          member_role: string
+        }
+        Insert: {
+          created_at?: string
+          gym_id: string
+          id?: string
+          member_email: string
+          member_id?: string | null
+          member_role?: string
+        }
+        Update: {
+          created_at?: string
+          gym_id?: string
+          id?: string
+          member_email?: string
+          member_id?: string | null
+          member_role?: string
+        }
+        Relationships: []
+      }
+      invitations: {
+        Row: {
+          created_at: string
+          id: string
+          invitation_type: string
+          invitee_email: string
+          inviter_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invitation_type?: string
+          invitee_email: string
+          inviter_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invitation_type?: string
+          invitee_email?: string
+          inviter_id?: string
+          status?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -276,8 +330,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_invite_limits: { Args: { _user_id: string }; Returns: Json }
       get_user_id_by_email: { Args: { _email: string }; Returns: string }
+      get_user_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_user_role"]
+      }
       is_email_allowed: { Args: { check_email: string }; Returns: boolean }
+      is_gym: { Args: { _user_id: string }; Returns: boolean }
       is_personal_trainer: { Args: { _user_id: string }; Returns: boolean }
       is_trainer_of: { Args: { _client_id: string }; Returns: boolean }
     }

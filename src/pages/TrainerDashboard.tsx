@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { useIsTrainer } from '@/hooks/useIsTrainer';
+import { useInviteLimits } from '@/hooks/useInviteLimits';
 import { Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,6 +41,7 @@ interface TrainerClient {
 export default function TrainerDashboard() {
   const { user } = useAuth();
   const { isTrainer, loading: trainerLoading } = useIsTrainer();
+  const { limits, refetch: refetchLimits } = useInviteLimits();
   const [clients, setClients] = useState<TrainerClient[]>([]);
   const [newEmail, setNewEmail] = useState('');
   const [adding, setAdding] = useState(false);
@@ -106,41 +108,40 @@ export default function TrainerDashboard() {
     if (!newEmail.trim() || !user) return;
     setAdding(true);
 
-    // Look up user ID by email
-    const { data: clientId, error: lookupError } = await supabase.
-    rpc('get_user_id_by_email', { _email: newEmail.trim() });
+    try {
+      const { data, error } = await supabase.functions.invoke('invite-user', {
+        body: {
+          email: newEmail.trim(),
+          invitationType: 'client',
+          appUrl: window.location.origin,
+        },
+      });
 
-    if (lookupError || !clientId) {
-      toast.error('Utente non trovato con questa email');
-      setAdding(false);
-      return;
-    }
-
-    if (clientId === user.id) {
-      toast.error('Non puoi aggiungere te stesso come cliente');
-      setAdding(false);
-      return;
-    }
-
-    const { error } = await supabase.
-    from('trainer_clients').
-    insert({
-      trainer_id: user.id,
-      client_id: clientId,
-      client_email: newEmail.trim().toLowerCase()
-    });
-
-    if (error) {
-      if (error.code === '23505') {
-        toast.error('Cliente già aggiunto');
-      } else {
+      if (error) {
         toast.error('Errore nell\'aggiunta del cliente');
         console.error(error);
+        setAdding(false);
+        return;
       }
-    } else {
-      toast.success('Cliente aggiunto!');
+
+      if (data?.error) {
+        toast.error(data.error);
+        setAdding(false);
+        return;
+      }
+
+      if (data?.registered) {
+        toast.success(`${data.clientName} aggiunto come cliente!`);
+      } else {
+        toast.success(data?.message || 'Invito inviato!');
+      }
+
       setNewEmail('');
       await fetchClients();
+      await refetchLimits();
+    } catch (e: any) {
+      toast.error(e.message || 'Errore');
+      console.error(e);
     }
     setAdding(false);
   };
@@ -587,12 +588,17 @@ export default function TrainerDashboard() {
                 <CardTitle className="text-lg flex items-center gap-2">
                   <UserPlus className="w-5 h-5 text-primary" />
                   Aggiungi Cliente
+                  {limits && limits.client_limit > 0 && (
+                    <span className="text-xs font-normal text-muted-foreground ml-auto">
+                      Inviti: {limits.client_used}/{limits.client_limit}
+                    </span>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex gap-2">
                   <Input
-                  placeholder="Email del cliente..."
+                  placeholder="Email del cliente (anche non registrato)..."
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleAddClient()} />
@@ -602,6 +608,9 @@ export default function TrainerDashboard() {
                     {adding ? 'Aggiunta...' : 'Aggiungi'}
                   </Button>
                 </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Se l'utente non è registrato, riceverà un invito via email per unirsi a GymApp.
+                </p>
               </CardContent>
             </Card>
 
