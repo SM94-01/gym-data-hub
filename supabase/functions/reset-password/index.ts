@@ -106,7 +106,7 @@ serve(async (req: Request): Promise<Response> => {
           <p>Usa questa password per accedere all'app e poi cambiala nelle <strong>impostazioni del profilo</strong>.</p>
           <p style="color: #888; font-size: 12px; margin-top: 30px;">Se non hai richiesto tu questo recupero, ignora questa email.</p>
           <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-          <p style="color: #888; font-size: 12px; text-align: center;">A presto,<br>Il team GymApp</p>
+            <p style="color: #888; font-size: 12px; text-align: center;">A presto,<br>Il team GymApp</p>
         </body>
       </html>
     `;
