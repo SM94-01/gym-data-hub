@@ -13,8 +13,9 @@ import { PlanUpgrade } from '@/components/gym/PlanUpgrade';
 import { toast } from 'sonner';
 import {
   UserPlus, Users, Trash2, ArrowLeft, GraduationCap, User,
-  Activity, BarChart3, TrendingUp, Clock, Dumbbell, Crown
+  Activity, BarChart3, TrendingUp, Clock, Dumbbell, Crown, FileDown
 } from 'lucide-react';
+import { exportMembersExcel, exportMembersPDF } from '@/lib/reportGenerator';
 
 interface GymMember {
   id: string;
@@ -204,17 +205,52 @@ export default function GymDashboard() {
   return (
     <div className="min-h-screen pt-20 pb-8">
       <div className="container mx-auto px-4">
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-6 animate-fade-in">
-          <Button variant="ghost" size="icon" asChild>
-            <a href="/"><ArrowLeft className="w-5 h-5" /></a>
-          </Button>
-          <div>
-            <h1 className="font-display text-2xl font-bold">Dashboard Palestra</h1>
-            <p className="text-sm text-muted-foreground">
-              {limits?.role || 'Gestisci la tua palestra'}
-            </p>
+       <div className="flex items-center justify-between mb-6 animate-fade-in">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" asChild>
+              <a href="/"><ArrowLeft className="w-5 h-5" /></a>
+            </Button>
+            <div>
+              <h1 className="font-display text-2xl font-bold">Dashboard Palestra</h1>
+              <p className="text-sm text-muted-foreground">
+                {limits?.role || 'Gestisci la tua palestra'}
+              </p>
+            </div>
           </div>
+          {limits?.role && (limits.role.includes('Pro') || limits.role.includes('Elite')) && (
+            <div className="flex gap-1">
+              <Button variant="outline" size="sm" onClick={() => {
+                const memberData = members.map(m => ({
+                  name: m.member_name || m.member_email,
+                  email: m.member_email,
+                  role: m.member_role,
+                  totalWorkouts: memberStats[m.id]?.totalWorkouts || 0,
+                  totalSessions: memberStats[m.id]?.totalSessions || 0,
+                  lastActive: memberStats[m.id]?.lastActive || null,
+                  totalClients: memberStats[m.id]?.totalClients,
+                }));
+                exportMembersExcel(memberData, user?.email || 'Palestra');
+              }}>
+                <FileDown className="w-4 h-4 mr-1" />
+                Excel
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => {
+                const memberData = members.map(m => ({
+                  name: m.member_name || m.member_email,
+                  email: m.member_email,
+                  role: m.member_role,
+                  totalWorkouts: memberStats[m.id]?.totalWorkouts || 0,
+                  totalSessions: memberStats[m.id]?.totalSessions || 0,
+                  lastActive: memberStats[m.id]?.lastActive || null,
+                  totalClients: memberStats[m.id]?.totalClients,
+                }));
+                exportMembersPDF(memberData, user?.email || 'Palestra');
+              }}>
+                <FileDown className="w-4 h-4 mr-1" />
+                PDF
+              </Button>
+            </div>
+          )}
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
