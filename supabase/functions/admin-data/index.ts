@@ -196,7 +196,7 @@ Deno.serve(async (req) => {
             </div>
             <p>${emailBody.replace(/\n/g, '<br>')}</p>
             <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-            <p style="color: #888; font-size: 12px; text-align: center;">Il team GymApp</p>
+            <p style="color: #888; font-size: 12px; text-align: center;">A presto,<br>Il team GymApp</p>
           </body>
         </html>
       `;
