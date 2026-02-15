@@ -32,6 +32,16 @@ import {
   DialogTrigger,
   DialogDescription,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -80,6 +90,12 @@ export default function AdminDashboard() {
   const [emailBody, setEmailBody] = useState('');
   const [sendingEmail, setSendingEmail] = useState(false);
   const [renewingEmail, setRenewingEmail] = useState<string | null>(null);
+  // Renewal confirmation
+  const [renewConfirmOpen, setRenewConfirmOpen] = useState(false);
+  const [renewConfirmEmail, setRenewConfirmEmail] = useState('');
+  const [renewConfirmNewDate, setRenewConfirmNewDate] = useState('');
+  // Plan change state
+  const [changingPlan, setChangingPlan] = useState(false);
 
   const roles = Constants.public.Enums.app_user_role;
 
@@ -133,7 +149,18 @@ export default function AdminDashboard() {
     loadData();
   };
 
-  const handleRenewSubscription = async (email: string) => {
+  // Ask for renewal confirmation
+  const askRenewConfirmation = (email: string) => {
+    const newExpiry = new Date();
+    newExpiry.setFullYear(newExpiry.getFullYear() + 1);
+    setRenewConfirmEmail(email);
+    setRenewConfirmNewDate(newExpiry.toLocaleDateString('it-IT'));
+    setRenewConfirmOpen(true);
+  };
+
+  const confirmRenewSubscription = async () => {
+    const email = renewConfirmEmail;
+    setRenewConfirmOpen(false);
     setRenewingEmail(email);
     const { error } = await supabase.functions.invoke('admin-data', {
       body: { action: 'renew_subscription', email }
@@ -141,10 +168,37 @@ export default function AdminDashboard() {
     if (error) {
       toast.error('Errore nel rinnovo');
     } else {
-      toast.success(`Abbonamento rinnovato per ${email}`);
+      toast.success(`Abbonamento rinnovato per ${email}. Nuova scadenza: ${renewConfirmNewDate}`);
       loadData();
     }
     setRenewingEmail(null);
+  };
+
+  // Change plan (for PT / Palestra) - updates role, resets expiry, updates payment
+  const handleChangePlan = async (email: string, newRole: string) => {
+    setChangingPlan(true);
+    // First update the role
+    const { error: roleError } = await supabase.functions.invoke('admin-data', {
+      body: { action: 'update_role', email, role: newRole }
+    });
+    if (roleError) {
+      toast.error('Errore nel cambio piano');
+      setChangingPlan(false);
+      return;
+    }
+    // Then renew subscription (reset expiry to +1 year from now)
+    const { error: renewError } = await supabase.functions.invoke('admin-data', {
+      body: { action: 'renew_subscription', email }
+    });
+    if (renewError) {
+      toast.error('Piano aggiornato ma errore nel rinnovo scadenza');
+    } else {
+      const newExpiry = new Date();
+      newExpiry.setFullYear(newExpiry.getFullYear() + 1);
+      toast.success(`Piano aggiornato a ${newRole}. Nuova scadenza: ${newExpiry.toLocaleDateString('it-IT')}`);
+    }
+    setChangingPlan(false);
+    loadData();
   };
 
   const handleSendEmail = async () => {
@@ -228,7 +282,7 @@ export default function AdminDashboard() {
   const getRoleCategory = (role: string) => {
     if (role.startsWith('Personal Trainer')) return 'Personal Trainer';
     if (role.startsWith('Palestra')) return 'Palestra';
-    return role;
+    return role; // Utente, Admin
   };
 
   const getSubscriptionTier = (role: string) => {
@@ -237,6 +291,25 @@ export default function AdminDashboard() {
     if (role.includes('Elite')) return 'Elite';
     if (role === 'Utente') return 'Normale';
     return '-';
+  };
+
+  // Get available plan options for changing (only tiers within same category)
+  const getPlanOptions = (role: string) => {
+    if (role.startsWith('Personal Trainer')) {
+      return [
+        { label: 'Starter', value: 'Personal Trainer Starter' },
+        { label: 'Pro', value: 'Personal Trainer Pro' },
+        { label: 'Elite', value: 'Personal Trainer Elite' },
+      ];
+    }
+    if (role.startsWith('Palestra')) {
+      return [
+        { label: 'Starter', value: 'Palestra Starter' },
+        { label: 'Pro', value: 'Palestra Pro' },
+        { label: 'Elite', value: 'Palestra Elite' },
+      ];
+    }
+    return [];
   };
 
   // Profile modal data
@@ -407,10 +480,10 @@ export default function AdminDashboard() {
                     <TableRow>
                       <TableHead>Email</TableHead>
                       <TableHead>Ruolo</TableHead>
+                      <TableHead>Abbonamento</TableHead>
                       <TableHead>Iscrizione</TableHead>
                       <TableHead>Scadenza</TableHead>
                       <TableHead>Pagamento</TableHead>
-                      <TableHead>Azioni</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -434,8 +507,11 @@ export default function AdminDashboard() {
                           </TableCell>
                           <TableCell>
                             <Badge variant={getRoleBadgeVariant(item.role)} className="text-xs">
-                              {item.role}
+                              {getRoleCategory(item.role)}
                             </Badge>
+                          </TableCell>
+                          <TableCell className="text-sm font-medium">
+                            {getSubscriptionTier(item.role)}
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground">
                             {new Date(registrationDate).toLocaleDateString('it-IT')}
@@ -457,21 +533,6 @@ export default function AdminDashboard() {
                             ) : (
                               <span className="font-medium text-green-500">€{price}/anno</span>
                             )}
-                          </TableCell>
-                          <TableCell>
-                            <Select
-                              value={item.role}
-                              onValueChange={(val) => handleChangeRole(item.email, val)}
-                            >
-                              <SelectTrigger className="w-[140px] h-8 text-xs">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {roles.map(role => (
-                                  <SelectItem key={role} value={role}>{role}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
                           </TableCell>
                         </TableRow>
                       );
@@ -623,6 +684,10 @@ export default function AdminDashboard() {
               const expiry = getExpiry(profileData.created_at);
               const expiryColor = getExpiryColor(expiry);
               const registrationDate = profileActivity?.created_at || profileData.created_at;
+              const category = getRoleCategory(profileData.role);
+              const tier = getSubscriptionTier(profileData.role);
+              const planOptions = getPlanOptions(profileData.role);
+              const canChangePlan = planOptions.length > 0;
 
               return (
                 <div className="space-y-4">
@@ -637,13 +702,30 @@ export default function AdminDashboard() {
                     </div>
                     <div>
                       <p className="text-muted-foreground">Categoria</p>
-                      <p className="font-medium">{getRoleCategory(profileData.role)}</p>
+                      <p className="font-medium">{category}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Piano</p>
-                      <Badge variant={getRoleBadgeVariant(profileData.role)} className="text-xs">
-                        {getSubscriptionTier(profileData.role)}
-                      </Badge>
+                      {canChangePlan ? (
+                        <Select
+                          value={profileData.role}
+                          onValueChange={(val) => handleChangePlan(profileData.email, val)}
+                          disabled={changingPlan}
+                        >
+                          <SelectTrigger className="h-7 text-xs w-[120px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {planOptions.map(opt => (
+                              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Badge variant={getRoleBadgeVariant(profileData.role)} className="text-xs">
+                          {tier}
+                        </Badge>
+                      )}
                     </div>
                     <div>
                       <p className="text-muted-foreground">Data Iscrizione</p>
@@ -660,7 +742,7 @@ export default function AdminDashboard() {
                           size="icon"
                           className="h-6 w-6"
                           disabled={renewingEmail === profileData.email}
-                          onClick={() => handleRenewSubscription(profileData.email)}
+                          onClick={() => askRenewConfirmation(profileData.email)}
                           title="Rinnova abbonamento (+1 anno da oggi)"
                         >
                           <RefreshCw className={`w-3.5 h-3.5 ${renewingEmail === profileData.email ? 'animate-spin' : ''}`} />
@@ -724,6 +806,24 @@ export default function AdminDashboard() {
             })()}
           </DialogContent>
         </Dialog>
+
+        {/* Renewal Confirmation Dialog */}
+        <AlertDialog open={renewConfirmOpen} onOpenChange={setRenewConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Conferma Rinnovo Abbonamento</AlertDialogTitle>
+              <AlertDialogDescription>
+                Vuoi rinnovare l'abbonamento di <strong>{renewConfirmEmail}</strong>?
+                <br />
+                La nuova data di scadenza sarà: <strong className="text-green-500">{renewConfirmNewDate}</strong>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annulla</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmRenewSubscription}>Conferma</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* Send Email Dialog */}
         <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
