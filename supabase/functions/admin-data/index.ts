@@ -23,7 +23,6 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // Verify calling user is admin
     const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -35,7 +34,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Check admin via service role
     const adminClient = createClient(supabaseUrl, serviceKey);
     const { data: isAdmin } = await adminClient.rpc("is_admin", { _user_id: user.id });
     if (!isAdmin) {
@@ -45,16 +43,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { action, email, role } = await req.json();
+    const { action, email, role, notes } = await req.json();
 
     if (action === "get_all_users") {
-      // Get all allowed emails
       const { data: emails } = await adminClient
         .from("allowed_emails")
         .select("*")
         .order("created_at", { ascending: false });
 
-      // Get activity data: join profiles with auth users, workouts, progress
       const { data: profiles } = await adminClient.from("profiles").select("id, name");
       const { data: authUsers } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
 
@@ -66,7 +62,6 @@ Deno.serve(async (req) => {
         .from("workout_progress")
         .select("user_id, date");
 
-      // Build activity map
       const activities = (authUsers?.users || []).map((au) => {
         const profile = profiles?.find((p) => p.id === au.id);
         const allowedEmail = emails?.find(
@@ -84,6 +79,7 @@ Deno.serve(async (req) => {
           workouts_count: userWorkouts.length,
           sessions_count: new Set(dates.map((d) => new Date(d).toDateString())).size,
           last_activity: lastActivity,
+          created_at: au.created_at,
         };
       });
 
@@ -94,9 +90,12 @@ Deno.serve(async (req) => {
     }
 
     if (action === "add_user") {
+      const insertData: Record<string, unknown> = { email: email.toLowerCase(), role };
+      if (notes) insertData.notes = notes;
+
       const { error } = await adminClient
         .from("allowed_emails")
-        .insert({ email: email.toLowerCase(), role });
+        .insert(insertData);
 
       if (error) {
         return new Response(JSON.stringify({ error: error.message }), {
