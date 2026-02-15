@@ -13,7 +13,7 @@ serve(async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { type, trainerName, clientName, clientEmail, trainerId, appUrl } = await req.json();
+    const { type, trainerName, clientName, clientEmail, trainerId, appUrl, userName, userEmail, currentPlan, requestedPlan, label } = await req.json();
     console.log("notify-workout called with:", { type, trainerName, clientName, clientEmail, trainerId });
 
     if (!type) {
@@ -145,6 +145,26 @@ serve(async (req: Request): Promise<Response> => {
             <div style="text-align: center; margin: 30px 0;">
               <a href="${link}/auth" style="background-color: #8b5cf6; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Registrati su GymApp</a>
             </div>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+            <p style="color: #888; font-size: 12px; text-align: center;">Il team GymApp</p>
+          </body>
+        </html>
+      `;
+    } else if (type === "plan_change_request") {
+      toEmail = "my.gymapp26@gmail.com";
+      subject = `GymApp - Richiesta cambio piano da ${userName}`;
+      htmlContent = `
+        <html>
+          <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #8b5cf6;">GymApp</h1>
+            </div>
+            <p><strong>${label}: ${userName}</strong> (${userEmail}) ha richiesto un cambio piano.</p>
+            <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+              <tr><td style="padding: 8px; border: 1px solid #eee;"><strong>Piano attuale</strong></td><td style="padding: 8px; border: 1px solid #eee;">${currentPlan}</td></tr>
+              <tr><td style="padding: 8px; border: 1px solid #eee;"><strong>Piano richiesto</strong></td><td style="padding: 8px; border: 1px solid #eee;">${requestedPlan}</td></tr>
+            </table>
+            <p>Procedi con la modifica dalla Dashboard Admin dopo aver verificato il pagamento.</p>
             <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
             <p style="color: #888; font-size: 12px; text-align: center;">Il team GymApp</p>
           </body>

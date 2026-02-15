@@ -9,10 +9,11 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AppVersion } from '@/components/gym/AppVersion';
+import { PlanUpgrade } from '@/components/gym/PlanUpgrade';
 import { toast } from 'sonner';
 import {
   UserPlus, Users, Trash2, ArrowLeft, GraduationCap, User,
-  Activity, BarChart3, TrendingUp, Clock, Dumbbell
+  Activity, BarChart3, TrendingUp, Clock, Dumbbell, Crown
 } from 'lucide-react';
 
 interface GymMember {
@@ -217,10 +218,14 @@ export default function GymDashboard() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3 mb-6">
+          <TabsList className="grid w-full grid-cols-4 mb-6">
             <TabsTrigger value="overview">Panoramica</TabsTrigger>
             <TabsTrigger value="trainers">PT ({ptMembers.length})</TabsTrigger>
             <TabsTrigger value="users">Utenti ({userMembers.length})</TabsTrigger>
+            <TabsTrigger value="plan" className="flex items-center gap-1">
+              <Crown className="w-3 h-3" />
+              Piano
+            </TabsTrigger>
           </TabsList>
 
           {/* OVERVIEW TAB */}
@@ -467,6 +472,11 @@ export default function GymDashboard() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* PLAN TAB */}
+          <TabsContent value="plan">
+            {limits?.role && <PlanUpgrade currentRole={limits.role} type="gym" />}
           </TabsContent>
         </Tabs>
 

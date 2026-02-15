@@ -11,12 +11,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
+import { PlanUpgrade } from '@/components/gym/PlanUpgrade';
 import { AppVersion } from '@/components/gym/AppVersion';
 import { toast } from 'sonner';
 import {
   UserPlus, Users, Trash2, Dumbbell, Target, ChevronLeft,
   Plus, ArrowLeft, Edit2, Check, X, Calendar, TrendingUp,
-  BarChart3, Flame, Award, Activity, MessageSquare, Zap, Timer } from
+  BarChart3, Flame, Award, Activity, MessageSquare, Zap, Timer, Crown } from
 'lucide-react';
 import { Workout, Exercise, WorkoutProgress, SetData, MONTHS } from '@/types/gym';
 import {
@@ -570,14 +572,31 @@ export default function TrainerDashboard() {
     <div className="min-h-screen pt-20 pb-8">
       <div className="container mx-auto px-4">
         {/* Header */}
-        <div className="flex items-center gap-3 mb-6 animate-fade-in">
-          <Button variant="ghost" size="icon" asChild>
-            <a href="/"><ArrowLeft className="w-5 h-5" /></a>
-          </Button>
-          <div>
-            <h1 className="font-display text-2xl font-bold">Dashboard Trainer</h1>
-            <p className="text-sm text-muted-foreground">Gestisci i tuoi clienti</p>
+        <div className="flex items-center justify-between mb-6 animate-fade-in">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" asChild>
+              <a href="/"><ArrowLeft className="w-5 h-5" /></a>
+            </Button>
+            <div>
+              <h1 className="font-display text-2xl font-bold">Dashboard Trainer</h1>
+              <p className="text-sm text-muted-foreground">Gestisci i tuoi clienti</p>
+            </div>
           </div>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Crown className="w-4 h-4 mr-2" />
+                Il mio Piano
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Gestione Piano</DialogTitle>
+                <DialogDescription>Visualizza e richiedi un cambio piano</DialogDescription>
+              </DialogHeader>
+              {limits?.role && <PlanUpgrade currentRole={limits.role} type="pt" />}
+            </DialogContent>
+          </Dialog>
         </div>
 
         {!selectedClient ?
