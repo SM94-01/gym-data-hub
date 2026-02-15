@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AppVersion } from '@/components/gym/AppVersion';
 import { PlanUpgrade } from '@/components/gym/PlanUpgrade';
 import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import {
   UserPlus, Users, Trash2, ArrowLeft, GraduationCap, User,
   Activity, BarChart3, TrendingUp, Clock, Dumbbell, Crown, FileDown
@@ -217,51 +218,64 @@ export default function GymDashboard() {
               </p>
             </div>
           </div>
-          {limits?.role && (limits.role.includes('Pro') || limits.role.includes('Elite')) && (
-            <div className="flex gap-1">
-              <Button variant="outline" size="sm" onClick={() => {
-                const memberData = members.map(m => ({
-                  name: m.member_name || m.member_email,
-                  email: m.member_email,
-                  role: m.member_role,
-                  totalWorkouts: memberStats[m.id]?.totalWorkouts || 0,
-                  totalSessions: memberStats[m.id]?.totalSessions || 0,
-                  lastActive: memberStats[m.id]?.lastActive || null,
-                  totalClients: memberStats[m.id]?.totalClients,
-                }));
-                exportMembersExcel(memberData, user?.email || 'Palestra');
-              }}>
-                <FileDown className="w-4 h-4 mr-1" />
-                Excel
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => {
-                const memberData = members.map(m => ({
-                  name: m.member_name || m.member_email,
-                  email: m.member_email,
-                  role: m.member_role,
-                  totalWorkouts: memberStats[m.id]?.totalWorkouts || 0,
-                  totalSessions: memberStats[m.id]?.totalSessions || 0,
-                  lastActive: memberStats[m.id]?.lastActive || null,
-                  totalClients: memberStats[m.id]?.totalClients,
-                }));
-                exportMembersPDF(memberData, user?.email || 'Palestra');
-              }}>
-                <FileDown className="w-4 h-4 mr-1" />
-                PDF
-              </Button>
-            </div>
-          )}
+           <div className="flex gap-1">
+            {limits?.role && (limits.role.includes('Pro') || limits.role.includes('Elite')) && (
+              <>
+                <Button variant="outline" size="sm" onClick={() => {
+                  const memberData = members.map(m => ({
+                    name: m.member_name || m.member_email,
+                    email: m.member_email,
+                    role: m.member_role,
+                    totalWorkouts: memberStats[m.id]?.totalWorkouts || 0,
+                    totalSessions: memberStats[m.id]?.totalSessions || 0,
+                    lastActive: memberStats[m.id]?.lastActive || null,
+                    totalClients: memberStats[m.id]?.totalClients,
+                  }));
+                  exportMembersExcel(memberData, user?.email || 'Palestra');
+                }}>
+                  <FileDown className="w-4 h-4 mr-1" />
+                  Excel
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => {
+                  const memberData = members.map(m => ({
+                    name: m.member_name || m.member_email,
+                    email: m.member_email,
+                    role: m.member_role,
+                    totalWorkouts: memberStats[m.id]?.totalWorkouts || 0,
+                    totalSessions: memberStats[m.id]?.totalSessions || 0,
+                    lastActive: memberStats[m.id]?.lastActive || null,
+                    totalClients: memberStats[m.id]?.totalClients,
+                  }));
+                  exportMembersPDF(memberData, user?.email || 'Palestra');
+                }}>
+                  <FileDown className="w-4 h-4 mr-1" />
+                  PDF
+                </Button>
+              </>
+            )}
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Crown className="w-4 h-4 mr-1" />
+                  Il mio Piano
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Il tuo Piano</DialogTitle>
+                  <DialogDescription>Visualizza e gestisci il tuo abbonamento</DialogDescription>
+                </DialogHeader>
+                {limits?.role && <PlanUpgrade currentRole={limits.role} type="gym" />}
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4 mb-6">
+          <TabsList className="grid w-full grid-cols-3 mb-6">
             <TabsTrigger value="overview">Panoramica</TabsTrigger>
             <TabsTrigger value="trainers">PT ({ptMembers.length})</TabsTrigger>
             <TabsTrigger value="users">Utenti ({userMembers.length})</TabsTrigger>
-            <TabsTrigger value="plan" className="flex items-center gap-1">
-              <Crown className="w-3 h-3" />
-              Piano
-            </TabsTrigger>
           </TabsList>
 
           {/* OVERVIEW TAB */}
@@ -510,10 +524,6 @@ export default function GymDashboard() {
             </Card>
           </TabsContent>
 
-          {/* PLAN TAB */}
-          <TabsContent value="plan">
-            {limits?.role && <PlanUpgrade currentRole={limits.role} type="gym" />}
-          </TabsContent>
         </Tabs>
 
         <AppVersion />
