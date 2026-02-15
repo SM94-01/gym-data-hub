@@ -4,12 +4,13 @@ import { WorkoutCard } from '@/components/gym/WorkoutCard';
 import { AppVersion } from '@/components/gym/AppVersion';
 
 import { Button } from '@/components/ui/button';
-import { Plus, Play, Trophy, Flame, Target, Scale, User, GraduationCap, Building2 } from 'lucide-react';
+import { Plus, Play, Trophy, Flame, Target, Scale, User, GraduationCap, Building2, Shield } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { ProfileModal } from '@/components/gym/ProfileModal';
 import { useIsTrainer } from '@/hooks/useIsTrainer';
 import { useIsGym } from '@/hooks/useIsGym';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +25,7 @@ export default function Home() {
   const [showProfile, setShowProfile] = useState(false);
   const { isTrainer } = useIsTrainer();
   const { isGym } = useIsGym();
+  const { isAdmin } = useIsAdmin();
   
   const workouts = getUserWorkouts();
   const progress = getUserProgress();
@@ -63,7 +65,7 @@ export default function Home() {
               <p className="font-display font-semibold">{profile?.name || 'Utente'}</p>
             </div>
           </div>
-          {(isTrainer || isGym) ? (
+          {(isTrainer || isGym || isAdmin) ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="text-muted-foreground">
@@ -86,6 +88,12 @@ export default function Home() {
                   <DropdownMenuItem onClick={() => navigate('/gym')}>
                     <Building2 className="w-4 h-4 mr-2" />
                     Palestra
+                  </DropdownMenuItem>
+                )}
+                {isAdmin && (
+                  <DropdownMenuItem onClick={() => navigate('/admin')}>
+                    <Shield className="w-4 h-4 mr-2" />
+                    Admin
                   </DropdownMenuItem>
                 )}
               </DropdownMenuContent>
