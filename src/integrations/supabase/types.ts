@@ -20,18 +20,21 @@ export type Database = {
           email: string
           id: string
           notes: string | null
+          role: Database["public"]["Enums"]["app_user_role"]
         }
         Insert: {
           created_at?: string
           email: string
           id?: string
           notes?: string | null
+          role?: Database["public"]["Enums"]["app_user_role"]
         }
         Update: {
           created_at?: string
           email?: string
           id?: string
           notes?: string | null
+          role?: Database["public"]["Enums"]["app_user_role"]
         }
         Relationships: []
       }
@@ -279,7 +282,14 @@ export type Database = {
       is_trainer_of: { Args: { _client_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_user_role:
+        | "Utente"
+        | "Personal Trainer Starter"
+        | "Personal Trainer Pro"
+        | "Personal Trainer Elite"
+        | "Palestra Starter"
+        | "Palestra Pro"
+        | "Palestra Elite"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -406,6 +416,16 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_user_role: [
+        "Utente",
+        "Personal Trainer Starter",
+        "Personal Trainer Pro",
+        "Personal Trainer Elite",
+        "Palestra Starter",
+        "Palestra Pro",
+        "Palestra Elite",
+      ],
+    },
   },
 } as const
