@@ -336,6 +336,7 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_user_role"]
       }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_email_allowed: { Args: { check_email: string }; Returns: boolean }
       is_gym: { Args: { _user_id: string }; Returns: boolean }
       is_personal_trainer: { Args: { _user_id: string }; Returns: boolean }
