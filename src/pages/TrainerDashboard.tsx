@@ -405,8 +405,10 @@ export default function TrainerDashboard() {
 
   // ===== Progress computed values =====
   function getWeekOfMonth(date: Date) {
-    const firstDay = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
-    return Math.ceil((date.getDate() + firstDay) / 7);
+    const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+    // Converti da domenica-based (0=Dom) a lunedì-based (0=Lun)
+    const adjustedFirstDay = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
+    return Math.ceil((date.getDate() + adjustedFirstDay) / 7);
   }
 
   const availableProgressYears = useMemo(() => {

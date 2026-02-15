@@ -66,11 +66,13 @@ export default function Progress() {
     return Array.from(years).sort((a, b) => b - a);
   }, [progress]);
 
-  // Funzione per ottenere il numero della settimana del mese (1-5)
+  // Funzione per ottenere il numero della settimana del mese (1-5), settimane da lunedì a domenica
   function getWeekOfMonth(date: Date) {
-    const firstDay = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+    const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+    // Converti da domenica-based (0=Dom) a lunedì-based (0=Lun)
+    const adjustedFirstDay = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
     const day = date.getDate();
-    return Math.ceil((day + firstDay) / 7);
+    return Math.ceil((day + adjustedFirstDay) / 7);
   }
 
   // Calcola le settimane disponibili nel mese selezionato
