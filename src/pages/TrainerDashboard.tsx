@@ -787,16 +787,16 @@ export default function TrainerDashboard() {
             {loadingData ? (
               <p className="text-center text-muted-foreground py-8">Caricamento...</p>
             ) : (
-              <>
+              <Accordion type="multiple" className="space-y-4">
                 {/* Client Workouts */}
-                <Card className="mb-6">
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
+                <AccordionItem value="schede" className="border rounded-lg">
+                  <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                    <span className="text-lg font-semibold flex items-center gap-2">
                       <Dumbbell className="w-5 h-5 text-primary" />
                       Schede ({clientWorkouts.length})
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
+                    </span>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-4 pb-4">
                     {clientWorkouts.length === 0 ? (
                       <p className="text-muted-foreground text-center py-4">Nessuna scheda creata</p>
                     ) : (
@@ -958,18 +958,18 @@ export default function TrainerDashboard() {
                         ))}
                       </div>
                     )}
-                  </CardContent>
-                </Card>
+                  </AccordionContent>
+                </AccordionItem>
 
                 {/* ===== PROGRESSI ===== */}
-                <Card className="mb-6">
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
+                <AccordionItem value="progressi" className="border rounded-lg">
+                  <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                    <span className="text-lg font-semibold flex items-center gap-2">
                       <Target className="w-5 h-5 text-primary" />
                       Progressi
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
+                    </span>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-4 pb-4">
                     {clientProgress.length === 0 ? (
                       <p className="text-muted-foreground text-center py-4">Nessun progresso registrato</p>
                     ) : (
@@ -1168,18 +1168,18 @@ export default function TrainerDashboard() {
                         )}
                       </div>
                     )}
-                  </CardContent>
-                </Card>
+                  </AccordionContent>
+                </AccordionItem>
 
                 {/* ===== STORICO ===== */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
+                <AccordionItem value="storico" className="border rounded-lg">
+                  <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                    <span className="text-lg font-semibold flex items-center gap-2">
                       <Calendar className="w-5 h-5 text-primary" />
                       Storico Allenamenti
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
+                    </span>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-4 pb-4">
                     {clientProgress.length === 0 ? (
                       <p className="text-muted-foreground text-center py-4">Nessun allenamento registrato</p>
                     ) : (
@@ -1290,9 +1290,9 @@ export default function TrainerDashboard() {
                         )}
                       </div>
                     )}
-                  </CardContent>
-                </Card>
-              </>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             )}
           </>
         )}
