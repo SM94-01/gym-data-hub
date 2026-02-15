@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -29,12 +30,14 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { 
   Users, Shield, Building2, GraduationCap, UserPlus, 
-  Activity, TrendingUp, BarChart3, Dumbbell, Euro, Gift
+  Activity, TrendingUp, BarChart3, Dumbbell, Euro, Gift,
+  Mail, RefreshCw, Send, X
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Constants } from '@/integrations/supabase/types';
@@ -70,6 +73,13 @@ export default function AdminDashboard() {
   const [isOmaggio, setIsOmaggio] = useState(false);
   const [search, setSearch] = useState('');
   const [filterRole, setFilterRole] = useState<string>('all');
+  const [profileEmail, setProfileEmail] = useState<string | null>(null);
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [emailTarget, setEmailTarget] = useState('');
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailBody, setEmailBody] = useState('');
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [renewingEmail, setRenewingEmail] = useState<string | null>(null);
 
   const roles = Constants.public.Enums.app_user_role;
 
@@ -123,6 +133,42 @@ export default function AdminDashboard() {
     loadData();
   };
 
+  const handleRenewSubscription = async (email: string) => {
+    setRenewingEmail(email);
+    const { error } = await supabase.functions.invoke('admin-data', {
+      body: { action: 'renew_subscription', email }
+    });
+    if (error) {
+      toast.error('Errore nel rinnovo');
+    } else {
+      toast.success(`Abbonamento rinnovato per ${email}`);
+      loadData();
+    }
+    setRenewingEmail(null);
+  };
+
+  const handleSendEmail = async () => {
+    if (!emailTarget || !emailBody.trim()) return;
+    setSendingEmail(true);
+    const { error } = await supabase.functions.invoke('admin-data', {
+      body: { 
+        action: 'send_email', 
+        toEmail: emailTarget,
+        subject: emailSubject || 'Comunicazione da GymApp',
+        emailBody: emailBody 
+      }
+    });
+    if (error) {
+      toast.error('Errore nell\'invio della mail');
+    } else {
+      toast.success(`Email inviata a ${emailTarget}`);
+      setEmailDialogOpen(false);
+      setEmailSubject('');
+      setEmailBody('');
+    }
+    setSendingEmail(false);
+  };
+
   if (adminLoading) return null;
   if (!isAdmin) return <Navigate to="/" replace />;
 
@@ -161,7 +207,41 @@ export default function AdminDashboard() {
     return d;
   };
 
+  const getExpiryColor = (expiry: Date) => {
+    const now = new Date();
+    if (expiry < now) return 'text-destructive font-medium';
+    const oneMonthFromNow = new Date();
+    oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
+    if (expiry < oneMonthFromNow) return 'text-yellow-500 font-medium';
+    return 'text-green-500';
+  };
+
   const findActivity = (email: string) => activities.find(a => a.email.toLowerCase() === email.toLowerCase());
+
+  const getActivityStatus = (lastActivity: string | null) => {
+    if (!lastActivity) return { label: 'Inattivo', color: 'text-destructive' };
+    const daysSince = Math.floor((Date.now() - new Date(lastActivity).getTime()) / (1000 * 60 * 60 * 24));
+    if (daysSince <= 21) return { label: 'Attivo', color: 'text-green-500' };
+    return { label: 'Inattivo', color: 'text-destructive' };
+  };
+
+  const getRoleCategory = (role: string) => {
+    if (role.startsWith('Personal Trainer')) return 'Personal Trainer';
+    if (role.startsWith('Palestra')) return 'Palestra';
+    return role;
+  };
+
+  const getSubscriptionTier = (role: string) => {
+    if (role.includes('Starter')) return 'Starter';
+    if (role.includes('Pro')) return 'Pro';
+    if (role.includes('Elite')) return 'Elite';
+    if (role === 'Utente') return 'Normale';
+    return '-';
+  };
+
+  // Profile modal data
+  const profileData = profileEmail ? allEmails.find(e => e.email.toLowerCase() === profileEmail.toLowerCase()) : null;
+  const profileActivity = profileEmail ? findActivity(profileEmail) : null;
 
   return (
     <div className="min-h-screen pt-20 pb-8">
@@ -184,12 +264,12 @@ export default function AdminDashboard() {
           </Button>
         </div>
 
-        {/* Overview Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+        {/* Overview Stats - always 5 in a row */}
+        <div className="grid grid-cols-5 gap-4 mb-8">
           <div className="glass-card rounded-xl p-4 text-center animate-slide-up">
             <Users className="w-6 h-6 text-primary mx-auto mb-2" />
             <p className="font-display text-2xl font-bold">{totalUsers}</p>
-            <p className="text-xs text-muted-foreground">Totale Utenti</p>
+            <p className="text-xs text-muted-foreground">Totale</p>
           </div>
           <div className="glass-card rounded-xl p-4 text-center animate-slide-up" style={{ animationDelay: '50ms' }}>
             <Users className="w-6 h-6 text-blue-500 mx-auto mb-2" />
@@ -199,7 +279,7 @@ export default function AdminDashboard() {
           <div className="glass-card rounded-xl p-4 text-center animate-slide-up" style={{ animationDelay: '100ms' }}>
             <GraduationCap className="w-6 h-6 text-green-500 mx-auto mb-2" />
             <p className="font-display text-2xl font-bold">{trainers}</p>
-            <p className="text-xs text-muted-foreground">Personal Trainer</p>
+            <p className="text-xs text-muted-foreground">PT</p>
           </div>
           <div className="glass-card rounded-xl p-4 text-center animate-slide-up" style={{ animationDelay: '150ms' }}>
             <Building2 className="w-6 h-6 text-purple-500 mx-auto mb-2" />
@@ -252,14 +332,14 @@ export default function AdminDashboard() {
                 placeholder="Cerca per email..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="flex-1"
+                className="flex-[3]"
               />
               <Select value={filterRole} onValueChange={setFilterRole}>
-                <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectTrigger className="w-full sm:w-[140px]">
                   <SelectValue placeholder="Filtra ruolo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tutti i ruoli</SelectItem>
+                  <SelectItem value="all">Tutti</SelectItem>
                   {roles.map(role => (
                     <SelectItem key={role} value={role}>{role}</SelectItem>
                   ))}
@@ -275,6 +355,7 @@ export default function AdminDashboard() {
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Aggiungi Utente</DialogTitle>
+                    <DialogDescription>Inserisci email e ruolo del nuovo utente</DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4">
                     <div>
@@ -337,13 +418,20 @@ export default function AdminDashboard() {
                       const isGift = item.notes?.includes('omaggio');
                       const price = ROLE_PRICING[item.role] ?? 0;
                       const expiry = getExpiry(item.created_at);
-                      const isExpired = expiry < new Date();
+                      const expiryColor = getExpiryColor(expiry);
                       const actData = findActivity(item.email);
                       const registrationDate = actData?.created_at || item.created_at;
 
                       return (
                         <TableRow key={item.id}>
-                          <TableCell className="font-medium text-sm">{item.email}</TableCell>
+                          <TableCell>
+                            <button
+                              onClick={() => setProfileEmail(item.email)}
+                              className="font-medium text-sm text-primary hover:underline cursor-pointer text-left"
+                            >
+                              {item.email}
+                            </button>
+                          </TableCell>
                           <TableCell>
                             <Badge variant={getRoleBadgeVariant(item.role)} className="text-xs">
                               {item.role}
@@ -353,7 +441,7 @@ export default function AdminDashboard() {
                             {new Date(registrationDate).toLocaleDateString('it-IT')}
                           </TableCell>
                           <TableCell className="text-sm">
-                            <span className={isExpired ? 'text-destructive font-medium' : 'text-muted-foreground'}>
+                            <span className={expiryColor}>
                               {expiry.toLocaleDateString('it-IT')}
                             </span>
                           </TableCell>
@@ -375,7 +463,7 @@ export default function AdminDashboard() {
                               value={item.role}
                               onValueChange={(val) => handleChangeRole(item.email, val)}
                             >
-                              <SelectTrigger className="w-[160px] h-8 text-xs">
+                              <SelectTrigger className="w-[140px] h-8 text-xs">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -432,34 +520,43 @@ export default function AdminDashboard() {
                         <TableHead>Ruolo</TableHead>
                         <TableHead>Schede</TableHead>
                         <TableHead>Sessioni</TableHead>
-                        <TableHead className="hidden md:table-cell">Ultima Attività</TableHead>
+                        <TableHead>Ultima Sessione</TableHead>
+                        <TableHead>Stato</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {activities
                         .sort((a, b) => b.sessions_count - a.sessions_count)
-                        .map((act) => (
-                          <TableRow key={act.email}>
-                            <TableCell>
-                              <div>
-                                <p className="font-medium text-sm">{act.name}</p>
-                                <p className="text-xs text-muted-foreground">{act.email}</p>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant={getRoleBadgeVariant(act.role)} className="text-xs">
-                                {act.role}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="font-medium">{act.workouts_count}</TableCell>
-                            <TableCell className="font-medium">{act.sessions_count}</TableCell>
-                            <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
-                              {act.last_activity 
-                                ? new Date(act.last_activity).toLocaleDateString('it-IT')
-                                : 'Mai'}
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                        .map((act) => {
+                          const status = getActivityStatus(act.last_activity);
+                          return (
+                            <TableRow key={act.email}>
+                              <TableCell>
+                                <div>
+                                  <p className="font-medium text-sm">{act.name}</p>
+                                  <p className="text-xs text-muted-foreground">{act.email}</p>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={getRoleBadgeVariant(act.role)} className="text-xs">
+                                  {act.role}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="font-medium">{act.workouts_count}</TableCell>
+                              <TableCell className="font-medium">{act.sessions_count}</TableCell>
+                              <TableCell className="text-sm text-muted-foreground">
+                                {act.last_activity 
+                                  ? new Date(act.last_activity).toLocaleDateString('it-IT')
+                                  : 'Mai'}
+                              </TableCell>
+                              <TableCell>
+                                <span className={`text-sm font-medium ${status.color}`}>
+                                  {status.label}
+                                </span>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
                     </TableBody>
                   </Table>
                 </div>
@@ -512,6 +609,154 @@ export default function AdminDashboard() {
             )}
           </TabsContent>
         </Tabs>
+
+        {/* Client Profile Modal */}
+        <Dialog open={!!profileEmail} onOpenChange={(open) => !open && setProfileEmail(null)}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Profilo Cliente</DialogTitle>
+              <DialogDescription>Dettagli e gestione abbonamento</DialogDescription>
+            </DialogHeader>
+            {profileData && (() => {
+              const isGift = profileData.notes?.includes('omaggio');
+              const price = ROLE_PRICING[profileData.role] ?? 0;
+              const expiry = getExpiry(profileData.created_at);
+              const expiryColor = getExpiryColor(expiry);
+              const registrationDate = profileActivity?.created_at || profileData.created_at;
+
+              return (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Email</p>
+                      <p className="font-medium">{profileData.email}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Nome</p>
+                      <p className="font-medium">{profileActivity?.name || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Categoria</p>
+                      <p className="font-medium">{getRoleCategory(profileData.role)}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Piano</p>
+                      <Badge variant={getRoleBadgeVariant(profileData.role)} className="text-xs">
+                        {getSubscriptionTier(profileData.role)}
+                      </Badge>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Data Iscrizione</p>
+                      <p className="font-medium">{new Date(registrationDate).toLocaleDateString('it-IT')}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Scadenza Abbonamento</p>
+                      <div className="flex items-center gap-2">
+                        <span className={`font-medium ${expiryColor}`}>
+                          {expiry.toLocaleDateString('it-IT')}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          disabled={renewingEmail === profileData.email}
+                          onClick={() => handleRenewSubscription(profileData.email)}
+                          title="Rinnova abbonamento (+1 anno da oggi)"
+                        >
+                          <RefreshCw className={`w-3.5 h-3.5 ${renewingEmail === profileData.email ? 'animate-spin' : ''}`} />
+                        </Button>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Pagamento</p>
+                      {isGift ? (
+                        <div className="flex items-center gap-1">
+                          <span className="line-through text-muted-foreground">€{price}</span>
+                          <Badge variant="outline" className="text-orange-500 border-orange-500/30 text-xs">
+                            <Gift className="w-3 h-3 mr-1" />
+                            Omaggio
+                          </Badge>
+                        </div>
+                      ) : (
+                        <span className="font-medium text-green-500">€{price}/anno</span>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Omaggio</p>
+                      <p className="font-medium">{isGift ? 'Sì' : 'No'}</p>
+                    </div>
+                  </div>
+
+                  {profileActivity && (
+                    <div className="bg-secondary/50 rounded-lg p-3 grid grid-cols-3 gap-3 text-center text-sm">
+                      <div>
+                        <p className="text-muted-foreground text-xs">Schede</p>
+                        <p className="font-bold">{profileActivity.workouts_count}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground text-xs">Sessioni</p>
+                        <p className="font-bold">{profileActivity.sessions_count}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground text-xs">Ultima</p>
+                        <p className="font-bold text-xs">
+                          {profileActivity.last_activity 
+                            ? new Date(profileActivity.last_activity).toLocaleDateString('it-IT')
+                            : 'Mai'}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  <Button
+                    className="w-full"
+                    variant="outline"
+                    onClick={() => {
+                      setEmailTarget(profileData.email);
+                      setEmailDialogOpen(true);
+                    }}
+                  >
+                    <Mail className="w-4 h-4 mr-2" />
+                    Invia Comunicazione
+                  </Button>
+                </div>
+              );
+            })()}
+          </DialogContent>
+        </Dialog>
+
+        {/* Send Email Dialog */}
+        <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Invia Email</DialogTitle>
+              <DialogDescription>Invia una comunicazione a {emailTarget}</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>Oggetto</Label>
+                <Input
+                  value={emailSubject}
+                  onChange={(e) => setEmailSubject(e.target.value)}
+                  placeholder="Oggetto della mail..."
+                />
+              </div>
+              <div>
+                <Label>Messaggio</Label>
+                <Textarea
+                  value={emailBody}
+                  onChange={(e) => setEmailBody(e.target.value)}
+                  placeholder="Scrivi il testo della mail..."
+                  rows={6}
+                />
+              </div>
+              <Button onClick={handleSendEmail} className="w-full" disabled={sendingEmail || !emailBody.trim()}>
+                <Send className="w-4 h-4 mr-2" />
+                {sendingEmail ? 'Invio in corso...' : 'Invia Email'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <AppVersion />
       </div>
