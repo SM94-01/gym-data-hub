@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Link } from 'react-router-dom';
 import { AppVersion } from '@/components/gym/AppVersion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -33,10 +34,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { 
   Users, Shield, Building2, GraduationCap, UserPlus, 
-  Activity, TrendingUp, BarChart3, Dumbbell 
+  Activity, TrendingUp, BarChart3, Dumbbell, Euro, Gift
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Constants } from '@/integrations/supabase/types';
+import { ROLE_PRICING, ROLE_LIMITS } from '@/lib/pricing';
 
 interface AllowedEmail {
   id: string;
@@ -53,16 +55,8 @@ interface UserActivity {
   workouts_count: number;
   sessions_count: number;
   last_activity: string | null;
+  created_at?: string;
 }
-
-const ROLE_LIMITS: Record<string, { clients?: number; pts?: number; users?: number }> = {
-  'Personal Trainer Starter': { clients: 5 },
-  'Personal Trainer Pro': { clients: 15 },
-  'Personal Trainer Elite': { clients: 40 },
-  'Palestra Starter': { pts: 3, users: 50 },
-  'Palestra Pro': { pts: 10, users: 150 },
-  'Palestra Elite': { pts: 25, users: 500 },
-};
 
 export default function AdminDashboard() {
   const { user } = useAuth();
@@ -73,48 +67,46 @@ export default function AdminDashboard() {
   const [addOpen, setAddOpen] = useState(false);
   const [newEmail, setNewEmail] = useState('');
   const [newRole, setNewRole] = useState<string>('Utente');
+  const [isOmaggio, setIsOmaggio] = useState(false);
   const [search, setSearch] = useState('');
   const [filterRole, setFilterRole] = useState<string>('all');
 
   const roles = Constants.public.Enums.app_user_role;
 
   useEffect(() => {
-    if (isAdmin) {
-      loadData();
-    }
+    if (isAdmin) loadData();
   }, [isAdmin]);
 
   const loadData = async () => {
     setLoading(true);
-    
-    // Load all allowed emails via edge function (since RLS blocks direct access)
-    const { data: emailsData, error: emailsError } = await supabase.functions.invoke('admin-data', {
+    const { data, error } = await supabase.functions.invoke('admin-data', {
       body: { action: 'get_all_users' }
     });
-
-    if (!emailsError && emailsData) {
-      setAllEmails(emailsData.emails || []);
-      setActivities(emailsData.activities || []);
+    if (!error && data) {
+      setAllEmails(data.emails || []);
+      setActivities(data.activities || []);
     }
-    
     setLoading(false);
   };
 
   const handleAddUser = async () => {
     if (!newEmail.trim()) return;
-
-    const { data, error } = await supabase.functions.invoke('admin-data', {
-      body: { action: 'add_user', email: newEmail.trim().toLowerCase(), role: newRole }
+    const { error } = await supabase.functions.invoke('admin-data', {
+      body: { 
+        action: 'add_user', 
+        email: newEmail.trim().toLowerCase(), 
+        role: newRole,
+        notes: isOmaggio ? 'omaggio' : null
+      }
     });
-
     if (error) {
       toast.error("Errore nell'aggiunta dell'utente");
       return;
     }
-
     toast.success(`${newEmail} aggiunto con ruolo ${newRole}`);
     setNewEmail('');
     setNewRole('Utente');
+    setIsOmaggio(false);
     setAddOpen(false);
     loadData();
   };
@@ -123,12 +115,10 @@ export default function AdminDashboard() {
     const { error } = await supabase.functions.invoke('admin-data', {
       body: { action: 'update_role', email, role: newRole }
     });
-
     if (error) {
       toast.error('Errore nel cambio ruolo');
       return;
     }
-
     toast.success(`Ruolo aggiornato per ${email}`);
     loadData();
   };
@@ -142,48 +132,56 @@ export default function AdminDashboard() {
     return matchesSearch && matchesRole;
   });
 
-  // Stats
   const totalUsers = allEmails.length;
   const utenti = allEmails.filter(e => e.role === 'Utente').length;
   const trainers = allEmails.filter(e => e.role.startsWith('Personal Trainer')).length;
   const palestre = allEmails.filter(e => e.role.startsWith('Palestra')).length;
   const admins = allEmails.filter(e => e.role === 'Admin').length;
 
-  // License stats
   const licenseSummary = allEmails.reduce((acc, e) => {
     const limits = ROLE_LIMITS[e.role];
     if (limits) {
-      if (limits.clients) {
-        acc.ptLicenses += limits.clients;
-      }
-      if (limits.pts) {
-        acc.gymPtLicenses += limits.pts;
-      }
-      if (limits.users) {
-        acc.gymUserLicenses += limits.users;
-      }
+      if (limits.clients) acc.ptLicenses += limits.clients;
+      if (limits.pts) acc.gymPtLicenses += limits.pts;
+      if (limits.users) acc.gymUserLicenses += limits.users;
     }
     return acc;
   }, { ptLicenses: 0, gymPtLicenses: 0, gymUserLicenses: 0 });
 
   const getRoleBadgeVariant = (role: string) => {
-    if (role === 'Admin') return 'destructive';
-    if (role.startsWith('Personal Trainer')) return 'default';
-    if (role.startsWith('Palestra')) return 'secondary';
-    return 'outline';
+    if (role === 'Admin') return 'destructive' as const;
+    if (role.startsWith('Personal Trainer')) return 'default' as const;
+    if (role.startsWith('Palestra')) return 'secondary' as const;
+    return 'outline' as const;
   };
+
+  const getExpiry = (createdAt: string) => {
+    const d = new Date(createdAt);
+    d.setFullYear(d.getFullYear() + 1);
+    return d;
+  };
+
+  const findActivity = (email: string) => activities.find(a => a.email.toLowerCase() === email.toLowerCase());
 
   return (
     <div className="min-h-screen pt-20 pb-8">
       <div className="container mx-auto px-4">
-        <div className="flex items-center gap-3 mb-6 animate-fade-in">
-          <div className="w-10 h-10 bg-destructive/20 rounded-full flex items-center justify-center">
-            <Shield className="w-5 h-5 text-destructive" />
+        <div className="flex items-center justify-between mb-6 animate-fade-in">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-destructive/20 rounded-full flex items-center justify-center">
+              <Shield className="w-5 h-5 text-destructive" />
+            </div>
+            <div>
+              <h1 className="font-display text-2xl font-bold">Admin Dashboard</h1>
+              <p className="text-sm text-muted-foreground">Gestione completa della piattaforma</p>
+            </div>
           </div>
-          <div>
-            <h1 className="font-display text-2xl font-bold">Admin Dashboard</h1>
-            <p className="text-sm text-muted-foreground">Gestione completa della piattaforma</p>
-          </div>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/admin/subscriptions">
+              <Euro className="w-4 h-4 mr-2" />
+              Statistiche Ricavi
+            </Link>
+          </Button>
         </div>
 
         {/* Overview Stats */}
@@ -265,7 +263,6 @@ export default function AdminDashboard() {
                   {roles.map(role => (
                     <SelectItem key={role} value={role}>{role}</SelectItem>
                   ))}
-                  <SelectItem value="Admin">Admin</SelectItem>
                 </SelectContent>
               </Select>
               <Dialog open={addOpen} onOpenChange={setAddOpen}>
@@ -298,9 +295,19 @@ export default function AdminDashboard() {
                           {roles.map(role => (
                             <SelectItem key={role} value={role}>{role}</SelectItem>
                           ))}
-                          <SelectItem value="Admin">Admin</SelectItem>
                         </SelectContent>
                       </Select>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="omaggio"
+                        checked={isOmaggio}
+                        onCheckedChange={(checked) => setIsOmaggio(checked === true)}
+                      />
+                      <Label htmlFor="omaggio" className="flex items-center gap-1 cursor-pointer">
+                        <Gift className="w-4 h-4 text-orange-500" />
+                        Omaggio (gratuito)
+                      </Label>
                     </div>
                     <Button onClick={handleAddUser} className="w-full">
                       Aggiungi Utente
@@ -313,46 +320,74 @@ export default function AdminDashboard() {
             {loading ? (
               <p className="text-muted-foreground text-center py-8">Caricamento...</p>
             ) : (
-              <div className="glass-card rounded-xl overflow-hidden">
+              <div className="glass-card rounded-xl overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Email</TableHead>
                       <TableHead>Ruolo</TableHead>
-                      <TableHead className="hidden md:table-cell">Data Aggiunta</TableHead>
+                      <TableHead>Iscrizione</TableHead>
+                      <TableHead>Scadenza</TableHead>
+                      <TableHead>Pagamento</TableHead>
                       <TableHead>Azioni</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredEmails.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell className="font-medium text-sm">{item.email}</TableCell>
-                        <TableCell>
-                          <Badge variant={getRoleBadgeVariant(item.role)} className="text-xs">
-                            {item.role}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
-                          {new Date(item.created_at).toLocaleDateString('it-IT')}
-                        </TableCell>
-                        <TableCell>
-                          <Select
-                            value={item.role}
-                            onValueChange={(val) => handleChangeRole(item.email, val)}
-                          >
-                            <SelectTrigger className="w-[160px] h-8 text-xs">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {roles.map(role => (
-                                <SelectItem key={role} value={role}>{role}</SelectItem>
-                              ))}
-                              <SelectItem value="Admin">Admin</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {filteredEmails.map((item) => {
+                      const isGift = item.notes?.includes('omaggio');
+                      const price = ROLE_PRICING[item.role] ?? 0;
+                      const expiry = getExpiry(item.created_at);
+                      const isExpired = expiry < new Date();
+                      const actData = findActivity(item.email);
+                      const registrationDate = actData?.created_at || item.created_at;
+
+                      return (
+                        <TableRow key={item.id}>
+                          <TableCell className="font-medium text-sm">{item.email}</TableCell>
+                          <TableCell>
+                            <Badge variant={getRoleBadgeVariant(item.role)} className="text-xs">
+                              {item.role}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {new Date(registrationDate).toLocaleDateString('it-IT')}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            <span className={isExpired ? 'text-destructive font-medium' : 'text-muted-foreground'}>
+                              {expiry.toLocaleDateString('it-IT')}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {isGift ? (
+                              <div className="flex items-center gap-1">
+                                <span className="line-through text-muted-foreground">€{price}</span>
+                                <Badge variant="outline" className="text-orange-500 border-orange-500/30 text-xs">
+                                  <Gift className="w-3 h-3 mr-1" />
+                                  Omaggio
+                                </Badge>
+                              </div>
+                            ) : (
+                              <span className="font-medium text-green-500">€{price}/anno</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Select
+                              value={item.role}
+                              onValueChange={(val) => handleChangeRole(item.email, val)}
+                            >
+                              <SelectTrigger className="w-[160px] h-8 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {roles.map(role => (
+                                  <SelectItem key={role} value={role}>{role}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
@@ -452,8 +487,6 @@ export default function AdminDashboard() {
                       .filter(e => ROLE_LIMITS[e.role])
                       .map((item) => {
                         const limits = ROLE_LIMITS[item.role];
-                        // Find activity data for used counts
-                        const activityData = activities.find(a => a.email === item.email);
                         return (
                           <TableRow key={item.id}>
                             <TableCell className="font-medium text-sm">{item.email}</TableCell>
