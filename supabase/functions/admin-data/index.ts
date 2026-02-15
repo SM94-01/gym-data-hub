@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -43,7 +44,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { action, email, role, notes } = await req.json();
+    const body = await req.json();
+    const { action, email, role, notes, subject, emailBody, toEmail } = body;
 
     if (action === "get_all_users") {
       const { data: emails } = await adminClient
@@ -121,6 +123,92 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (action === "update_notes") {
+      const { error } = await adminClient
+        .from("allowed_emails")
+        .update({ notes })
+        .eq("email", email.toLowerCase());
+
+      if (error) {
+        return new Response(JSON.stringify({ error: error.message }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (action === "renew_subscription") {
+      const { error } = await adminClient
+        .from("allowed_emails")
+        .update({ created_at: new Date().toISOString() })
+        .eq("email", email.toLowerCase());
+
+      if (error) {
+        return new Response(JSON.stringify({ error: error.message }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (action === "send_email") {
+      const gmailAppPassword = Deno.env.get("GMAIL_APP_PASSWORD");
+      if (!gmailAppPassword) {
+        return new Response(JSON.stringify({ error: "Configurazione email mancante" }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const cleanPassword = gmailAppPassword.replace(/\s+/g, "");
+
+      const client = new SMTPClient({
+        connection: {
+          hostname: "smtp.gmail.com",
+          port: 465,
+          tls: true,
+          auth: {
+            username: "my.gymapp26@gmail.com",
+            password: cleanPassword,
+          },
+        },
+      });
+
+      const htmlContent = `
+        <html>
+          <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #8b5cf6;">GymApp</h1>
+            </div>
+            <p>${emailBody.replace(/\n/g, '<br>')}</p>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+            <p style="color: #888; font-size: 12px; text-align: center;">Il team GymApp</p>
+          </body>
+        </html>
+      `;
+
+      await client.send({
+        from: "GymApp <my.gymapp26@gmail.com>",
+        to: toEmail,
+        subject: subject || "Comunicazione da GymApp",
+        html: htmlContent,
+      });
+
+      await client.close();
 
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

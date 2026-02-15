@@ -1,73 +1,68 @@
-# Welcome to your Lovable project
+# GymApp
 
-## Project info
+Applicazione web per la gestione di allenamenti in palestra, sviluppata con React, Vite, TypeScript, Tailwind CSS e shadcn/ui.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Funzionalità Principali
 
-## How can I edit this code?
+### 🏋️ Gestione Allenamenti
+- Creazione e modifica di schede di allenamento personalizzate
+- Supporto per esercizi singoli e superset
+- Gestione di serie, ripetizioni, peso target e tempi di recupero
+- Note personalizzate per ogni esercizio
 
-There are several ways of editing your application.
+### 📊 Tracking Progressi
+- Registrazione dei progressi per ogni sessione di allenamento
+- Storico completo delle sessioni con riepilogo dettagliato
+- Grafici di distribuzione muscolare (PieChart) con tooltip interattivi
+- Monitoraggio del peso corporeo con grafici temporali
 
-**Use Lovable**
+### 👤 Profilo Utente
+- Gestione del profilo personale (nome, email)
+- Sistema di autenticazione con email e password
+- Verifica email obbligatoria alla registrazione
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+### 🎓 Dashboard Personal Trainer
+- Gestione clienti con inviti via email
+- Creazione di schede personalizzate per ogni cliente
+- Monitoraggio progressi e attività dei clienti
+- Notifiche email automatiche (nuova scheda, allenamento completato)
+- Piani abbonamento: Starter (5 clienti), Pro (15 clienti), Elite (40 clienti)
 
-Changes made via Lovable will be committed automatically to this repo.
+### 🏢 Dashboard Palestra
+- Gestione centralizzata di utenti e personal trainer
+- Monitoraggio sessioni settimanali e tassi di retention
+- Analisi attività dei trainer (clienti e schede create)
+- Piani abbonamento: Starter (3 PT + 50 utenti), Pro (10 PT + 150 utenti), Elite (25 PT + 500 utenti)
 
-**Use your preferred IDE**
+### ⚖️ Monitoraggio Peso Corporeo
+- Inserimento peso giornaliero
+- Grafici temporali dell'andamento del peso
+- Calcolo variazioni e trend
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### 📱 PWA (Progressive Web App)
+- Installabile su dispositivi mobili
+- Funzionamento offline
+- Esperienza nativa su smartphone
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## Tecnologie Utilizzate
 
-Follow these steps:
+- **Frontend**: React 18, TypeScript, Vite
+- **UI**: Tailwind CSS, shadcn/ui, Lucide Icons
+- **State Management**: React Context, TanStack React Query
+- **Routing**: React Router DOM
+- **Form**: React Hook Form, Zod
+- **Grafici**: Recharts
+- **Backend**: Lovable Cloud (Database, Auth, Edge Functions, Storage)
+- **Email**: SMTP Gmail per notifiche automatiche
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## Struttura Ruoli
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+| Ruolo | Prezzo/anno | Limiti |
+|-------|-------------|--------|
+| Utente | €10 | - |
+| PT Starter | €49 | 5 clienti |
+| PT Pro | €89 | 15 clienti |
+| PT Elite | €149 | 40 clienti |
+| Palestra Starter | €199 | 3 PT + 50 utenti |
+| Palestra Pro | €399 | 10 PT + 150 utenti |
+| Palestra Elite | €699 | 25 PT + 500 utenti |
