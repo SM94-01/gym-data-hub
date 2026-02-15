@@ -13,7 +13,7 @@ serve(async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { type, trainerName, clientName, clientEmail, trainerId } = await req.json();
+    const { type, trainerName, clientName, clientEmail, trainerId, appUrl } = await req.json();
     console.log("notify-workout called with:", { type, trainerName, clientName, clientEmail, trainerId });
 
     if (!type) {
@@ -55,9 +55,7 @@ serve(async (req: Request): Promise<Response> => {
         </html>
       `;
     } else if (type === "workout_completed") {
-      // Resolve trainer email server-side using service role (bypasses RLS)
       if (!trainerId) {
-        console.error("trainerId missing for workout_completed");
         return new Response(
           JSON.stringify({ error: "trainerId mancante" }),
           { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
@@ -68,7 +66,6 @@ serve(async (req: Request): Promise<Response> => {
       const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
       const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-      // Get trainer's email from auth.users
       const { data: userData, error: userError } = await supabase.auth.admin.getUserById(trainerId);
       if (userError || !userData?.user?.email) {
         console.error("Could not find trainer email:", userError);
@@ -88,6 +85,66 @@ serve(async (req: Request): Promise<Response> => {
             </div>
             <p>Ciao <strong>${trainerName}</strong>,</p>
             <p>il tuo cliente <strong>${clientName}</strong> ha aggiunto un nuovo allenamento nel suo storico. Vai a dare un'occhiata ai progressi 📊</p>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+            <p style="color: #888; font-size: 12px; text-align: center;">Il team GymApp</p>
+          </body>
+        </html>
+      `;
+    } else if (type === "client_added") {
+      // Confirmation email when a PT adds an already-registered client
+      toEmail = clientEmail;
+      subject = "GymApp - Sei stato aggiunto come cliente!";
+      htmlContent = `
+        <html>
+          <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #8b5cf6;">GymApp</h1>
+            </div>
+            <p>Ciao <strong>${clientName}</strong>,</p>
+            <p>il Personal Trainer <strong>${trainerName}</strong> ti ha aggiunto come cliente su GymApp! Da ora potrà creare schede personalizzate per te e monitorare i tuoi progressi 🎯</p>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+            <p style="color: #888; font-size: 12px; text-align: center;">Il team GymApp</p>
+          </body>
+        </html>
+      `;
+    } else if (type === "invite_client") {
+      // Invite email for non-registered user
+      toEmail = clientEmail;
+      subject = "GymApp - Sei stato invitato!";
+      const link = appUrl || "https://gymapp.app";
+      htmlContent = `
+        <html>
+          <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #8b5cf6;">GymApp</h1>
+            </div>
+            <p>Ciao!</p>
+            <p>Il tuo Personal Trainer <strong>${trainerName}</strong> ti ha invitato a usare <strong>GymApp</strong>. Cosa aspetti? Registrati ora! 💪</p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${link}/auth" style="background-color: #8b5cf6; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Registrati su GymApp</a>
+            </div>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+            <p style="color: #888; font-size: 12px; text-align: center;">Il team GymApp</p>
+          </body>
+        </html>
+      `;
+    } else if (type === "invite_gym_member") {
+      // Invite email for gym-invited PT or user
+      toEmail = clientEmail;
+      const roleName = clientName || "membro"; // reusing clientName for role description
+      subject = "GymApp - Sei stato invitato dalla tua palestra!";
+      const link = appUrl || "https://gymapp.app";
+      htmlContent = `
+        <html>
+          <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #8b5cf6;">GymApp</h1>
+            </div>
+            <p>Ciao!</p>
+            <p>La tua palestra <strong>${trainerName}</strong> ti ha invitato a usare <strong>GymApp</strong>. Cosa aspetti? Registrati ora! 🏋️</p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${link}/auth" style="background-color: #8b5cf6; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Registrati su GymApp</a>
+            </div>
             <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
             <p style="color: #888; font-size: 12px; text-align: center;">Il team GymApp</p>
           </body>

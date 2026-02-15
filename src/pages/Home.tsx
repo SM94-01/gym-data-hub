@@ -4,11 +4,12 @@ import { WorkoutCard } from '@/components/gym/WorkoutCard';
 import { AppVersion } from '@/components/gym/AppVersion';
 
 import { Button } from '@/components/ui/button';
-import { Plus, Play, Trophy, Flame, Target, Scale, User, GraduationCap } from 'lucide-react';
+import { Plus, Play, Trophy, Flame, Target, Scale, User, GraduationCap, Building2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { ProfileModal } from '@/components/gym/ProfileModal';
 import { useIsTrainer } from '@/hooks/useIsTrainer';
+import { useIsGym } from '@/hooks/useIsGym';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,6 +23,7 @@ export default function Home() {
   const navigate = useNavigate();
   const [showProfile, setShowProfile] = useState(false);
   const { isTrainer } = useIsTrainer();
+  const { isGym } = useIsGym();
   
   const workouts = getUserWorkouts();
   const progress = getUserProgress();
@@ -61,7 +63,7 @@ export default function Home() {
               <p className="font-display font-semibold">{profile?.name || 'Utente'}</p>
             </div>
           </div>
-          {isTrainer ? (
+          {(isTrainer || isGym) ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="text-muted-foreground">
@@ -74,10 +76,18 @@ export default function Home() {
                   <User className="w-4 h-4 mr-2" />
                   Utente
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/trainer')}>
-                  <GraduationCap className="w-4 h-4 mr-2" />
-                  Trainer
-                </DropdownMenuItem>
+                {isTrainer && (
+                  <DropdownMenuItem onClick={() => navigate('/trainer')}>
+                    <GraduationCap className="w-4 h-4 mr-2" />
+                    Trainer
+                  </DropdownMenuItem>
+                )}
+                {isGym && (
+                  <DropdownMenuItem onClick={() => navigate('/gym')}>
+                    <Building2 className="w-4 h-4 mr-2" />
+                    Palestra
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
