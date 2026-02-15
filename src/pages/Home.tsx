@@ -91,10 +91,20 @@ export default function Home() {
                   </DropdownMenuItem>
                 )}
                 {isAdmin && (
-                  <DropdownMenuItem onClick={() => navigate('/admin')}>
-                    <Shield className="w-4 h-4 mr-2" />
-                    Admin
-                  </DropdownMenuItem>
+                  <>
+                    <DropdownMenuItem onClick={() => navigate('/admin')}>
+                      <Shield className="w-4 h-4 mr-2" />
+                      Admin
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate('/demo/trainer')}>
+                      <GraduationCap className="w-4 h-4 mr-2" />
+                      Demo Trainer
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate('/demo/gym')}>
+                      <Building2 className="w-4 h-4 mr-2" />
+                      Demo Palestra
+                    </DropdownMenuItem>
+                  </>
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
