@@ -15,19 +15,19 @@ import { toast } from 'sonner';
 import {
   UserPlus, Users, Trash2, Dumbbell, Target, ChevronLeft,
   Plus, ArrowLeft, Edit2, Check, X, Calendar, TrendingUp,
-  BarChart3, Flame, Award, Activity, MessageSquare, Zap, Timer
-} from 'lucide-react';
+  BarChart3, Flame, Award, Activity, MessageSquare, Zap, Timer } from
+'lucide-react';
 import { Workout, Exercise, WorkoutProgress, SetData, MONTHS } from '@/types/gym';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, AreaChart, Area, BarChart, Bar,
-  PieChart, Pie, Cell,
-} from 'recharts';
+  PieChart, Pie, Cell } from
+'recharts';
 
 const COLORS = [
-  "hsl(160, 84%, 39%)", "hsl(38, 92%, 50%)", "hsl(280, 65%, 60%)",
-  "hsl(200, 80%, 50%)", "hsl(340, 75%, 55%)", "hsl(120, 60%, 45%)",
-];
+"hsl(160, 84%, 39%)", "hsl(38, 92%, 50%)", "hsl(280, 65%, 60%)",
+"hsl(200, 80%, 50%)", "hsl(340, 75%, 55%)", "hsl(120, 60%, 45%)"];
+
 
 interface TrainerClient {
   id: string;
@@ -72,10 +72,10 @@ export default function TrainerDashboard() {
 
   const fetchClients = useCallback(async () => {
     if (!user) return;
-    const { data, error } = await supabase
-      .from('trainer_clients')
-      .select('*')
-      .order('created_at', { ascending: true });
+    const { data, error } = await supabase.
+    from('trainer_clients').
+    select('*').
+    order('created_at', { ascending: true });
 
     if (error) {
       console.error('Error fetching clients:', error);
@@ -85,14 +85,14 @@ export default function TrainerDashboard() {
     // Fetch client names from profiles
     const clientsWithNames: TrainerClient[] = [];
     for (const c of data || []) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('name')
-        .eq('id', c.client_id)
-        .maybeSingle();
+      const { data: profile } = await supabase.
+      from('profiles').
+      select('name').
+      eq('id', c.client_id).
+      maybeSingle();
       clientsWithNames.push({
         ...c,
-        client_name: profile?.name || c.client_email,
+        client_name: profile?.name || c.client_email
       });
     }
     setClients(clientsWithNames);
@@ -107,8 +107,8 @@ export default function TrainerDashboard() {
     setAdding(true);
 
     // Look up user ID by email
-    const { data: clientId, error: lookupError } = await supabase
-      .rpc('get_user_id_by_email', { _email: newEmail.trim() });
+    const { data: clientId, error: lookupError } = await supabase.
+    rpc('get_user_id_by_email', { _email: newEmail.trim() });
 
     if (lookupError || !clientId) {
       toast.error('Utente non trovato con questa email');
@@ -122,13 +122,13 @@ export default function TrainerDashboard() {
       return;
     }
 
-    const { error } = await supabase
-      .from('trainer_clients')
-      .insert({
-        trainer_id: user.id,
-        client_id: clientId,
-        client_email: newEmail.trim().toLowerCase(),
-      });
+    const { error } = await supabase.
+    from('trainer_clients').
+    insert({
+      trainer_id: user.id,
+      client_id: clientId,
+      client_email: newEmail.trim().toLowerCase()
+    });
 
     if (error) {
       if (error.code === '23505') {
@@ -146,10 +146,10 @@ export default function TrainerDashboard() {
   };
 
   const handleRemoveClient = async (clientRelId: string) => {
-    const { error } = await supabase
-      .from('trainer_clients')
-      .delete()
-      .eq('id', clientRelId);
+    const { error } = await supabase.
+    from('trainer_clients').
+    delete().
+    eq('id', clientRelId);
 
     if (error) {
       toast.error('Errore nella rimozione');
@@ -164,20 +164,20 @@ export default function TrainerDashboard() {
     setLoadingData(true);
 
     const [workoutsRes, progressRes] = await Promise.all([
-      supabase
-        .from('workouts')
-        .select('*, exercises(*)')
-        .eq('user_id', clientId)
-        .order('created_at', { ascending: true }),
-      supabase
-        .from('workout_progress')
-        .select('*')
-        .eq('user_id', clientId)
-        .order('date', { ascending: false }),
-    ]);
+    supabase.
+    from('workouts').
+    select('*, exercises(*)').
+    eq('user_id', clientId).
+    order('created_at', { ascending: true }),
+    supabase.
+    from('workout_progress').
+    select('*').
+    eq('user_id', clientId).
+    order('date', { ascending: false })]
+    );
 
     if (workoutsRes.data) {
-      setClientWorkouts(workoutsRes.data.map(w => ({
+      setClientWorkouts(workoutsRes.data.map((w) => ({
         id: w.id,
         userId: w.user_id,
         name: w.name,
@@ -185,26 +185,26 @@ export default function TrainerDashboard() {
         isSaved: w.is_saved,
         lastUsed: w.last_used || undefined,
         createdAt: w.created_at,
-        exercises: (w.exercises || [])
-          .sort((a: any, b: any) => a.position - b.position)
-          .map((e: any) => ({
-            id: e.id,
-            name: e.name,
-            muscle: e.muscle,
-            sets: e.sets,
-            reps: e.reps,
-            targetWeight: Number(e.target_weight),
-            isSuperset: e.is_superset || false,
-            exercise2Name: e.exercise2_name || undefined,
-            muscle2: e.muscle2 || undefined,
-            reps2: e.reps2 || undefined,
-            targetWeight2: e.target_weight2 ? Number(e.target_weight2) : undefined,
-          })),
+        exercises: (w.exercises || []).
+        sort((a: any, b: any) => a.position - b.position).
+        map((e: any) => ({
+          id: e.id,
+          name: e.name,
+          muscle: e.muscle,
+          sets: e.sets,
+          reps: e.reps,
+          targetWeight: Number(e.target_weight),
+          isSuperset: e.is_superset || false,
+          exercise2Name: e.exercise2_name || undefined,
+          muscle2: e.muscle2 || undefined,
+          reps2: e.reps2 || undefined,
+          targetWeight2: e.target_weight2 ? Number(e.target_weight2) : undefined
+        }))
       })));
     }
 
     if (progressRes.data) {
-      setClientProgress(progressRes.data.map(p => ({
+      setClientProgress(progressRes.data.map((p) => ({
         id: p.id,
         userId: p.user_id,
         exerciseId: p.exercise_id || '',
@@ -215,7 +215,7 @@ export default function TrainerDashboard() {
         weightUsed: Number(p.weight_used),
         repsCompleted: p.reps_completed,
         notes: p.notes || undefined,
-        setsData: p.sets_data ? (p.sets_data as unknown as SetData[]) : undefined,
+        setsData: p.sets_data ? p.sets_data as unknown as SetData[] : undefined
       })));
     }
 
@@ -230,17 +230,17 @@ export default function TrainerDashboard() {
 
   // Create workout for client
   const addExercise = () => {
-    setExercises(prev => [...prev, {
-      name: '', muscle: 'Pettorali', sets: 3, reps: 10, targetWeight: 0,
+    setExercises((prev) => [...prev, {
+      name: '', muscle: 'Pettorali', sets: 3, reps: 10, targetWeight: 0
     }]);
   };
 
   const updateExercise = (index: number, field: string, value: any) => {
-    setExercises(prev => prev.map((ex, i) => i === index ? { ...ex, [field]: value } : ex));
+    setExercises((prev) => prev.map((ex, i) => i === index ? { ...ex, [field]: value } : ex));
   };
 
   const removeExercise = (index: number) => {
-    setExercises(prev => prev.filter((_, i) => i !== index));
+    setExercises((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleCreateWorkout = async () => {
@@ -249,16 +249,16 @@ export default function TrainerDashboard() {
       return;
     }
 
-    const { data: workoutData, error: workoutError } = await supabase
-      .from('workouts')
-      .insert({
-        user_id: selectedClient.client_id,
-        name: workoutName.trim(),
-        is_active: false,
-        is_saved: true,
-      })
-      .select()
-      .single();
+    const { data: workoutData, error: workoutError } = await supabase.
+    from('workouts').
+    insert({
+      user_id: selectedClient.client_id,
+      name: workoutName.trim(),
+      is_active: false,
+      is_saved: true
+    }).
+    select().
+    single();
 
     if (workoutError) {
       toast.error('Errore nella creazione della scheda');
@@ -280,7 +280,7 @@ export default function TrainerDashboard() {
       muscle2: ex.muscle2 || null,
       reps2: ex.reps2 || null,
       target_weight2: ex.targetWeight2 || null,
-      position: idx,
+      position: idx
     }));
 
     const { error: exError } = await supabase.from('exercises').insert(exercisesToInsert);
@@ -292,19 +292,19 @@ export default function TrainerDashboard() {
 
     // Send email notification to client
     try {
-      const { data: trainerProfile } = await supabase
-        .from('profiles')
-        .select('name')
-        .eq('id', user!.id)
-        .maybeSingle();
+      const { data: trainerProfile } = await supabase.
+      from('profiles').
+      select('name').
+      eq('id', user!.id).
+      maybeSingle();
 
       const { data: invokeData, error: invokeError } = await supabase.functions.invoke('notify-workout', {
         body: {
           type: 'workout_created',
           trainerName: trainerProfile?.name || 'Il tuo PT',
           clientName: selectedClient.client_name || 'Atleta',
-          clientEmail: selectedClient.client_email,
-        },
+          clientEmail: selectedClient.client_email
+        }
       });
       console.log('notify-workout response:', invokeData, invokeError);
     } catch (e) {
@@ -340,11 +340,11 @@ export default function TrainerDashboard() {
   };
 
   const updateEditExercise = (index: number, field: string, value: any) => {
-    setEditExercises(prev => prev.map((ex, i) => i === index ? { ...ex, [field]: value } : ex));
+    setEditExercises((prev) => prev.map((ex, i) => i === index ? { ...ex, [field]: value } : ex));
   };
 
   const removeEditExercise = (index: number) => {
-    setEditExercises(prev => prev.filter((_, i) => i !== index));
+    setEditExercises((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSaveEditWorkout = async () => {
@@ -354,10 +354,10 @@ export default function TrainerDashboard() {
     }
 
     // Update workout
-    const { error: updateError } = await supabase
-      .from('workouts')
-      .update({ name: editWorkoutName.trim() })
-      .eq('id', editingWorkout.id);
+    const { error: updateError } = await supabase.
+    from('workouts').
+    update({ name: editWorkoutName.trim() }).
+    eq('id', editingWorkout.id);
 
     if (updateError) {
       toast.error('Errore nell\'aggiornamento della scheda');
@@ -366,10 +366,10 @@ export default function TrainerDashboard() {
     }
 
     // Delete existing exercises
-    const { error: deleteError } = await supabase
-      .from('exercises')
-      .delete()
-      .eq('workout_id', editingWorkout.id);
+    const { error: deleteError } = await supabase.
+    from('exercises').
+    delete().
+    eq('workout_id', editingWorkout.id);
 
     if (deleteError) {
       console.error(deleteError);
@@ -378,7 +378,7 @@ export default function TrainerDashboard() {
     // Insert updated exercises
     const exercisesToInsert = editExercises.map((ex, idx) => ({
       workout_id: editingWorkout.id,
-      name: ex.isSuperset && ex.exercise2Name ? `Superset (${ex.name.startsWith('Superset (') ? (ex.name.match(/^Superset \((.+?)\+/)?.[1] || ex.name) : ex.name}+${ex.exercise2Name})` : ex.name,
+      name: ex.isSuperset && ex.exercise2Name ? `Superset (${ex.name.startsWith('Superset (') ? ex.name.match(/^Superset \((.+?)\+/)?.[1] || ex.name : ex.name}+${ex.exercise2Name})` : ex.name,
       muscle: ex.muscle,
       sets: ex.sets,
       reps: ex.reps,
@@ -390,7 +390,7 @@ export default function TrainerDashboard() {
       muscle2: ex.muscle2 || null,
       reps2: ex.reps2 || null,
       target_weight2: ex.targetWeight2 || null,
-      position: idx,
+      position: idx
     }));
 
     const { error: insertError } = await supabase.from('exercises').insert(exercisesToInsert);
@@ -410,7 +410,7 @@ export default function TrainerDashboard() {
   }
 
   const availableProgressYears = useMemo(() => {
-    const years = new Set(clientProgress.map(p => new Date(p.date).getFullYear()));
+    const years = new Set(clientProgress.map((p) => new Date(p.date).getFullYear()));
     const arr = Array.from(years).sort((a, b) => b - a);
     return arr.length > 0 ? arr : [new Date().getFullYear()];
   }, [clientProgress]);
@@ -426,7 +426,7 @@ export default function TrainerDashboard() {
   }, [progressMonth, progressYear]);
 
   const filteredProgress = useMemo(() => {
-    return clientProgress.filter(p => {
+    return clientProgress.filter((p) => {
       const date = new Date(p.date);
       const monthOk = date.getMonth() + 1 === progressMonth;
       const yearOk = date.getFullYear() === progressYear;
@@ -438,7 +438,7 @@ export default function TrainerDashboard() {
 
   const progressExercises = useMemo(() => {
     const map = new Map<string, string>();
-    filteredProgress.forEach(p => {
+    filteredProgress.forEach((p) => {
       const key = p.exerciseName.trim().toLowerCase();
       if (!map.has(key)) map.set(key, p.exerciseName.trim());
     });
@@ -446,15 +446,15 @@ export default function TrainerDashboard() {
   }, [filteredProgress]);
 
   const progressMuscles = useMemo(() => {
-    return Array.from(new Set(clientProgress.map(p => p.muscle))).sort();
+    return Array.from(new Set(clientProgress.map((p) => p.muscle))).sort();
   }, [clientProgress]);
 
   const periodStats = useMemo(() => {
-    const uniqueDates = new Set(filteredProgress.map(p => new Date(p.date).toDateString()));
-    let maxWeight = 0, totalReps = 0, totalVolume = 0;
-    filteredProgress.forEach(p => {
+    const uniqueDates = new Set(filteredProgress.map((p) => new Date(p.date).toDateString()));
+    let maxWeight = 0,totalReps = 0,totalVolume = 0;
+    filteredProgress.forEach((p) => {
       if (p.setsData?.length) {
-        const mx = Math.max(...p.setsData.map(s => s.weight));
+        const mx = Math.max(...p.setsData.map((s) => s.weight));
         if (mx > maxWeight) maxWeight = mx;
         totalReps += p.setsData.reduce((s, d) => s + d.reps, 0);
         totalVolume += p.setsData.reduce((s, d) => s + d.weight * d.reps, 0);
@@ -468,30 +468,30 @@ export default function TrainerDashboard() {
     return {
       totalSessions: uniqueDates.size, maxWeight: maxWeight.toFixed(1),
       totalSets, totalReps, totalVolume: Math.round(totalVolume),
-      uniqueExercises: new Set(filteredProgress.map(p => p.exerciseName.trim().toLowerCase())).size,
-      uniqueMuscles: new Set(filteredProgress.map(p => p.muscle)).size,
+      uniqueExercises: new Set(filteredProgress.map((p) => p.exerciseName.trim().toLowerCase())).size,
+      uniqueMuscles: new Set(filteredProgress.map((p) => p.muscle)).size
     };
   }, [filteredProgress]);
 
   const muscleDistribution = useMemo(() => {
     const muscleSets: Record<string, number> = {};
-    filteredProgress.forEach(p => { muscleSets[p.muscle] = (muscleSets[p.muscle] || 0) + (p.setsData?.length || p.setsCompleted); });
+    filteredProgress.forEach((p) => {muscleSets[p.muscle] = (muscleSets[p.muscle] || 0) + (p.setsData?.length || p.setsCompleted);});
     const total = Object.values(muscleSets).reduce((a, b) => a + b, 0);
-    return Object.entries(muscleSets)
-      .sort((a, b) => b[1] - a[1])
-      .map(([muscle, sets], i) => ({
-        name: muscle, value: sets,
-        percentage: total > 0 ? ((sets / total) * 100).toFixed(1) : '0',
-        fill: COLORS[i % COLORS.length],
-      }));
+    return Object.entries(muscleSets).
+    sort((a, b) => b[1] - a[1]).
+    map(([muscle, sets], i) => ({
+      name: muscle, value: sets,
+      percentage: total > 0 ? (sets / total * 100).toFixed(1) : '0',
+      fill: COLORS[i % COLORS.length]
+    }));
   }, [filteredProgress]);
 
   const volumeByMuscle = useMemo(() => {
     const mv: Record<string, number> = {};
-    filteredProgress.forEach(p => {
-      const vol = p.setsData?.length
-        ? p.setsData.reduce((s, d) => s + d.weight * d.reps, 0)
-        : p.weightUsed * p.setsCompleted * p.repsCompleted;
+    filteredProgress.forEach((p) => {
+      const vol = p.setsData?.length ?
+      p.setsData.reduce((s, d) => s + d.weight * d.reps, 0) :
+      p.weightUsed * p.setsCompleted * p.repsCompleted;
       mv[p.muscle] = (mv[p.muscle] || 0) + vol;
     });
     return Object.entries(mv).map(([muscle, volume]) => ({ muscle, volume: Math.round(volume) })).sort((a, b) => b.volume - a.volume);
@@ -500,39 +500,39 @@ export default function TrainerDashboard() {
   const chartData = useMemo(() => {
     if (!selectedExercise) return [];
     const data: any[] = [];
-    filteredProgress
-      .filter(p => p.exerciseName.trim().toLowerCase() === selectedExercise)
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-      .forEach((p, si) => {
-        const ds = new Date(p.date).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' });
-        if (p.setsData?.length) {
-          p.setsData.forEach(set => data.push({ date: `${ds} S${set.setNumber}`, peso: set.weight, reps: set.reps, volume: set.weight * set.reps }));
-        } else {
-          for (let i = 1; i <= p.setsCompleted; i++) data.push({ date: `${ds} S${i}`, peso: p.weightUsed, reps: p.repsCompleted, volume: p.weightUsed * p.repsCompleted });
-        }
-      });
+    filteredProgress.
+    filter((p) => p.exerciseName.trim().toLowerCase() === selectedExercise).
+    sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()).
+    forEach((p, si) => {
+      const ds = new Date(p.date).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' });
+      if (p.setsData?.length) {
+        p.setsData.forEach((set) => data.push({ date: `${ds} S${set.setNumber}`, peso: set.weight, reps: set.reps, volume: set.weight * set.reps }));
+      } else {
+        for (let i = 1; i <= p.setsCompleted; i++) data.push({ date: `${ds} S${i}`, peso: p.weightUsed, reps: p.repsCompleted, volume: p.weightUsed * p.repsCompleted });
+      }
+    });
     return data;
   }, [filteredProgress, selectedExercise]);
 
   const exerciseStats = useMemo(() => {
     if (!selectedExercise) return null;
-    const ep = clientProgress.filter(p => p.exerciseName.trim().toLowerCase() === selectedExercise).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const ep = clientProgress.filter((p) => p.exerciseName.trim().toLowerCase() === selectedExercise).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     if (!ep.length) return null;
-    const getMax = (p: WorkoutProgress) => p.setsData?.length ? Math.max(...p.setsData.map(s => s.weight)) : p.weightUsed;
+    const getMax = (p: WorkoutProgress) => p.setsData?.length ? Math.max(...p.setsData.map((s) => s.weight)) : p.weightUsed;
     const weights = ep.map(getMax);
-    const maxW = Math.max(...weights), lastW = weights[weights.length - 1], firstW = weights[0];
-    const imp = firstW > 0 ? ((lastW - firstW) / firstW) * 100 : 0;
+    const maxW = Math.max(...weights),lastW = weights[weights.length - 1],firstW = weights[0];
+    const imp = firstW > 0 ? (lastW - firstW) / firstW * 100 : 0;
     const totalVol = ep.reduce((s, p) => s + (p.setsData?.length ? p.setsData.reduce((a, d) => a + d.weight * d.reps, 0) : p.weightUsed * p.setsCompleted * p.repsCompleted), 0);
     return { maxWeight: maxW, lastWeight: lastW, improvement: imp.toFixed(1), totalSessions: ep.length, totalVolume: Math.round(totalVol), avgVolume: Math.round(totalVol / ep.length) };
   }, [clientProgress, selectedExercise]);
 
   // ===== History computed values =====
   const historyExerciseNames = useMemo(() => {
-    return Array.from(new Set(clientProgress.map(p => p.exerciseName.trim()))).sort();
+    return Array.from(new Set(clientProgress.map((p) => p.exerciseName.trim()))).sort();
   }, [clientProgress]);
 
   const sessionsByDate = useMemo(() => {
-    const filtered = clientProgress.filter(p => {
+    const filtered = clientProgress.filter((p) => {
       const date = new Date(p.date);
       const monthOk = date.getMonth() + 1 === historyMonth;
       const yearOk = date.getFullYear() === historyYear;
@@ -540,28 +540,28 @@ export default function TrainerDashboard() {
       return monthOk && yearOk && exOk;
     });
     const grouped: Record<string, typeof filtered> = {};
-    filtered.forEach(p => {
+    filtered.forEach((p) => {
       const key = new Date(p.date).toDateString();
       if (!grouped[key]) grouped[key] = [];
       grouped[key].push(p);
     });
-    return Object.entries(grouped)
-      .map(([date, exercises]) => ({
-        date,
-        formattedDate: new Date(date).toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' }),
-        exercises: exercises.sort((a, b) => a.exerciseName.localeCompare(b.exerciseName)),
-      }))
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return Object.entries(grouped).
+    map(([date, exercises]) => ({
+      date,
+      formattedDate: new Date(date).toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' }),
+      exercises: exercises.sort((a, b) => a.exerciseName.localeCompare(b.exerciseName))
+    })).
+    sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [clientProgress, historyMonth, historyYear, historyExerciseFilter]);
 
   if (trainerLoading) return null;
   if (!isTrainer) return <Navigate to="/" replace />;
 
   const MUSCLES = [
-    "Pettorali", "Dorsali", "Spalle", "Gambe", "Deltoidi", "Trapezi",
-    "Bicipiti", "Tricipiti", "Quadricipiti", "Bicipiti femorali",
-    "Glutei", "Polpacci", "Addominali", "Lombari", "Avambracci"
-  ];
+  "Pettorali", "Dorsali", "Spalle", "Gambe", "Deltoidi", "Trapezi",
+  "Bicipiti", "Tricipiti", "Quadricipiti", "Bicipiti femorali",
+  "Glutei", "Polpacci", "Addominali", "Lombari", "Avambracci"];
+
 
   return (
     <div className="min-h-screen pt-20 pb-8">
@@ -577,8 +577,8 @@ export default function TrainerDashboard() {
           </div>
         </div>
 
-        {!selectedClient ? (
-          <>
+        {!selectedClient ?
+        <>
             {/* Add Client */}
             <Card className="mb-6">
               <CardHeader>
@@ -590,11 +590,11 @@ export default function TrainerDashboard() {
               <CardContent>
                 <div className="flex gap-2">
                   <Input
-                    placeholder="Email del cliente..."
-                    value={newEmail}
-                    onChange={e => setNewEmail(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handleAddClient()}
-                  />
+                  placeholder="Email del cliente..."
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddClient()} />
+
                   <Button onClick={handleAddClient} disabled={adding || !newEmail.trim()}>
                     <UserPlus className="w-4 h-4 mr-2" />
                     {adding ? 'Aggiunta...' : 'Aggiungi'}
@@ -612,37 +612,37 @@ export default function TrainerDashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {clients.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8">
+                {clients.length === 0 ?
+              <p className="text-muted-foreground text-center py-8">
                     Nessun cliente aggiunto. Inserisci l'email di un utente registrato per iniziare.
-                  </p>
-                ) : (
-                  <div className="space-y-3">
-                    {clients.map(client => (
-                      <div
-                        key={client.id}
-                        className="flex items-center justify-between p-3 rounded-lg border hover:border-primary/30 transition-colors cursor-pointer"
-                        onClick={() => selectClient(client)}
-                      >
+                  </p> :
+
+              <div className="space-y-3">
+                    {clients.map((client) =>
+                <div
+                  key={client.id}
+                  className="flex items-center justify-between p-3 rounded-lg border hover:border-primary/30 transition-colors cursor-pointer"
+                  onClick={() => selectClient(client)}>
+
                         <div>
                           <p className="font-medium">{client.client_name}</p>
                           <p className="text-sm text-muted-foreground">{client.client_email}</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <Button variant="ghost" size="icon"
-                            onClick={e => { e.stopPropagation(); handleRemoveClient(client.id); }}>
+                    onClick={(e) => {e.stopPropagation();handleRemoveClient(client.id);}}>
                             <Trash2 className="w-4 h-4 text-destructive" />
                           </Button>
                         </div>
                       </div>
-                    ))}
-                  </div>
                 )}
+                  </div>
+              }
               </CardContent>
             </Card>
-          </>
-        ) : (
-          <>
+          </> :
+
+        <>
             {/* Client Detail View */}
             <Button variant="ghost" onClick={() => setSelectedClient(null)} className="mb-4">
               <ChevronLeft className="w-4 h-4 mr-2" />
@@ -654,26 +654,26 @@ export default function TrainerDashboard() {
                 <h2 className="font-display text-xl font-bold">{selectedClient.client_name}</h2>
                 <p className="text-sm text-muted-foreground">{selectedClient.client_email}</p>
               </div>
-              <Button onClick={() => { setShowCreateWorkout(true); setExercises([]); setWorkoutName(''); }}>
+              <Button onClick={() => {setShowCreateWorkout(true);setExercises([]);setWorkoutName('');}}>
                 <Plus className="w-4 h-4 mr-2" />
                 Crea Scheda
               </Button>
             </div>
 
-            {showCreateWorkout && (
-              <Card className="mb-6 border-primary/30">
+            {showCreateWorkout &&
+          <Card className="mb-6 border-primary/30">
                 <CardHeader>
                   <CardTitle className="text-lg">Nuova Scheda per {selectedClient.client_name}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <Input
-                    placeholder="Nome scheda..."
-                    value={workoutName}
-                    onChange={e => setWorkoutName(e.target.value)}
-                  />
+                placeholder="Nome scheda..."
+                value={workoutName}
+                onChange={(e) => setWorkoutName(e.target.value)} />
 
-                  {exercises.map((ex, i) => (
-                    <div key={i} className="p-3 rounded-lg border space-y-2">
+
+                  {exercises.map((ex, i) =>
+              <div key={i} className="p-3 rounded-lg border space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium">Esercizio {i + 1}</span>
                         <Button variant="ghost" size="icon" onClick={() => removeExercise(i)}>
@@ -685,15 +685,15 @@ export default function TrainerDashboard() {
                         <div className="space-y-1">
                           <label className="text-xs text-muted-foreground">Superset</label>
                           <div className="flex items-center h-9 px-3 rounded-md border border-input bg-background cursor-pointer"
-                            onClick={() => updateExercise(i, 'isSuperset', !ex.isSuperset)}>
+                    onClick={() => updateExercise(i, 'isSuperset', !ex.isSuperset)}>
                             <Zap className={`w-3 h-3 mr-2 ${ex.isSuperset ? 'text-warning' : 'text-muted-foreground'}`} />
                             <span className="text-xs flex-1">Superset</span>
                             <Checkbox
-                              id={`superset-create-${i}`}
-                              checked={ex.isSuperset || false}
-                              onCheckedChange={(checked) => updateExercise(i, 'isSuperset', !!checked)}
-                              onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                            />
+                        id={`superset-create-${i}`}
+                        checked={ex.isSuperset || false}
+                        onCheckedChange={(checked) => updateExercise(i, 'isSuperset', !!checked)}
+                        onClick={(e: React.MouseEvent) => e.stopPropagation()} />
+
                           </div>
                         </div>
                         <div className="space-y-1">
@@ -701,71 +701,71 @@ export default function TrainerDashboard() {
                           <div className="relative">
                             <Timer className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
                             <Input type="number" value={ex.restTime || ''} placeholder="Recupero (s)"
-                              className="h-9 pl-7" min={0}
-                              onChange={e => updateExercise(i, 'restTime', e.target.value ? parseInt(e.target.value) : undefined)} />
+                      className="h-9 pl-7" min={0}
+                      onChange={(e) => updateExercise(i, 'restTime', e.target.value ? parseInt(e.target.value) : undefined)} />
                           </div>
                         </div>
                       </div>
                       <Input placeholder="Nome esercizio" value={ex.name}
-                        onChange={e => updateExercise(i, 'name', e.target.value)} />
+                onChange={(e) => updateExercise(i, 'name', e.target.value)} />
                       <select
-                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                        value={ex.muscle}
-                        onChange={e => updateExercise(i, 'muscle', e.target.value)}
-                      >
-                        {MUSCLES.map(m => <option key={m} value={m}>{m}</option>)}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={ex.muscle}
+                  onChange={(e) => updateExercise(i, 'muscle', e.target.value)}>
+
+                        {MUSCLES.map((m) => <option key={m} value={m}>{m}</option>)}
                       </select>
                       <div className="grid grid-cols-3 gap-2">
                         <div>
                           <label className="text-xs text-muted-foreground">Serie</label>
                           <Input type="number" value={ex.sets || ''} min={1} placeholder="3"
-                            onChange={e => updateExercise(i, 'sets', e.target.value ? parseInt(e.target.value) : 0)} />
+                    onChange={(e) => updateExercise(i, 'sets', e.target.value ? parseInt(e.target.value) : 0)} />
                         </div>
                         <div>
                           <label className="text-xs text-muted-foreground">Reps</label>
                           <Input type="number" value={ex.reps || ''} min={1} placeholder="10"
-                            onChange={e => updateExercise(i, 'reps', e.target.value ? parseInt(e.target.value) : 0)} />
+                    onChange={(e) => updateExercise(i, 'reps', e.target.value ? parseInt(e.target.value) : 0)} />
                         </div>
                         <div>
                           <label className="text-xs text-muted-foreground">Peso (kg)</label>
                           <Input type="number" value={ex.targetWeight || ''} min={0} step={0.5} placeholder="0"
-                            onChange={e => updateExercise(i, 'targetWeight', e.target.value ? parseFloat(e.target.value) : 0)} />
+                    onChange={(e) => updateExercise(i, 'targetWeight', e.target.value ? parseFloat(e.target.value) : 0)} />
                         </div>
                       </div>
                       <Input placeholder="Nota (max 10 car.)" value={ex.note || ''}
-                        maxLength={10}
-                        onChange={e => updateExercise(i, 'note', e.target.value.slice(0, 10))} />
+                maxLength={10}
+                onChange={(e) => updateExercise(i, 'note', e.target.value.slice(0, 10))} />
                       {/* Superset Exercise 2 */}
-                      {ex.isSuperset && (
-                        <div className="p-2 border border-warning/30 rounded-lg bg-warning/5 space-y-2">
+                      {ex.isSuperset &&
+                <div className="p-2 border border-warning/30 rounded-lg bg-warning/5 space-y-2">
                           <p className="text-xs font-medium text-warning flex items-center gap-1">
                             <Zap className="w-3 h-3" /> Esercizio 2
                           </p>
                           <Input placeholder="Nome esercizio 2" value={ex.exercise2Name || ''}
-                            onChange={e => updateExercise(i, 'exercise2Name', e.target.value)} />
+                  onChange={(e) => updateExercise(i, 'exercise2Name', e.target.value)} />
                           <select
-                            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                            value={ex.muscle2 || 'Pettorali'}
-                            onChange={e => updateExercise(i, 'muscle2', e.target.value)}
-                          >
-                            {MUSCLES.map(m => <option key={m} value={m}>{m}</option>)}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    value={ex.muscle2 || 'Pettorali'}
+                    onChange={(e) => updateExercise(i, 'muscle2', e.target.value)}>
+
+                            {MUSCLES.map((m) => <option key={m} value={m}>{m}</option>)}
                           </select>
                           <div className="grid grid-cols-2 gap-2">
                             <div>
                               <label className="text-xs text-muted-foreground">Reps</label>
                               <Input type="number" value={ex.reps2 || ''} min={1} placeholder="10"
-                                onChange={e => updateExercise(i, 'reps2', parseInt(e.target.value) || 0)} />
+                      onChange={(e) => updateExercise(i, 'reps2', parseInt(e.target.value) || 0)} />
                             </div>
                             <div>
                               <label className="text-xs text-muted-foreground">Peso (kg)</label>
                               <Input type="number" value={ex.targetWeight2 || ''} min={0} step={0.5} placeholder="0"
-                                onChange={e => updateExercise(i, 'targetWeight2', parseFloat(e.target.value) || 0)} />
+                      onChange={(e) => updateExercise(i, 'targetWeight2', parseFloat(e.target.value) || 0)} />
                             </div>
                           </div>
                         </div>
-                      )}
+                }
                     </div>
-                  ))}
+              )}
 
                   <Button variant="outline" onClick={addExercise} className="w-full">
                     <Plus className="w-4 h-4 mr-2" /> Aggiungi Esercizio
@@ -776,18 +776,18 @@ export default function TrainerDashboard() {
                       Annulla
                     </Button>
                     <Button onClick={handleCreateWorkout} className="flex-1"
-                      disabled={!workoutName.trim() || exercises.length === 0}>
+                disabled={!workoutName.trim() || exercises.length === 0}>
                       Salva Scheda
                     </Button>
                   </div>
                 </CardContent>
               </Card>
-            )}
+          }
 
-            {loadingData ? (
-              <p className="text-center text-muted-foreground py-8">Caricamento...</p>
-            ) : (
-              <Accordion type="multiple" className="space-y-4">
+            {loadingData ?
+          <p className="text-center text-muted-foreground py-8">Caricamento...</p> :
+
+          <Accordion type="multiple" className="space-y-4">
                 {/* Client Workouts */}
                 <AccordionItem value="schede" className="border rounded-lg">
                   <AccordionTrigger className="px-4 py-3 hover:no-underline">
@@ -797,24 +797,24 @@ export default function TrainerDashboard() {
                     </span>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 pb-4">
-                    {clientWorkouts.length === 0 ? (
-                      <p className="text-muted-foreground text-center py-4">Nessuna scheda creata</p>
-                    ) : (
-                      <div className="space-y-3">
-                        {clientWorkouts.map(w => (
-                          <div key={w.id}>
-                            {editingWorkout?.id === w.id ? (
-                              // Edit mode
-                              <div className="p-3 rounded-lg border border-primary/30 space-y-3">
+                    {clientWorkouts.length === 0 ?
+                <p className="text-muted-foreground text-center py-4">Nessuna scheda creata</p> :
+
+                <div className="space-y-3">
+                        {clientWorkouts.map((w) =>
+                  <div key={w.id}>
+                            {editingWorkout?.id === w.id ?
+                    // Edit mode
+                    <div className="p-3 rounded-lg border border-primary/30 space-y-3">
                                 <Input
-                                  placeholder="Nome scheda..."
-                                  value={editWorkoutName}
-                                  onChange={e => setEditWorkoutName(e.target.value)}
-                                  className="font-medium"
-                                />
+                        placeholder="Nome scheda..."
+                        value={editWorkoutName}
+                        onChange={(e) => setEditWorkoutName(e.target.value)}
+                        className="font-medium" />
+
                                 
-                                {editExercises.map((ex, i) => (
-                                  <div key={i} className="p-3 rounded border bg-secondary/20 space-y-2">
+                                {editExercises.map((ex, i) =>
+                      <div key={i} className="p-3 rounded border bg-secondary/20 space-y-2">
                                     <div className="flex items-center justify-between">
                                       <span className="text-sm font-medium">Esercizio {i + 1}</span>
                                       <Button variant="ghost" size="icon" onClick={() => removeEditExercise(i)}>
@@ -826,15 +826,15 @@ export default function TrainerDashboard() {
                                       <div className="space-y-1">
                                         <label className="text-xs text-muted-foreground">Superset</label>
                                         <div className="flex items-center h-9 px-3 rounded-md border border-input bg-background cursor-pointer"
-                                          onClick={() => updateEditExercise(i, 'isSuperset', !ex.isSuperset)}>
+                            onClick={() => updateEditExercise(i, 'isSuperset', !ex.isSuperset)}>
                                           <Zap className={`w-3 h-3 mr-2 ${ex.isSuperset ? 'text-warning' : 'text-muted-foreground'}`} />
                                           <span className="text-xs flex-1">Superset</span>
                                           <Checkbox
-                                            id={`superset-edit-${i}`}
-                                            checked={ex.isSuperset || false}
-                                            onCheckedChange={(checked) => updateEditExercise(i, 'isSuperset', !!checked)}
-                                            onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                                          />
+                                id={`superset-edit-${i}`}
+                                checked={ex.isSuperset || false}
+                                onCheckedChange={(checked) => updateEditExercise(i, 'isSuperset', !!checked)}
+                                onClick={(e: React.MouseEvent) => e.stopPropagation()} />
+
                                         </div>
                                       </div>
                                       <div className="space-y-1">
@@ -842,75 +842,75 @@ export default function TrainerDashboard() {
                                         <div className="relative">
                                           <Timer className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
                                           <Input type="number" value={ex.restTime || ''} placeholder="Recupero (s)"
-                                            className="h-9 pl-7" min={0}
-                                            onChange={e => updateEditExercise(i, 'restTime', e.target.value ? parseInt(e.target.value) : undefined)} />
+                              className="h-9 pl-7" min={0}
+                              onChange={(e) => updateEditExercise(i, 'restTime', e.target.value ? parseInt(e.target.value) : undefined)} />
                                         </div>
                                       </div>
                                     </div>
                                     <Input placeholder="Nome" value={ex.name}
-                                      onChange={e => updateEditExercise(i, 'name', e.target.value)} />
+                        onChange={(e) => updateEditExercise(i, 'name', e.target.value)} />
                                     <select
-                                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                      value={ex.muscle}
-                                      onChange={e => updateEditExercise(i, 'muscle', e.target.value)}
-                                    >
-                                      {MUSCLES.map(m => <option key={m} value={m}>{m}</option>)}
+                          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                          value={ex.muscle}
+                          onChange={(e) => updateEditExercise(i, 'muscle', e.target.value)}>
+
+                                      {MUSCLES.map((m) => <option key={m} value={m}>{m}</option>)}
                                     </select>
                                     <div className="grid grid-cols-3 gap-2">
                                       <div>
                                         <label className="text-xs text-muted-foreground">Serie</label>
                                         <Input type="number" value={ex.sets || ''} min={1} placeholder="3"
-                                          onChange={e => updateEditExercise(i, 'sets', e.target.value ? parseInt(e.target.value) : 0)} />
+                            onChange={(e) => updateEditExercise(i, 'sets', e.target.value ? parseInt(e.target.value) : 0)} />
                                       </div>
                                       <div>
                                         <label className="text-xs text-muted-foreground">Reps</label>
                                         <Input type="number" value={ex.reps || ''} min={1} placeholder="10"
-                                          onChange={e => updateEditExercise(i, 'reps', e.target.value ? parseInt(e.target.value) : 0)} />
+                            onChange={(e) => updateEditExercise(i, 'reps', e.target.value ? parseInt(e.target.value) : 0)} />
                                       </div>
                                       <div>
                                         <label className="text-xs text-muted-foreground">Peso (kg)</label>
                                         <Input type="number" value={ex.targetWeight || ''} min={0} step={0.5} placeholder="0"
-                                          onChange={e => updateEditExercise(i, 'targetWeight', e.target.value ? parseFloat(e.target.value) : 0)} />
+                            onChange={(e) => updateEditExercise(i, 'targetWeight', e.target.value ? parseFloat(e.target.value) : 0)} />
                                       </div>
                                     </div>
                                     <Input placeholder="Nota (max 10 car.)" value={ex.note || ''}
-                                      maxLength={10}
-                                      onChange={e => updateEditExercise(i, 'note', e.target.value.slice(0, 10))} />
+                        maxLength={10}
+                        onChange={(e) => updateEditExercise(i, 'note', e.target.value.slice(0, 10))} />
                                     {/* Superset Exercise 2 */}
-                                    {ex.isSuperset && (
-                                      <div className="p-2 border border-warning/30 rounded-lg bg-warning/5 space-y-2">
+                                    {ex.isSuperset &&
+                        <div className="p-2 border border-warning/30 rounded-lg bg-warning/5 space-y-2">
                                         <p className="text-xs font-medium text-warning flex items-center gap-1">
                                           <Zap className="w-3 h-3" /> Esercizio 2
                                         </p>
                                         <Input placeholder="Nome esercizio 2" value={ex.exercise2Name || ''}
-                                          onChange={e => updateEditExercise(i, 'exercise2Name', e.target.value)} />
+                          onChange={(e) => updateEditExercise(i, 'exercise2Name', e.target.value)} />
                                         <select
-                                          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                          value={ex.muscle2 || 'Pettorali'}
-                                          onChange={e => updateEditExercise(i, 'muscle2', e.target.value)}
-                                        >
-                                          {MUSCLES.map(m => <option key={m} value={m}>{m}</option>)}
+                            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                            value={ex.muscle2 || 'Pettorali'}
+                            onChange={(e) => updateEditExercise(i, 'muscle2', e.target.value)}>
+
+                                          {MUSCLES.map((m) => <option key={m} value={m}>{m}</option>)}
                                         </select>
                                         <div className="grid grid-cols-2 gap-2">
                                           <div>
                                             <label className="text-xs text-muted-foreground">Reps</label>
                                             <Input type="number" value={ex.reps2 || ''} min={1} placeholder="10"
-                                              onChange={e => updateEditExercise(i, 'reps2', parseInt(e.target.value) || 0)} />
+                              onChange={(e) => updateEditExercise(i, 'reps2', parseInt(e.target.value) || 0)} />
                                           </div>
                                           <div>
                                             <label className="text-xs text-muted-foreground">Peso (kg)</label>
                                             <Input type="number" value={ex.targetWeight2 || ''} min={0} step={0.5} placeholder="0"
-                                              onChange={e => updateEditExercise(i, 'targetWeight2', parseFloat(e.target.value) || 0)} />
+                              onChange={(e) => updateEditExercise(i, 'targetWeight2', parseFloat(e.target.value) || 0)} />
                                           </div>
                                         </div>
                                       </div>
-                                    )}
+                        }
                                   </div>
-                                ))}
+                      )}
                                 
                                 <Button variant="outline" onClick={() => {
-                                  setEditExercises(prev => [...prev, { id: crypto.randomUUID(), name: '', muscle: 'Pettorali', sets: 3, reps: 10, targetWeight: 0 }]);
-                                }} className="w-full">
+                        setEditExercises((prev) => [...prev, { id: crypto.randomUUID(), name: '', muscle: 'Pettorali', sets: 3, reps: 10, targetWeight: 0 }]);
+                      }} className="w-full">
                                   <Plus className="w-4 h-4 mr-2" /> Aggiungi Esercizio
                                 </Button>
 
@@ -919,45 +919,45 @@ export default function TrainerDashboard() {
                                     <X className="w-4 h-4" /> Annulla
                                   </Button>
                                   <Button onClick={handleSaveEditWorkout} className="flex-1 gap-1"
-                                    disabled={!editWorkoutName.trim() || editExercises.length === 0}>
+                        disabled={!editWorkoutName.trim() || editExercises.length === 0}>
                                     <Check className="w-4 h-4" /> Salva
                                   </Button>
                                 </div>
-                              </div>
-                            ) : (
-                              // View mode
-                              <div className="p-3 rounded-lg border">
+                              </div> :
+
+                    // View mode
+                    <div className="p-3 rounded-lg border">
                                 <div className="flex items-center justify-between mb-2">
                                   <h3 className="font-medium">{w.name}</h3>
                                   <div className="flex items-center gap-2">
-                                    {w.isActive && (
-                                      <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
-                                        Attiva
-                                      </span>
-                                    )}
+                                    {w.isActive
+
+
+
+                          }
                                     <Button variant="ghost" size="icon"
-                                      onClick={() => startEditWorkout(w)}>
+                          onClick={() => startEditWorkout(w)}>
                                       <Edit2 className="w-4 h-4 text-muted-foreground hover:text-primary" />
                                     </Button>
                                     <Button variant="ghost" size="icon"
-                                      onClick={() => handleDeleteWorkout(w.id)}>
+                          onClick={() => handleDeleteWorkout(w.id)}>
                                       <Trash2 className="w-4 h-4 text-destructive" />
                                     </Button>
                                   </div>
                                 </div>
                                 <div className="space-y-1">
-                                  {w.exercises.map((ex, i) => (
-                                    <p key={i} className="text-sm text-muted-foreground">
+                                  {w.exercises.map((ex, i) =>
+                        <p key={i} className="text-sm text-muted-foreground">
                                       {ex.name} — {ex.muscle} · {ex.sets}×{ex.reps} · {ex.targetWeight}kg
                                     </p>
-                                  ))}
+                        )}
                                 </div>
                               </div>
-                            )}
+                    }
                           </div>
-                        ))}
+                  )}
                       </div>
-                    )}
+                }
                   </AccordionContent>
                 </AccordionItem>
 
@@ -970,35 +970,35 @@ export default function TrainerDashboard() {
                     </span>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 pb-4">
-                    {clientProgress.length === 0 ? (
-                      <p className="text-muted-foreground text-center py-4">Nessun progresso registrato</p>
-                    ) : (
-                      <div className="space-y-6">
+                    {clientProgress.length === 0 ?
+                <p className="text-muted-foreground text-center py-4">Nessun progresso registrato</p> :
+
+                <div className="space-y-6">
                         {/* Filters */}
                         <div className="flex gap-2 flex-wrap">
-                          <Select value={progressMonth.toString()} onValueChange={v => setProgressMonth(parseInt(v))}>
+                          <Select value={progressMonth.toString()} onValueChange={(v) => setProgressMonth(parseInt(v))}>
                             <SelectTrigger className="bg-secondary/50 border-border/50 w-32">
                               <SelectValue placeholder="Mese" />
                             </SelectTrigger>
                             <SelectContent>
-                              {MONTHS.map(m => <SelectItem key={m.value} value={m.value.toString()}>{m.label}</SelectItem>)}
+                              {MONTHS.map((m) => <SelectItem key={m.value} value={m.value.toString()}>{m.label}</SelectItem>)}
                             </SelectContent>
                           </Select>
-                          <Select value={progressYear.toString()} onValueChange={v => setProgressYear(parseInt(v))}>
+                          <Select value={progressYear.toString()} onValueChange={(v) => setProgressYear(parseInt(v))}>
                             <SelectTrigger className="bg-secondary/50 border-border/50 w-24">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              {availableProgressYears.map(y => <SelectItem key={y} value={y.toString()}>{y}</SelectItem>)}
+                              {availableProgressYears.map((y) => <SelectItem key={y} value={y.toString()}>{y}</SelectItem>)}
                             </SelectContent>
                           </Select>
-                          <Select value={progressWeek?.toString() || 'all'} onValueChange={v => setProgressWeek(v === 'all' ? null : parseInt(v))}>
+                          <Select value={progressWeek?.toString() || 'all'} onValueChange={(v) => setProgressWeek(v === 'all' ? null : parseInt(v))}>
                             <SelectTrigger className="bg-secondary/50 border-border/50 w-28">
                               <SelectValue placeholder="Settimana" />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="all">Tutto</SelectItem>
-                              {weeksInMonth.map(w => <SelectItem key={w} value={w.toString()}>Week {w}</SelectItem>)}
+                              {weeksInMonth.map((w) => <SelectItem key={w} value={w.toString()}>Week {w}</SelectItem>)}
                             </SelectContent>
                           </Select>
                           <Select value={selectedMuscle} onValueChange={setSelectedMuscle}>
@@ -1007,15 +1007,15 @@ export default function TrainerDashboard() {
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="all">Tutti i muscoli</SelectItem>
-                              {progressMuscles.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                              {progressMuscles.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
                             </SelectContent>
                           </Select>
                         </div>
 
-                        {filteredProgress.length === 0 ? (
-                          <p className="text-muted-foreground text-center py-4">Nessun dato per il periodo selezionato</p>
-                        ) : (
-                          <>
+                        {filteredProgress.length === 0 ?
+                  <p className="text-muted-foreground text-center py-4">Nessun dato per il periodo selezionato</p> :
+
+                  <>
                             {/* Period Stats */}
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                               <div className="p-3 rounded-lg bg-secondary/30 text-center">
@@ -1041,8 +1041,8 @@ export default function TrainerDashboard() {
                             </div>
 
                             {/* Muscle Distribution */}
-                            {muscleDistribution.length > 0 && (
-                              <div>
+                            {muscleDistribution.length > 0 &&
+                    <div>
                                 <div className="flex items-center gap-2 mb-3">
                                   <BarChart3 className="w-4 h-4 text-primary" />
                                   <h4 className="font-semibold text-sm">Distribuzione Muscoli</h4>
@@ -1054,21 +1054,21 @@ export default function TrainerDashboard() {
                                         {muscleDistribution.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
                                       </Pie>
                                       <Tooltip content={({ active, payload }) => {
-                                        if (active && payload?.length) {
-                                          const d = payload[0].payload;
-                                          return <div className="bg-background border rounded-lg p-2 text-sm"><p style={{ color: d.fill }} className="font-medium">{d.name}</p><p style={{ color: d.fill }}>{d.value} serie ({d.percentage}%)</p></div>;
-                                        }
-                                        return null;
-                                      }} />
+                              if (active && payload?.length) {
+                                const d = payload[0].payload;
+                                return <div className="bg-background border rounded-lg p-2 text-sm"><p style={{ color: d.fill }} className="font-medium">{d.name}</p><p style={{ color: d.fill }}>{d.value} serie ({d.percentage}%)</p></div>;
+                              }
+                              return null;
+                            }} />
                                     </PieChart>
                                   </ResponsiveContainer>
                                 </div>
                               </div>
-                            )}
+                    }
 
                             {/* Volume by Muscle */}
-                            {volumeByMuscle.length > 0 && (
-                              <div>
+                            {volumeByMuscle.length > 0 &&
+                    <div>
                                 <div className="flex items-center gap-2 mb-3">
                                   <BarChart3 className="w-4 h-4 text-primary" />
                                   <h4 className="font-semibold text-sm">Volume per Muscolo</h4>
@@ -1085,7 +1085,7 @@ export default function TrainerDashboard() {
                                   </ResponsiveContainer>
                                 </div>
                               </div>
-                            )}
+                    }
 
                             {/* Exercise Detail Selector */}
                             <div>
@@ -1095,13 +1095,13 @@ export default function TrainerDashboard() {
                                   <SelectValue placeholder="Scegli un esercizio" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {progressExercises.map(ex => <SelectItem key={ex.id} value={ex.id}>{ex.name}</SelectItem>)}
+                                  {progressExercises.map((ex) => <SelectItem key={ex.id} value={ex.id}>{ex.name}</SelectItem>)}
                                 </SelectContent>
                               </Select>
                             </div>
 
-                            {selectedExercise && exerciseStats && (
-                              <>
+                            {selectedExercise && exerciseStats &&
+                    <>
                                 <div className="grid grid-cols-3 gap-3">
                                   <div className="p-3 rounded-lg bg-secondary/30 text-center">
                                     <p className="font-bold text-lg">{exerciseStats.maxWeight}kg</p>
@@ -1120,8 +1120,8 @@ export default function TrainerDashboard() {
                                 </div>
 
                                 {/* Weight Chart */}
-                                {chartData.length > 0 && (
-                                  <div>
+                                {chartData.length > 0 &&
+                      <div>
                                     <h4 className="font-semibold text-sm mb-1">Andamento Peso - Serie per Serie</h4>
                                     <div className="h-52">
                                       <ResponsiveContainer width="100%" height="100%">
@@ -1136,17 +1136,17 @@ export default function TrainerDashboard() {
                                           <XAxis dataKey="date" stroke="hsl(220, 10%, 55%)" fontSize={10} angle={-45} textAnchor="end" height={60} interval="preserveStartEnd" />
                                           <YAxis stroke="hsl(220, 10%, 55%)" fontSize={12} />
                                           <Tooltip contentStyle={{ backgroundColor: 'hsl(220, 18%, 10%)', border: '1px solid hsl(220, 14%, 18%)', borderRadius: '8px' }}
-                                            formatter={(v: number, name: string) => name === 'peso' ? [`${v} kg`, 'Peso'] : [v, 'Reps']} />
+                              formatter={(v: number, name: string) => name === 'peso' ? [`${v} kg`, 'Peso'] : [v, 'Reps']} />
                                           <Area type="monotone" dataKey="peso" stroke="hsl(160, 84%, 39%)" strokeWidth={2} fill="url(#trainerColorWeight)" dot={{ fill: 'hsl(160, 84%, 39%)', r: 3 }} />
                                         </AreaChart>
                                       </ResponsiveContainer>
                                     </div>
                                   </div>
-                                )}
+                      }
 
                                 {/* Reps Chart */}
-                                {chartData.length > 0 && (
-                                  <div>
+                                {chartData.length > 0 &&
+                      <div>
                                     <h4 className="font-semibold text-sm mb-1">Ripetizioni per Serie</h4>
                                     <div className="h-40">
                                       <ResponsiveContainer width="100%" height="100%">
@@ -1155,19 +1155,19 @@ export default function TrainerDashboard() {
                                           <XAxis dataKey="date" stroke="hsl(220, 10%, 55%)" fontSize={10} angle={-45} textAnchor="end" height={60} interval="preserveStartEnd" />
                                           <YAxis stroke="hsl(220, 10%, 55%)" fontSize={12} />
                                           <Tooltip contentStyle={{ backgroundColor: 'hsl(220, 18%, 10%)', border: '1px solid hsl(220, 14%, 18%)', borderRadius: '8px' }}
-                                            formatter={(v: number) => [v, 'Reps']} />
+                              formatter={(v: number) => [v, 'Reps']} />
                                           <Line type="monotone" dataKey="reps" stroke="hsl(38, 92%, 50%)" strokeWidth={2} dot={{ fill: 'hsl(38, 92%, 50%)', r: 3 }} />
                                         </LineChart>
                                       </ResponsiveContainer>
                                     </div>
                                   </div>
-                                )}
+                      }
                               </>
-                            )}
+                    }
                           </>
-                        )}
+                  }
                       </div>
-                    )}
+                }
                   </AccordionContent>
                 </AccordionItem>
 
@@ -1180,26 +1180,26 @@ export default function TrainerDashboard() {
                     </span>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 pb-4">
-                    {clientProgress.length === 0 ? (
-                      <p className="text-muted-foreground text-center py-4">Nessun allenamento registrato</p>
-                    ) : (
-                      <div className="space-y-4">
+                    {clientProgress.length === 0 ?
+                <p className="text-muted-foreground text-center py-4">Nessun allenamento registrato</p> :
+
+                <div className="space-y-4">
                         {/* History Filters */}
                         <div className="flex gap-2 flex-wrap">
-                          <Select value={historyMonth.toString()} onValueChange={v => setHistoryMonth(parseInt(v))}>
+                          <Select value={historyMonth.toString()} onValueChange={(v) => setHistoryMonth(parseInt(v))}>
                             <SelectTrigger className="bg-secondary/50 border-border/50 w-32">
                               <SelectValue placeholder="Mese" />
                             </SelectTrigger>
                             <SelectContent>
-                              {MONTHS.map(m => <SelectItem key={m.value} value={m.value.toString()}>{m.label}</SelectItem>)}
+                              {MONTHS.map((m) => <SelectItem key={m.value} value={m.value.toString()}>{m.label}</SelectItem>)}
                             </SelectContent>
                           </Select>
-                          <Select value={historyYear.toString()} onValueChange={v => setHistoryYear(parseInt(v))}>
+                          <Select value={historyYear.toString()} onValueChange={(v) => setHistoryYear(parseInt(v))}>
                             <SelectTrigger className="bg-secondary/50 border-border/50 w-24">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              {availableProgressYears.map(y => <SelectItem key={y} value={y.toString()}>{y}</SelectItem>)}
+                              {availableProgressYears.map((y) => <SelectItem key={y} value={y.toString()}>{y}</SelectItem>)}
                             </SelectContent>
                           </Select>
                           <Select value={historyExerciseFilter} onValueChange={setHistoryExerciseFilter}>
@@ -1208,17 +1208,17 @@ export default function TrainerDashboard() {
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="all">Tutti gli esercizi</SelectItem>
-                              {historyExerciseNames.map(n => <SelectItem key={n} value={n}>{n}</SelectItem>)}
+                              {historyExerciseNames.map((n) => <SelectItem key={n} value={n}>{n}</SelectItem>)}
                             </SelectContent>
                           </Select>
                         </div>
 
-                        {sessionsByDate.length === 0 ? (
-                          <p className="text-muted-foreground text-center py-4">Nessuna sessione per questo periodo</p>
-                        ) : (
-                          <div className="space-y-3">
-                            {sessionsByDate.map((session, si) => (
-                              <div key={session.date} className="rounded-lg border overflow-hidden">
+                        {sessionsByDate.length === 0 ?
+                  <p className="text-muted-foreground text-center py-4">Nessuna sessione per questo periodo</p> :
+
+                  <div className="space-y-3">
+                            {sessionsByDate.map((session, si) =>
+                    <div key={session.date} className="rounded-lg border overflow-hidden">
                                 <div className="p-3 border-b bg-secondary/30">
                                   <div className="flex items-center gap-2">
                                     <Calendar className="w-4 h-4 text-primary" />
@@ -1227,8 +1227,8 @@ export default function TrainerDashboard() {
                                   </div>
                                 </div>
                                 <Accordion type="multiple" className="w-full">
-                                  {session.exercises.map((exercise, idx) => (
-                                    <AccordionItem key={`${exercise.id}-${idx}`} value={`${exercise.id}-${idx}`} className="border-b last:border-0">
+                                  {session.exercises.map((exercise, idx) =>
+                        <AccordionItem key={`${exercise.id}-${idx}`} value={`${exercise.id}-${idx}`} className="border-b last:border-0">
                                       <AccordionTrigger className="px-3 py-2 hover:no-underline hover:bg-secondary/20">
                                         <div className="flex items-center gap-2 text-left">
                                           <Dumbbell className="w-3 h-3 text-primary flex-shrink-0" />
@@ -1236,29 +1236,29 @@ export default function TrainerDashboard() {
                                             <p className="font-medium text-sm">{exercise.exerciseName}</p>
                                             <p className="text-xs text-muted-foreground">
                                               {exercise.muscle} • {exercise.setsCompleted} serie
-                                              {exercise.setsData?.length ? (
-                                                <> @ {Math.min(...exercise.setsData.map(s => s.weight))}-{Math.max(...exercise.setsData.map(s => s.weight))}kg</>
-                                              ) : (
-                                                <> × {exercise.repsCompleted} reps @ {exercise.weightUsed}kg</>
-                                              )}
+                                              {exercise.setsData?.length ?
+                                  <> @ {Math.min(...exercise.setsData.map((s) => s.weight))}-{Math.max(...exercise.setsData.map((s) => s.weight))}kg</> :
+
+                                  <> × {exercise.repsCompleted} reps @ {exercise.weightUsed}kg</>
+                                  }
                                             </p>
                                           </div>
                                         </div>
                                       </AccordionTrigger>
                                       <AccordionContent className="px-3 pb-3">
                                         <div className="space-y-2">
-                                          {exercise.setsData?.length ? (
-                                            <div className="space-y-1">
-                                              {exercise.setsData.map((set, si) => (
-                                                <div key={si} className="flex items-center gap-3 p-2 bg-secondary/40 rounded text-sm">
+                                          {exercise.setsData?.length ?
+                              <div className="space-y-1">
+                                              {exercise.setsData.map((set, si) =>
+                                <div key={si} className="flex items-center gap-3 p-2 bg-secondary/40 rounded text-sm">
                                                   <span className="font-semibold text-muted-foreground w-6">#{set.setNumber}</span>
                                                   <span><span className="font-medium">{set.reps}</span> reps</span>
                                                   <span><span className="font-medium">{set.weight}</span> kg</span>
                                                 </div>
-                                              ))}
-                                            </div>
-                                          ) : (
-                                            <div className="grid grid-cols-3 gap-2 text-center">
+                                )}
+                                            </div> :
+
+                              <div className="grid grid-cols-3 gap-2 text-center">
                                               <div className="bg-secondary/40 rounded p-2">
                                                 <p className="font-bold text-primary">{exercise.setsCompleted}</p>
                                                 <p className="text-xs text-muted-foreground">Serie</p>
@@ -1272,33 +1272,33 @@ export default function TrainerDashboard() {
                                                 <p className="text-xs text-muted-foreground">Peso</p>
                                               </div>
                                             </div>
-                                          )}
-                                          {exercise.notes && (
-                                            <div className="bg-secondary/30 rounded p-2 flex items-start gap-2">
+                              }
+                                          {exercise.notes &&
+                              <div className="bg-secondary/30 rounded p-2 flex items-start gap-2">
                                               <MessageSquare className="w-3 h-3 text-warning mt-0.5 flex-shrink-0" />
                                               <p className="text-xs">{exercise.notes}</p>
                                             </div>
-                                          )}
+                              }
                                         </div>
                                       </AccordionContent>
                                     </AccordionItem>
-                                  ))}
+                        )}
                                 </Accordion>
                               </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
                     )}
+                          </div>
+                  }
+                      </div>
+                }
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>
-            )}
+          }
           </>
-        )}
+        }
 
         <AppVersion />
       </div>
-    </div>
-  );
+    </div>);
+
 }
