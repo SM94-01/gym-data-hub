@@ -104,6 +104,10 @@ export default function Home() {
                       <Building2 className="w-4 h-4 mr-2" />
                       Demo Palestra
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate('/demo/gym-pt')}>
+                      <GraduationCap className="w-4 h-4 mr-2" />
+                      Demo PT Affiliato
+                    </DropdownMenuItem>
                   </>
                 )}
               </DropdownMenuContent>
