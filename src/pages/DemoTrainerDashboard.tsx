@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
+import { Progress } from '@/components/ui/progress';
 import { PlanUpgrade } from '@/components/gym/PlanUpgrade';
 import { AppVersion } from '@/components/gym/AppVersion';
 import { Badge } from '@/components/ui/badge';
@@ -309,6 +310,30 @@ export default function DemoTrainerDashboard() {
             </Dialog>
           </div>
         </div>
+
+        {/* Plan Usage Summary */}
+        {!selectedClient && (
+          <Card className="mb-6 animate-fade-in">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3 mb-4">
+                <Crown className="w-5 h-5 text-primary" />
+                <div>
+                  <h3 className="font-semibold">Personal Trainer Pro</h3>
+                  <p className="text-xs text-muted-foreground">Il tuo piano attuale</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-muted-foreground">Clienti</span>
+                    <span className="font-medium">{MOCK_CLIENTS.length} / 15</span>
+                  </div>
+                  <Progress value={(MOCK_CLIENTS.length / 15) * 100} className="h-2" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {!selectedClient ? (
           <>
