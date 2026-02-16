@@ -583,51 +583,53 @@ export default function TrainerDashboard() {
               <p className="text-sm text-muted-foreground">Gestisci i tuoi clienti</p>
             </div>
           </div>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Crown className="w-4 h-4 mr-2" />
-                Il mio Piano
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Gestione Piano</DialogTitle>
-                <DialogDescription>Visualizza e richiedi un cambio piano</DialogDescription>
-              </DialogHeader>
-              {limits?.role && <PlanUpgrade currentRole={limits.role} type="pt" />}
-            </DialogContent>
-          </Dialog>
-          {limits?.role && (limits.role.includes('Pro') || limits.role.includes('Elite')) && (
-            <div className="flex gap-1">
-              <Button variant="outline" size="sm" onClick={() => {
-                const clientData = clients.map(c => ({
-                  name: c.client_name || c.client_email,
-                  email: c.client_email,
-                  totalWorkouts: 0,
-                  totalSessions: 0,
-                  lastActive: null as string | null,
-                }));
-                exportClientsExcel(clientData, user?.email || 'Trainer');
-              }}>
-                <FileDown className="w-4 h-4 mr-1" />
-                Excel
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => {
-                const clientData = clients.map(c => ({
-                  name: c.client_name || c.client_email,
-                  email: c.client_email,
-                  totalWorkouts: 0,
-                  totalSessions: 0,
-                  lastActive: null as string | null,
-                }));
-                exportClientsPDF(clientData, user?.email || 'Trainer');
-              }}>
-                <FileDown className="w-4 h-4 mr-1" />
-                PDF
-              </Button>
-            </div>
-          )}
+          <div className="flex gap-1">
+            {limits?.role && (limits.role.includes('Pro') || limits.role.includes('Elite')) && (
+              <>
+                <Button variant="outline" size="sm" onClick={() => {
+                  const clientData = clients.map(c => ({
+                    name: c.client_name || c.client_email,
+                    email: c.client_email,
+                    totalWorkouts: 0,
+                    totalSessions: 0,
+                    lastActive: null as string | null,
+                  }));
+                  exportClientsExcel(clientData, user?.email || 'Trainer');
+                }}>
+                  <FileDown className="w-4 h-4 mr-1" />
+                  Excel
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => {
+                  const clientData = clients.map(c => ({
+                    name: c.client_name || c.client_email,
+                    email: c.client_email,
+                    totalWorkouts: 0,
+                    totalSessions: 0,
+                    lastActive: null as string | null,
+                  }));
+                  exportClientsPDF(clientData, user?.email || 'Trainer');
+                }}>
+                  <FileDown className="w-4 h-4 mr-1" />
+                  PDF
+                </Button>
+              </>
+            )}
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Crown className="w-4 h-4 mr-1" />
+                  Il mio Piano
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Gestione Piano</DialogTitle>
+                  <DialogDescription>Visualizza e richiedi un cambio piano</DialogDescription>
+                </DialogHeader>
+                {limits?.role && <PlanUpgrade currentRole={limits.role} type="pt" />}
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         {!selectedClient ?
