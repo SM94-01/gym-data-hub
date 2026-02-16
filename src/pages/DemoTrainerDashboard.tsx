@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { PlanUpgrade } from '@/components/gym/PlanUpgrade';
 import { AppVersion } from '@/components/gym/AppVersion';
 import { Badge } from '@/components/ui/badge';
+import { exportClientsExcel, exportClientsPDF } from '@/lib/reportGenerator';
 import {
   Users, Dumbbell, Target, ChevronLeft,
   ArrowLeft, Calendar, TrendingUp,
@@ -257,10 +258,44 @@ export default function DemoTrainerDashboard() {
             </div>
           </div>
           <div className="flex gap-1">
+            <Button variant="outline" size="sm" onClick={() => {
+              const clientData = MOCK_CLIENTS.map(c => {
+                const progress = generateMockProgress(c.client_id);
+                const uniqueDates = new Set(progress.map(p => new Date(p.date).toDateString()));
+                const workouts = MOCK_WORKOUTS[c.client_id] || [];
+                return {
+                  name: c.client_name,
+                  email: c.client_email,
+                  totalWorkouts: workouts.length,
+                  totalSessions: uniqueDates.size,
+                  lastActive: progress.length > 0 ? progress[0].date : null,
+                };
+              });
+              exportClientsExcel(clientData, 'Demo Trainer');
+            }}>
+              <FileDown className="w-4 h-4 mr-1" />Excel
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => {
+              const clientData = MOCK_CLIENTS.map(c => {
+                const progress = generateMockProgress(c.client_id);
+                const uniqueDates = new Set(progress.map(p => new Date(p.date).toDateString()));
+                const workouts = MOCK_WORKOUTS[c.client_id] || [];
+                return {
+                  name: c.client_name,
+                  email: c.client_email,
+                  totalWorkouts: workouts.length,
+                  totalSessions: uniqueDates.size,
+                  lastActive: progress.length > 0 ? progress[0].date : null,
+                };
+              });
+              exportClientsPDF(clientData, 'Demo Trainer');
+            }}>
+              <FileDown className="w-4 h-4 mr-1" />PDF
+            </Button>
             <Dialog>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm">
-                  <Crown className="w-4 h-4 mr-2" />
+                  <Crown className="w-4 h-4 mr-1" />
                   Il mio Piano
                 </Button>
               </DialogTrigger>
@@ -272,8 +307,6 @@ export default function DemoTrainerDashboard() {
                 <PlanUpgrade currentRole="Personal Trainer Pro" type="pt" />
               </DialogContent>
             </Dialog>
-            <Button variant="outline" size="sm"><FileDown className="w-4 h-4 mr-1" />Excel</Button>
-            <Button variant="outline" size="sm"><FileDown className="w-4 h-4 mr-1" />PDF</Button>
           </div>
         </div>
 

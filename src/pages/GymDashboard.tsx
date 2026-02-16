@@ -8,13 +8,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AppVersion } from '@/components/gym/AppVersion';
 import { PlanUpgrade } from '@/components/gym/PlanUpgrade';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import {
-  UserPlus, Users, Trash2, ArrowLeft, GraduationCap, User,
-  Activity, BarChart3, TrendingUp, Clock, Dumbbell, Crown, FileDown
+  UserPlus, Users, Trash2, ArrowLeft, GraduationCap,
+  Activity, BarChart3, Clock, Dumbbell, Crown, FileDown, ChevronLeft
 } from 'lucide-react';
 import { exportMembersExcel, exportMembersPDF } from '@/lib/reportGenerator';
 
@@ -44,6 +46,10 @@ export default function GymDashboard() {
   const [adding, setAdding] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [memberStats, setMemberStats] = useState<Record<string, MemberStats>>({});
+  const [selectedPT, setSelectedPT] = useState<GymMember | null>(null);
+  const [ptClients, setPtClients] = useState<{ name: string; email: string; workouts: number; sessions: number; lastActive: string | null }[]>([]);
+  const [loadingPTDetail, setLoadingPTDetail] = useState(false);
+  const [userPTMap, setUserPTMap] = useState<Record<string, string>>({});
 
   const ptMembers = useMemo(() => members.filter(m => m.member_role === 'personal_trainer'), [members]);
   const userMembers = useMemo(() => members.filter(m => m.member_role === 'utente'), [members]);
@@ -117,6 +123,61 @@ export default function GymDashboard() {
   useEffect(() => {
     if (members.length > 0) fetchMemberStats();
   }, [members, fetchMemberStats]);
+
+  // Fetch PT associations for user members
+  useEffect(() => {
+    const fetchUserPTs = async () => {
+      const map: Record<string, string> = {};
+      for (const m of userMembers) {
+        if (!m.member_id) continue;
+        const { data } = await supabase
+          .from('trainer_clients')
+          .select('trainer_id')
+          .eq('client_id', m.member_id)
+          .maybeSingle();
+        if (data?.trainer_id) {
+          const pt = ptMembers.find(p => p.member_id === data.trainer_id);
+          if (pt) map[m.id] = pt.member_name || pt.member_email;
+        }
+      }
+      setUserPTMap(map);
+    };
+    if (userMembers.length > 0 && ptMembers.length > 0) fetchUserPTs();
+  }, [userMembers, ptMembers]);
+
+  const loadPTDetail = async (pt: GymMember) => {
+    setSelectedPT(pt);
+    if (!pt.member_id) return;
+    setLoadingPTDetail(true);
+    const { data } = await supabase
+      .from('trainer_clients')
+      .select('client_id, client_email')
+      .eq('trainer_id', pt.member_id);
+    const clients: typeof ptClients = [];
+    for (const c of data || []) {
+      const { data: profile } = await supabase.from('profiles').select('name').eq('id', c.client_id).maybeSingle();
+      const [wRes, pRes] = await Promise.all([
+        supabase.from('workouts').select('id', { count: 'exact' }).eq('user_id', c.client_id),
+        supabase.from('workout_progress').select('date').eq('user_id', c.client_id).order('date', { ascending: false }).limit(100),
+      ]);
+      const uniqueDates = new Set((pRes.data || []).map(p => new Date(p.date).toDateString()));
+      clients.push({
+        name: profile?.name || c.client_email,
+        email: c.client_email,
+        workouts: wRes.count || 0,
+        sessions: uniqueDates.size,
+        lastActive: pRes.data?.[0]?.date || null,
+      });
+    }
+    setPtClients(clients);
+    setLoadingPTDetail(false);
+  };
+
+  function isActive(lastActive: string | null): boolean {
+    if (!lastActive) return false;
+    const twoWeeksAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+    return new Date(lastActive) >= twoWeeksAgo;
+  }
 
   const handleAddMember = async (type: 'gym_pt' | 'gym_user') => {
     if (!newEmail.trim() || !user) return;
@@ -376,76 +437,168 @@ export default function GymDashboard() {
 
           {/* TRAINERS TAB */}
           <TabsContent value="trainers" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <UserPlus className="w-5 h-5 text-primary" />
-                  Aggiungi Personal Trainer
-                  {limits && (
-                    <span className="text-xs font-normal text-muted-foreground ml-auto">
-                      {limits.pt_used}/{limits.pt_limit}
-                    </span>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Email del PT..."
-                    value={activeTab === 'trainers' ? newEmail : ''}
-                    onChange={(e) => setNewEmail(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleAddMember('gym_pt')} />
-                  <Button onClick={() => handleAddMember('gym_pt')} disabled={adding || !newEmail.trim()}>
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    {adding ? '...' : 'Aggiungi'}
+            {selectedPT ? (
+              <>
+                <Button variant="ghost" onClick={() => { setSelectedPT(null); setPtClients([]); }} className="mb-2">
+                  <ChevronLeft className="w-4 h-4 mr-2" />
+                  Torna alla lista PT
+                </Button>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <GraduationCap className="w-5 h-5 text-primary" />
+                      {selectedPT.member_name}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="text-sm text-muted-foreground">{selectedPT.member_email}</p>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div className="text-center p-3 rounded-lg bg-secondary/50">
+                        <p className="text-xl font-bold">{memberStats[selectedPT.id]?.totalClients || 0}</p>
+                        <p className="text-xs text-muted-foreground">Clienti</p>
+                      </div>
+                      <div className="text-center p-3 rounded-lg bg-secondary/50">
+                        <p className="text-xl font-bold">{memberStats[selectedPT.id]?.totalWorkouts || 0}</p>
+                        <p className="text-xs text-muted-foreground">Schede Create</p>
+                      </div>
+                      <div className="text-center p-3 rounded-lg bg-secondary/50">
+                        <p className="text-xl font-bold">{memberStats[selectedPT.id]?.totalSessions || 0}</p>
+                        <p className="text-xs text-muted-foreground">Sessioni Totali</p>
+                      </div>
+                      <div className="text-center p-3 rounded-lg bg-secondary/50">
+                        <p className="text-xl font-bold">
+                          {memberStats[selectedPT.id]?.lastActive ? new Date(memberStats[selectedPT.id].lastActive!).toLocaleDateString('it-IT') : 'Mai'}
+                        </p>
+                        <p className="text-xs text-muted-foreground">Ultima Attività</p>
+                      </div>
+                    </div>
+
+                    {loadingPTDetail ? (
+                      <p className="text-muted-foreground text-center py-4">Caricamento...</p>
+                    ) : ptClients.length > 0 ? (
+                      <div>
+                        <h3 className="font-medium mb-3">Clienti Seguiti ({ptClients.length})</h3>
+                        <div className="rounded-md border overflow-x-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Nome</TableHead>
+                                <TableHead>Email</TableHead>
+                                <TableHead className="text-center">Schede</TableHead>
+                                <TableHead className="text-center">Sessioni</TableHead>
+                                <TableHead className="text-center">Ultima Sessione</TableHead>
+                                <TableHead className="text-center">Attività</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {ptClients.map((c, i) => (
+                                <TableRow key={i}>
+                                  <TableCell className="font-medium">{c.name}</TableCell>
+                                  <TableCell className="text-muted-foreground text-xs">{c.email}</TableCell>
+                                  <TableCell className="text-center">{c.workouts}</TableCell>
+                                  <TableCell className="text-center">{c.sessions}</TableCell>
+                                  <TableCell className="text-center text-xs">
+                                    {c.lastActive ? new Date(c.lastActive).toLocaleDateString('it-IT') : 'Mai'}
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    <Badge variant={isActive(c.lastActive) ? 'default' : 'secondary'} className="text-xs">
+                                      {isActive(c.lastActive) ? 'Attivo' : 'Inattivo'}
+                                    </Badge>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground text-center py-4">Nessun cliente associato</p>
+                    )}
+                  </CardContent>
+                </Card>
+                <div className="flex justify-end">
+                  <Button variant="ghost" size="sm" className="text-destructive" onClick={() => { handleRemoveMember(selectedPT.id); setSelectedPT(null); }}>
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    Rimuovi PT
                   </Button>
                 </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Se il PT non è registrato, riceverà un invito via email.
-                </p>
-              </CardContent>
-            </Card>
+              </>
+            ) : (
+              <>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <UserPlus className="w-5 h-5 text-primary" />
+                      Aggiungi Personal Trainer
+                      {limits && (
+                        <span className="text-xs font-normal text-muted-foreground ml-auto">
+                          {limits.pt_used}/{limits.pt_limit}
+                        </span>
+                      )}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Email del PT..."
+                        value={activeTab === 'trainers' ? newEmail : ''}
+                        onChange={(e) => setNewEmail(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleAddMember('gym_pt')} />
+                      <Button onClick={() => handleAddMember('gym_pt')} disabled={adding || !newEmail.trim()}>
+                        <UserPlus className="w-4 h-4 mr-2" />
+                        {adding ? '...' : 'Aggiungi'}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Se il PT non è registrato, riceverà un invito via email.
+                    </p>
+                  </CardContent>
+                </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <GraduationCap className="w-5 h-5 text-primary" />
-                  Personal Trainer ({ptMembers.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {ptMembers.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8">Nessun PT aggiunto.</p>
-                ) : (
-                  <div className="space-y-3">
-                    {ptMembers.map(m => {
-                      const stats = memberStats[m.id];
-                      return (
-                        <div key={m.id} className="flex items-center justify-between p-3 rounded-lg border">
-                          <div className="flex-1">
-                            <p className="font-medium">{m.member_name}</p>
-                            <p className="text-xs text-muted-foreground">{m.member_email}</p>
-                            {m.member_id && stats && (
-                              <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
-                                <span>{stats.totalClients || 0} clienti</span>
-                                <span>{stats.totalWorkouts} schede</span>
-                                <span>{stats.totalSessions} sessioni</span>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <GraduationCap className="w-5 h-5 text-primary" />
+                      Personal Trainer ({ptMembers.length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {ptMembers.length === 0 ? (
+                      <p className="text-muted-foreground text-center py-8">Nessun PT aggiunto.</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {ptMembers.map(m => {
+                          const stats = memberStats[m.id];
+                          return (
+                            <div key={m.id}
+                              className={`flex items-center justify-between p-3 rounded-lg border ${m.member_id ? 'hover:border-primary/30 cursor-pointer' : ''} transition-colors`}
+                              onClick={() => m.member_id && loadPTDetail(m)}>
+                              <div className="flex-1">
+                                <p className="font-medium">{m.member_name}</p>
+                                <p className="text-xs text-muted-foreground">{m.member_email}</p>
+                                {m.member_id && stats && (
+                                  <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
+                                    <span>{stats.totalClients || 0} clienti</span>
+                                    <span>{stats.totalWorkouts} schede</span>
+                                    <span>{stats.totalSessions} sessioni</span>
+                                  </div>
+                                )}
+                                {!m.member_id && (
+                                  <span className="text-xs text-warning">In attesa di registrazione</span>
+                                )}
                               </div>
-                            )}
-                            {!m.member_id && (
-                              <span className="text-xs text-warning">In attesa di registrazione</span>
-                            )}
-                          </div>
-                          <Button variant="ghost" size="icon" onClick={() => handleRemoveMember(m.id)}>
-                            <Trash2 className="w-4 h-4 text-destructive" />
-                          </Button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                              <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleRemoveMember(m.id); }}>
+                                <Trash2 className="w-4 h-4 text-destructive" />
+                              </Button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </>
+            )}
           </TabsContent>
 
           {/* USERS TAB */}
@@ -491,33 +644,54 @@ export default function GymDashboard() {
                 {userMembers.length === 0 ? (
                   <p className="text-muted-foreground text-center py-8">Nessun utente aggiunto.</p>
                 ) : (
-                  <div className="space-y-3">
-                    {userMembers.map(m => {
-                      const stats = memberStats[m.id];
-                      return (
-                        <div key={m.id} className="flex items-center justify-between p-3 rounded-lg border">
-                          <div className="flex-1">
-                            <p className="font-medium">{m.member_name}</p>
-                            <p className="text-xs text-muted-foreground">{m.member_email}</p>
-                            {m.member_id && stats && (
-                              <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
-                                <span>{stats.totalWorkouts} schede</span>
-                                <span>{stats.totalSessions} sessioni</span>
-                                {stats.lastActive && (
-                                  <span>Ultimo: {new Date(stats.lastActive).toLocaleDateString('it-IT')}</span>
+                  <div className="rounded-md border overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Nome</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Iscritto dal</TableHead>
+                          <TableHead>PT Associato</TableHead>
+                          <TableHead className="text-center">Schede</TableHead>
+                          <TableHead className="text-center">Sessioni</TableHead>
+                          <TableHead className="text-center">Ultima Sessione</TableHead>
+                          <TableHead className="text-center">Attività</TableHead>
+                          <TableHead></TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {userMembers.map(m => {
+                          const stats = memberStats[m.id];
+                          return (
+                            <TableRow key={m.id}>
+                              <TableCell className="font-medium">{m.member_name}</TableCell>
+                              <TableCell className="text-muted-foreground text-xs">{m.member_email}</TableCell>
+                              <TableCell className="text-xs">{new Date(m.created_at).toLocaleDateString('it-IT')}</TableCell>
+                              <TableCell className="text-xs">{userPTMap[m.id] || <span className="text-muted-foreground">—</span>}</TableCell>
+                              <TableCell className="text-center">{stats?.totalWorkouts || 0}</TableCell>
+                              <TableCell className="text-center">{stats?.totalSessions || 0}</TableCell>
+                              <TableCell className="text-center text-xs">
+                                {stats?.lastActive ? new Date(stats.lastActive).toLocaleDateString('it-IT') : 'Mai'}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                {!m.member_id ? (
+                                  <Badge variant="outline" className="text-xs text-warning border-warning/50">In attesa</Badge>
+                                ) : (
+                                  <Badge variant={isActive(stats?.lastActive || null) ? 'default' : 'secondary'} className="text-xs">
+                                    {isActive(stats?.lastActive || null) ? 'Attivo' : 'Inattivo'}
+                                  </Badge>
                                 )}
-                              </div>
-                            )}
-                            {!m.member_id && (
-                              <span className="text-xs text-warning">In attesa di registrazione</span>
-                            )}
-                          </div>
-                          <Button variant="ghost" size="icon" onClick={() => handleRemoveMember(m.id)}>
-                            <Trash2 className="w-4 h-4 text-destructive" />
-                          </Button>
-                        </div>
-                      );
-                    })}
+                              </TableCell>
+                              <TableCell>
+                                <Button variant="ghost" size="icon" onClick={() => handleRemoveMember(m.id)}>
+                                  <Trash2 className="w-4 h-4 text-destructive" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
                   </div>
                 )}
               </CardContent>

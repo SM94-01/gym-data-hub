@@ -5,12 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { PlanUpgrade } from '@/components/gym/PlanUpgrade';
 import { AppVersion } from '@/components/gym/AppVersion';
 import { Badge } from '@/components/ui/badge';
+import { exportMembersExcel, exportMembersPDF } from '@/lib/reportGenerator';
 import {
-  Users, Trash2, ArrowLeft, GraduationCap,
-  Activity, BarChart3, Clock, Dumbbell, Crown, FileDown, Eye
+  Users, ArrowLeft, GraduationCap,
+  Activity, BarChart3, Clock, Dumbbell, Crown, FileDown, Eye, ChevronLeft
 } from 'lucide-react';
 
 // ===== MOCK DATA =====
@@ -21,6 +23,7 @@ interface MockGymMember {
   member_name: string;
   member_id: string | null;
   created_at: string;
+  pt_name?: string;
 }
 
 interface MockMemberStats {
@@ -41,20 +44,20 @@ const MOCK_PT_MEMBERS: MockGymMember[] = [
 ];
 
 const MOCK_USER_MEMBERS: MockGymMember[] = [
-  { id: 'gu1', member_email: 'mario.rossi@email.com', member_role: 'utente', member_name: 'Mario Rossi', member_id: 'u1', created_at: '2025-08-15' },
-  { id: 'gu2', member_email: 'laura.bianchi@email.com', member_role: 'utente', member_name: 'Laura Bianchi', member_id: 'u2', created_at: '2025-09-10' },
-  { id: 'gu3', member_email: 'paolo.verdi@email.com', member_role: 'utente', member_name: 'Paolo Verdi', member_id: 'u3', created_at: '2025-09-25' },
-  { id: 'gu4', member_email: 'anna.ferrari@email.com', member_role: 'utente', member_name: 'Anna Ferrari', member_id: 'u4', created_at: '2025-10-05' },
-  { id: 'gu5', member_email: 'stefano.greco@email.com', member_role: 'utente', member_name: 'Stefano Greco', member_id: 'u5', created_at: '2025-10-20' },
-  { id: 'gu6', member_email: 'chiara.conti@email.com', member_role: 'utente', member_name: 'Chiara Conti', member_id: 'u6', created_at: '2025-11-01' },
-  { id: 'gu7', member_email: 'marco.moretti@email.com', member_role: 'utente', member_name: 'Marco Moretti', member_id: 'u7', created_at: '2025-11-15' },
-  { id: 'gu8', member_email: 'elena.rizzo@email.com', member_role: 'utente', member_name: 'Elena Rizzo', member_id: 'u8', created_at: '2025-12-01' },
+  { id: 'gu1', member_email: 'mario.rossi@email.com', member_role: 'utente', member_name: 'Mario Rossi', member_id: 'u1', created_at: '2025-08-15', pt_name: 'Giovanni Verdi' },
+  { id: 'gu2', member_email: 'laura.bianchi@email.com', member_role: 'utente', member_name: 'Laura Bianchi', member_id: 'u2', created_at: '2025-09-10', pt_name: 'Giovanni Verdi' },
+  { id: 'gu3', member_email: 'paolo.verdi@email.com', member_role: 'utente', member_name: 'Paolo Verdi', member_id: 'u3', created_at: '2025-09-25', pt_name: 'Alessia Martini' },
+  { id: 'gu4', member_email: 'anna.ferrari@email.com', member_role: 'utente', member_name: 'Anna Ferrari', member_id: 'u4', created_at: '2025-10-05', pt_name: 'Roberto Neri' },
+  { id: 'gu5', member_email: 'stefano.greco@email.com', member_role: 'utente', member_name: 'Stefano Greco', member_id: 'u5', created_at: '2025-10-20', pt_name: 'Roberto Neri' },
+  { id: 'gu6', member_email: 'chiara.conti@email.com', member_role: 'utente', member_name: 'Chiara Conti', member_id: 'u6', created_at: '2025-11-01', pt_name: 'Chiara Romano' },
+  { id: 'gu7', member_email: 'marco.moretti@email.com', member_role: 'utente', member_name: 'Marco Moretti', member_id: 'u7', created_at: '2025-11-15', pt_name: 'Giovanni Verdi' },
+  { id: 'gu8', member_email: 'elena.rizzo@email.com', member_role: 'utente', member_name: 'Elena Rizzo', member_id: 'u8', created_at: '2025-12-01', pt_name: 'Matteo Fontana' },
   { id: 'gu9', member_email: 'davide.russo@email.com', member_role: 'utente', member_name: 'Davide Russo', member_id: 'u9', created_at: '2025-12-15' },
-  { id: 'gu10', member_email: 'giulia.colombo@email.com', member_role: 'utente', member_name: 'Giulia Colombo', member_id: 'u10', created_at: '2026-01-05' },
-  { id: 'gu11', member_email: 'andrea.bruno@email.com', member_role: 'utente', member_name: 'Andrea Bruno', member_id: 'u11', created_at: '2026-01-15' },
+  { id: 'gu10', member_email: 'giulia.colombo@email.com', member_role: 'utente', member_name: 'Giulia Colombo', member_id: 'u10', created_at: '2026-01-05', pt_name: 'Alessia Martini' },
+  { id: 'gu11', member_email: 'andrea.bruno@email.com', member_role: 'utente', member_name: 'Andrea Bruno', member_id: 'u11', created_at: '2026-01-15', pt_name: 'Roberto Neri' },
   { id: 'gu12', member_email: 'sara.gallo@email.com', member_role: 'utente', member_name: 'Sara Gallo', member_id: 'u12', created_at: '2026-01-25' },
-  { id: 'gu13', member_email: 'luca.marino@email.com', member_role: 'utente', member_name: 'Luca Marino', member_id: 'u13', created_at: '2026-02-01' },
-  { id: 'gu14', member_email: 'francesca.villa@email.com', member_role: 'utente', member_name: 'Francesca Villa', member_id: 'u14', created_at: '2026-02-05' },
+  { id: 'gu13', member_email: 'luca.marino@email.com', member_role: 'utente', member_name: 'Luca Marino', member_id: 'u13', created_at: '2026-02-01', pt_name: 'Valentina Costa' },
+  { id: 'gu14', member_email: 'francesca.villa@email.com', member_role: 'utente', member_name: 'Francesca Villa', member_id: 'u14', created_at: '2026-02-05', pt_name: 'Valentina Costa' },
   { id: 'gu15', member_email: 'newuser@email.com', member_role: 'utente', member_name: 'newuser@email.com (in attesa)', member_id: null, created_at: '2026-02-10' },
   { id: 'gu16', member_email: 'newuser2@email.com', member_role: 'utente', member_name: 'newuser2@email.com (in attesa)', member_id: null, created_at: '2026-02-12' },
 ];
@@ -85,9 +88,44 @@ const MOCK_MEMBER_STATS: Record<string, MockMemberStats> = {
   gu16: { totalWorkouts: 0, totalSessions: 0, lastActive: null },
 };
 
+// Mock PT detail data: which clients each PT has
+const MOCK_PT_CLIENTS: Record<string, { name: string; email: string; workouts: number; sessions: number; lastActive: string | null }[]> = {
+  gm1: [
+    { name: 'Mario Rossi', email: 'mario.rossi@email.com', workouts: 3, sessions: 85, lastActive: '2026-02-14' },
+    { name: 'Laura Bianchi', email: 'laura.bianchi@email.com', workouts: 2, sessions: 62, lastActive: '2026-02-13' },
+    { name: 'Marco Moretti', email: 'marco.moretti@email.com', workouts: 2, sessions: 38, lastActive: '2026-02-12' },
+  ],
+  gm2: [
+    { name: 'Paolo Verdi', email: 'paolo.verdi@email.com', workouts: 4, sessions: 110, lastActive: '2026-02-11' },
+    { name: 'Giulia Colombo', email: 'giulia.colombo@email.com', workouts: 1, sessions: 18, lastActive: '2026-02-14' },
+  ],
+  gm3: [
+    { name: 'Anna Ferrari', email: 'anna.ferrari@email.com', workouts: 2, sessions: 45, lastActive: '2026-02-09' },
+    { name: 'Stefano Greco', email: 'stefano.greco@email.com', workouts: 3, sessions: 72, lastActive: '2026-02-07' },
+    { name: 'Andrea Bruno', email: 'andrea.bruno@email.com', workouts: 2, sessions: 25, lastActive: '2026-02-10' },
+  ],
+  gm4: [
+    { name: 'Chiara Conti', email: 'chiara.conti@email.com', workouts: 1, sessions: 20, lastActive: '2026-01-25' },
+  ],
+  gm5: [
+    { name: 'Elena Rizzo', email: 'elena.rizzo@email.com', workouts: 3, sessions: 55, lastActive: '2026-02-06' },
+  ],
+  gm6: [
+    { name: 'Luca Marino', email: 'luca.marino@email.com', workouts: 1, sessions: 8, lastActive: '2026-02-13' },
+    { name: 'Francesca Villa', email: 'francesca.villa@email.com', workouts: 1, sessions: 5, lastActive: '2026-02-11' },
+  ],
+};
+
+function isActive(lastActive: string | null): boolean {
+  if (!lastActive) return false;
+  const twoWeeksAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+  return new Date(lastActive) >= twoWeeksAgo;
+}
+
 export default function DemoGymDashboard() {
   const { isAdmin, loading: adminLoading } = useIsAdmin();
   const [activeTab, setActiveTab] = useState('overview');
+  const [selectedPT, setSelectedPT] = useState<string | null>(null);
 
   const allMembers = [...MOCK_PT_MEMBERS, ...MOCK_USER_MEMBERS];
   const activePTs = MOCK_PT_MEMBERS.filter(m => m.member_id).length;
@@ -96,7 +134,6 @@ export default function DemoGymDashboard() {
   const pendingUsers = MOCK_USER_MEMBERS.filter(m => !m.member_id).length;
 
   const totalWorkouts = Object.values(MOCK_MEMBER_STATS).reduce((s, m) => s + m.totalWorkouts, 0);
-  const totalSessions = Object.values(MOCK_MEMBER_STATS).reduce((s, m) => s + m.totalSessions, 0);
 
   const weeklySessions = useMemo(() => {
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
@@ -111,6 +148,36 @@ export default function DemoGymDashboard() {
       return !stats?.lastActive || new Date(stats.lastActive) < twoWeeksAgo;
     });
   }, []);
+
+  const handleExportExcel = () => {
+    const memberData = allMembers.map(m => ({
+      name: m.member_name,
+      email: m.member_email,
+      role: m.member_role,
+      totalWorkouts: MOCK_MEMBER_STATS[m.id]?.totalWorkouts || 0,
+      totalSessions: MOCK_MEMBER_STATS[m.id]?.totalSessions || 0,
+      lastActive: MOCK_MEMBER_STATS[m.id]?.lastActive || null,
+      totalClients: MOCK_MEMBER_STATS[m.id]?.totalClients,
+    }));
+    exportMembersExcel(memberData, 'Demo Palestra');
+  };
+
+  const handleExportPDF = () => {
+    const memberData = allMembers.map(m => ({
+      name: m.member_name,
+      email: m.member_email,
+      role: m.member_role,
+      totalWorkouts: MOCK_MEMBER_STATS[m.id]?.totalWorkouts || 0,
+      totalSessions: MOCK_MEMBER_STATS[m.id]?.totalSessions || 0,
+      lastActive: MOCK_MEMBER_STATS[m.id]?.lastActive || null,
+      totalClients: MOCK_MEMBER_STATS[m.id]?.totalClients,
+    }));
+    exportMembersPDF(memberData, 'Demo Palestra');
+  };
+
+  const selectedPTData = selectedPT ? MOCK_PT_MEMBERS.find(m => m.id === selectedPT) : null;
+  const selectedPTStats = selectedPT ? MOCK_MEMBER_STATS[selectedPT] : null;
+  const selectedPTClients = selectedPT ? MOCK_PT_CLIENTS[selectedPT] || [] : [];
 
   if (adminLoading) return null;
   if (!isAdmin) return <Navigate to="/" replace />;
@@ -135,8 +202,12 @@ export default function DemoGymDashboard() {
             </div>
           </div>
           <div className="flex gap-1">
-            <Button variant="outline" size="sm"><FileDown className="w-4 h-4 mr-1" />Excel</Button>
-            <Button variant="outline" size="sm"><FileDown className="w-4 h-4 mr-1" />PDF</Button>
+            <Button variant="outline" size="sm" onClick={handleExportExcel}>
+              <FileDown className="w-4 h-4 mr-1" />Excel
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleExportPDF}>
+              <FileDown className="w-4 h-4 mr-1" />PDF
+            </Button>
             <Dialog>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm">
@@ -256,42 +327,122 @@ export default function DemoGymDashboard() {
 
           {/* TRAINERS */}
           <TabsContent value="trainers" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <GraduationCap className="w-5 h-5 text-primary" />
-                  Personal Trainer ({MOCK_PT_MEMBERS.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {MOCK_PT_MEMBERS.map(m => {
-                    const stats = MOCK_MEMBER_STATS[m.id];
-                    return (
-                      <div key={m.id} className="flex items-center justify-between p-3 rounded-lg border">
-                        <div className="flex-1">
-                          <p className="font-medium">{m.member_name}</p>
-                          <p className="text-xs text-muted-foreground">{m.member_email}</p>
-                          {m.member_id && stats && (
-                            <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
-                              <span>{stats.totalClients || 0} clienti</span>
-                              <span>{stats.totalWorkouts} schede</span>
-                              <span>{stats.totalSessions} sessioni</span>
-                            </div>
-                          )}
-                          {!m.member_id && (
-                            <span className="text-xs text-warning">In attesa di registrazione</span>
-                          )}
+            {selectedPT && selectedPTData ? (
+              <>
+                <Button variant="ghost" onClick={() => setSelectedPT(null)} className="mb-2">
+                  <ChevronLeft className="w-4 h-4 mr-2" />
+                  Torna alla lista PT
+                </Button>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <GraduationCap className="w-5 h-5 text-primary" />
+                      {selectedPTData.member_name}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="text-sm text-muted-foreground">{selectedPTData.member_email}</p>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div className="text-center p-3 rounded-lg bg-secondary/50">
+                        <p className="text-xl font-bold">{selectedPTStats?.totalClients || 0}</p>
+                        <p className="text-xs text-muted-foreground">Clienti</p>
+                      </div>
+                      <div className="text-center p-3 rounded-lg bg-secondary/50">
+                        <p className="text-xl font-bold">{selectedPTStats?.totalWorkouts || 0}</p>
+                        <p className="text-xs text-muted-foreground">Schede Create</p>
+                      </div>
+                      <div className="text-center p-3 rounded-lg bg-secondary/50">
+                        <p className="text-xl font-bold">{selectedPTStats?.totalSessions || 0}</p>
+                        <p className="text-xs text-muted-foreground">Sessioni Totali</p>
+                      </div>
+                      <div className="text-center p-3 rounded-lg bg-secondary/50">
+                        <p className="text-xl font-bold">
+                          {selectedPTStats?.lastActive ? new Date(selectedPTStats.lastActive).toLocaleDateString('it-IT') : 'Mai'}
+                        </p>
+                        <p className="text-xs text-muted-foreground">Ultima Attività</p>
+                      </div>
+                    </div>
+
+                    {selectedPTClients.length > 0 && (
+                      <div>
+                        <h3 className="font-medium mb-3">Clienti Seguiti ({selectedPTClients.length})</h3>
+                        <div className="rounded-md border overflow-x-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Nome</TableHead>
+                                <TableHead>Email</TableHead>
+                                <TableHead className="text-center">Schede</TableHead>
+                                <TableHead className="text-center">Sessioni</TableHead>
+                                <TableHead className="text-center">Ultima Sessione</TableHead>
+                                <TableHead className="text-center">Attività</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {selectedPTClients.map((c, i) => (
+                                <TableRow key={i}>
+                                  <TableCell className="font-medium">{c.name}</TableCell>
+                                  <TableCell className="text-muted-foreground text-xs">{c.email}</TableCell>
+                                  <TableCell className="text-center">{c.workouts}</TableCell>
+                                  <TableCell className="text-center">{c.sessions}</TableCell>
+                                  <TableCell className="text-center text-xs">
+                                    {c.lastActive ? new Date(c.lastActive).toLocaleDateString('it-IT') : 'Mai'}
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    <Badge variant={isActive(c.lastActive) ? 'default' : 'secondary'} className="text-xs">
+                                      {isActive(c.lastActive) ? 'Attivo' : 'Inattivo'}
+                                    </Badge>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
+                    )}
+                  </CardContent>
+                </Card>
+              </>
+            ) : (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <GraduationCap className="w-5 h-5 text-primary" />
+                    Personal Trainer ({MOCK_PT_MEMBERS.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {MOCK_PT_MEMBERS.map(m => {
+                      const stats = MOCK_MEMBER_STATS[m.id];
+                      return (
+                        <div key={m.id}
+                          className={`flex items-center justify-between p-3 rounded-lg border ${m.member_id ? 'hover:border-primary/30 cursor-pointer' : ''} transition-colors`}
+                          onClick={() => m.member_id && setSelectedPT(m.id)}>
+                          <div className="flex-1">
+                            <p className="font-medium">{m.member_name}</p>
+                            <p className="text-xs text-muted-foreground">{m.member_email}</p>
+                            {m.member_id && stats && (
+                              <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
+                                <span>{stats.totalClients || 0} clienti</span>
+                                <span>{stats.totalWorkouts} schede</span>
+                                <span>{stats.totalSessions} sessioni</span>
+                              </div>
+                            )}
+                            {!m.member_id && (
+                              <span className="text-xs text-warning">In attesa di registrazione</span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
-          {/* USERS */}
+          {/* USERS - Table View */}
           <TabsContent value="users" className="space-y-4">
             <Card>
               <CardHeader>
@@ -301,30 +452,52 @@ export default function DemoGymDashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {MOCK_USER_MEMBERS.map(m => {
-                    const stats = MOCK_MEMBER_STATS[m.id];
-                    return (
-                      <div key={m.id} className="flex items-center justify-between p-3 rounded-lg border">
-                        <div className="flex-1">
-                          <p className="font-medium">{m.member_name}</p>
-                          <p className="text-xs text-muted-foreground">{m.member_email}</p>
-                          {m.member_id && stats && (
-                            <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
-                              <span>{stats.totalWorkouts} schede</span>
-                              <span>{stats.totalSessions} sessioni</span>
-                              {stats.lastActive && (
-                                <span>Ultimo: {new Date(stats.lastActive).toLocaleDateString('it-IT')}</span>
+                <div className="rounded-md border overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Nome</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Iscritto dal</TableHead>
+                        <TableHead>PT Associato</TableHead>
+                        <TableHead className="text-center">Schede</TableHead>
+                        <TableHead className="text-center">Sessioni</TableHead>
+                        <TableHead className="text-center">Ultima Sessione</TableHead>
+                        <TableHead className="text-center">Attività</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {MOCK_USER_MEMBERS.map(m => {
+                        const stats = MOCK_MEMBER_STATS[m.id];
+                        return (
+                          <TableRow key={m.id}>
+                            <TableCell className="font-medium">{m.member_name}</TableCell>
+                            <TableCell className="text-muted-foreground text-xs">{m.member_email}</TableCell>
+                            <TableCell className="text-xs">
+                              {new Date(m.created_at).toLocaleDateString('it-IT')}
+                            </TableCell>
+                            <TableCell className="text-xs">
+                              {m.pt_name || <span className="text-muted-foreground">—</span>}
+                            </TableCell>
+                            <TableCell className="text-center">{stats?.totalWorkouts || 0}</TableCell>
+                            <TableCell className="text-center">{stats?.totalSessions || 0}</TableCell>
+                            <TableCell className="text-center text-xs">
+                              {stats?.lastActive ? new Date(stats.lastActive).toLocaleDateString('it-IT') : 'Mai'}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {!m.member_id ? (
+                                <Badge variant="outline" className="text-xs text-warning border-warning/50">In attesa</Badge>
+                              ) : (
+                                <Badge variant={isActive(stats?.lastActive || null) ? 'default' : 'secondary'} className="text-xs">
+                                  {isActive(stats?.lastActive || null) ? 'Attivo' : 'Inattivo'}
+                                </Badge>
                               )}
-                            </div>
-                          )}
-                          {!m.member_id && (
-                            <span className="text-xs text-warning">In attesa di registrazione</span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
                 </div>
               </CardContent>
             </Card>
