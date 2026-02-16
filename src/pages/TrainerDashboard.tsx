@@ -12,6 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
+import { Progress } from '@/components/ui/progress';
 import { PlanUpgrade } from '@/components/gym/PlanUpgrade';
 import { exportClientsExcel, exportClientsPDF } from '@/lib/reportGenerator';
 import { AppVersion } from '@/components/gym/AppVersion';
@@ -631,6 +632,30 @@ export default function TrainerDashboard() {
             </Dialog>
           </div>
         </div>
+
+        {/* Plan Usage Summary */}
+        {limits && !selectedClient && (
+          <Card className="mb-6 animate-fade-in">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3 mb-4">
+                <Crown className="w-5 h-5 text-primary" />
+                <div>
+                  <h3 className="font-semibold">{limits.role}</h3>
+                  <p className="text-xs text-muted-foreground">Il tuo piano attuale</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-muted-foreground">Clienti</span>
+                    <span className="font-medium">{limits.client_used} / {limits.client_limit}</span>
+                  </div>
+                  <Progress value={limits.client_limit > 0 ? (limits.client_used / limits.client_limit) * 100 : 0} className="h-2" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {!selectedClient ?
         <>
