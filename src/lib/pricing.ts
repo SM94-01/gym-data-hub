@@ -1,11 +1,11 @@
 export const ROLE_PRICING: Record<string, number> = {
   'Utente': 10,
   'Personal Trainer Starter': 49,
-  'Personal Trainer Pro': 89,
-  'Personal Trainer Elite': 149,
-  'Palestra Starter': 199,
-  'Palestra Pro': 399,
-  'Palestra Elite': 699,
+  'Personal Trainer Pro': 99,
+  'Personal Trainer Elite': 179,
+  'Palestra Starter': 349,
+  'Palestra Pro': 699,
+  'Palestra Elite': 1299,
   'Admin': 0,
 };
 
