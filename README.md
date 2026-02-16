@@ -2,11 +2,12 @@
 
 Applicazione web per la gestione di allenamenti in palestra, sviluppata con React, Vite, TypeScript, Tailwind CSS e shadcn/ui.
 
-## 🚀 Promo Lancio
+## 🎯 Founder / Beta Program
 
-- **Primi 20 utenti**: accesso lifetime a **5€** (una tantum, per sempre!)
-- **Dopo i primi 20**: abbonamento annuale a **10€/anno**
-- **Primi 5 PT e prime 2 Palestre**: 2 mesi di abbonamento gratuito inclusi (14 mesi al prezzo di 12)
+- 💎 **Founder Price** — Prezzi bloccati per i primi 12 mesi
+- 🔒 Bloccato per sempre per chi entra ora
+- ⏳ Limitato ai primi clienti
+- 🧪 Beta access · 🚀 Co-building program
 
 ---
 
@@ -60,8 +61,8 @@ Piattaforma professionale per Personal Trainer che vogliono gestire i propri cli
 | Piano | Prezzo/anno | Clienti Max | Report Excel/PDF |
 |-------|-------------|-------------|------------------|
 | PT Starter | €49 | 5 | ❌ |
-| PT Pro | €89 | 15 | ✅ |
-| PT Elite | €149 | 40 | ✅ |
+| PT Pro | €99 | 15 | ✅ |
+| PT Elite | €179 | 40 | ✅ |
 
 ---
 
@@ -81,9 +82,9 @@ Dashboard centralizzata per palestre che vogliono gestire il proprio staff e i p
 
 | Piano | Prezzo/anno | PT Max | Utenti Max | Report Excel/PDF |
 |-------|-------------|--------|------------|------------------|
-| Palestra Starter | €199 | 3 | 50 | ❌ |
-| Palestra Pro | €399 | 10 | 150 | ✅ |
-| Palestra Elite | €699 | 25 | 500 | ✅ |
+| Palestra Starter | €349 | 3 | 50 | ❌ |
+| Palestra Pro | €699 | 10 | 150 | ✅ |
+| Palestra Elite | €1.299 | 25 | 500 | ✅ |
 
 ---
 
