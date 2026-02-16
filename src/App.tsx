@@ -19,6 +19,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminSubscriptions from "./pages/AdminSubscriptions";
 import DemoTrainerDashboard from "./pages/DemoTrainerDashboard";
 import DemoGymDashboard from "./pages/DemoGymDashboard";
+import DemoGymPTDashboard from "./pages/DemoGymPTDashboard";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -56,6 +57,7 @@ function AppRoutes() {
         <Route path="/admin/subscriptions" element={<ProtectedRoute><AdminSubscriptions /></ProtectedRoute>} />
         <Route path="/demo/trainer" element={<ProtectedRoute><DemoTrainerDashboard /></ProtectedRoute>} />
         <Route path="/demo/gym" element={<ProtectedRoute><DemoGymDashboard /></ProtectedRoute>} />
+        <Route path="/demo/gym-pt" element={<ProtectedRoute><DemoGymPTDashboard /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </div>
