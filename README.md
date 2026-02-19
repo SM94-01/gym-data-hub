@@ -14,17 +14,20 @@ Applicazione web per la gestione di allenamenti in palestra, sviluppata con Reac
 ## Funzionalità Principali
 
 ### 🏋️ Gestione Allenamenti
+
 - Creazione e modifica di schede di allenamento personalizzate
 - Supporto per esercizi singoli e superset
 - Gestione di serie, ripetizioni, peso target e tempi di recupero
 - Note personalizzate per ogni esercizio
 
 ### ⚡ Workout Custom
+
 - Sessioni di allenamento libere senza scheda predefinita
 - Aggiungi esercizi al volo durante l'allenamento
 - Perfetto per improvvisare o provare nuovi esercizi
 
 ### 📊 Tracking Progressi
+
 - Registrazione dei progressi per ogni sessione di allenamento
 - Storico completo delle sessioni con riepilogo dettagliato
 - Grafici di distribuzione muscolare (PieChart) con tooltip interattivi
@@ -32,11 +35,13 @@ Applicazione web per la gestione di allenamenti in palestra, sviluppata con Reac
 - Filtri per mese, anno e settimana
 
 ### ⚖️ Monitoraggio Peso Corporeo
+
 - Inserimento peso giornaliero
 - Grafici temporali dell'andamento del peso
 - Calcolo variazioni e trend
 
 ### 👤 Profilo Utente
+
 - Gestione del profilo personale (nome, email)
 - Sistema di autenticazione con email e password
 - Verifica email obbligatoria alla registrazione
@@ -49,6 +54,7 @@ Applicazione web per la gestione di allenamenti in palestra, sviluppata con Reac
 Piattaforma professionale per Personal Trainer che vogliono gestire i propri clienti in modo digitale.
 
 ### Funzionalità
+
 - Gestione clienti con inviti via email
 - Creazione di schede personalizzate per ogni cliente
 - Monitoraggio progressi e attività dei clienti in tempo reale
@@ -58,11 +64,11 @@ Piattaforma professionale per Personal Trainer che vogliono gestire i propri cli
 
 ### Piani Disponibili
 
-| Piano | Prezzo/anno | Clienti Max | Report Excel/PDF |
-|-------|-------------|-------------|------------------|
-| PT Starter | €49 | 5 | ❌ |
-| PT Pro | €99 | 15 | ✅ |
-| PT Elite | €179 | 40 | ✅ |
+| Piano      | Prezzo/anno | Clienti Max | Report Excel/PDF |
+| ---------- | ----------- | ----------- | ---------------- |
+| PT Starter | €49         | 5           | ❌               |
+| PT Pro     | €99         | 15          | ✅               |
+| PT Elite   | €179        | 40          | ✅               |
 
 ---
 
@@ -71,6 +77,7 @@ Piattaforma professionale per Personal Trainer che vogliono gestire i propri cli
 Dashboard centralizzata per palestre che vogliono gestire il proprio staff e i propri iscritti.
 
 ### Funzionalità
+
 - Gestione centralizzata di utenti e personal trainer
 - Monitoraggio sessioni settimanali e tassi di retention
 - Analisi attività dei trainer (clienti e schede create)
@@ -80,11 +87,11 @@ Dashboard centralizzata per palestre che vogliono gestire il proprio staff e i p
 
 ### Piani Disponibili
 
-| Piano | Prezzo/anno | PT Max | Utenti Max | Report Excel/PDF |
-|-------|-------------|--------|------------|------------------|
-| Palestra Starter | €349 | 3 | 50 | ❌ |
-| Palestra Pro | €699 | 10 | 150 | ✅ |
-| Palestra Elite | €1.299 | 25 | 500 | ✅ |
+| Piano            | Prezzo/anno | PT Max | Utenti Max | Report Excel/PDF |
+| ---------------- | ----------- | ------ | ---------- | ---------------- |
+| Palestra Starter | €249        | 3      | 50         | ❌               |
+| Palestra Pro     | €599        | 10     | 150        | ✅               |
+| Palestra Elite   | €999        | 25     | 500        | ✅               |
 
 ---
 
@@ -101,6 +108,7 @@ I piani **Pro** ed **Elite** (sia PT che Palestre) includono la possibilità di 
 ## 📧 Notifiche Email Automatiche
 
 GymApp invia email automatiche in diversi scenari:
+
 - **Invito utente**: quando un PT o una palestra aggiunge un nuovo membro
 - **Nuova scheda**: quando il PT crea una scheda per un cliente
 - **Allenamento completato**: quando un cliente completa un allenamento
@@ -111,11 +119,13 @@ GymApp invia email automatiche in diversi scenari:
 ---
 
 ## 📱 PWA (Progressive Web App)
+
 - Installabile su dispositivi mobili
 - Funzionamento offline
 - Esperienza nativa su smartphone
 
 ## 🌓 Tema Chiaro e Scuro
+
 - Supporto completo per dark mode e light mode
 - Commutazione automatica o manuale
 
