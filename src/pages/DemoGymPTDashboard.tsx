@@ -10,12 +10,13 @@ import { Badge } from '@/components/ui/badge';
 import { exportClientsExcel, exportClientsPDF } from '@/lib/reportGenerator';
 import {
   Users, Dumbbell, ChevronLeft, ArrowLeft, TrendingUp,
-  BarChart3, Flame, Award, Activity, Crown, FileDown, Eye, Building2
+  BarChart3, Award, Activity, Calendar, Crown, FileDown, Eye, Building2
 } from 'lucide-react';
 import { MONTHS } from '@/types/gym';
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell
+  XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, AreaChart, Area, BarChart, Bar,
+  PieChart, Pie, Cell
 } from 'recharts';
 
 const COLORS = [
@@ -469,129 +470,149 @@ export default function DemoGymPTDashboard() {
                   </div>
 
                   {/* Stats */}
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                    <Card><CardContent className="pt-3 pb-3 text-center">
-                      <Activity className="w-4 h-4 text-primary mx-auto mb-1" />
-                      <p className="text-lg font-bold">{periodStats.totalSessions}</p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="p-3 rounded-lg bg-secondary/30 text-center">
+                      <Calendar className="w-4 h-4 text-primary mx-auto mb-1" />
+                      <p className="font-bold text-lg">{periodStats.totalSessions}</p>
                       <p className="text-xs text-muted-foreground">Sessioni</p>
-                    </CardContent></Card>
-                    <Card><CardContent className="pt-3 pb-3 text-center">
+                    </div>
+                    <div className="p-3 rounded-lg bg-secondary/30 text-center">
+                      <Dumbbell className="w-4 h-4 text-primary mx-auto mb-1" />
+                      <p className="font-bold text-lg">{periodStats.totalSets}</p>
+                      <p className="text-xs text-muted-foreground">Serie Totali</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-secondary/30 text-center">
                       <Award className="w-4 h-4 text-primary mx-auto mb-1" />
-                      <p className="text-lg font-bold">{periodStats.maxWeight}kg</p>
+                      <p className="font-bold text-lg">{periodStats.maxWeight}kg</p>
                       <p className="text-xs text-muted-foreground">Max Peso</p>
-                    </CardContent></Card>
-                    <Card><CardContent className="pt-3 pb-3 text-center">
-                      <BarChart3 className="w-4 h-4 text-primary mx-auto mb-1" />
-                      <p className="text-lg font-bold">{periodStats.totalSets}</p>
-                      <p className="text-xs text-muted-foreground">Serie</p>
-                    </CardContent></Card>
-                    <Card><CardContent className="pt-3 pb-3 text-center">
-                      <Flame className="w-4 h-4 text-primary mx-auto mb-1" />
-                      <p className="text-lg font-bold">{periodStats.totalReps}</p>
-                      <p className="text-xs text-muted-foreground">Reps</p>
-                    </CardContent></Card>
-                    <Card><CardContent className="pt-3 pb-3 text-center">
+                    </div>
+                    <div className="p-3 rounded-lg bg-secondary/30 text-center">
                       <TrendingUp className="w-4 h-4 text-primary mx-auto mb-1" />
-                      <p className="text-lg font-bold">{(periodStats.totalVolume / 1000).toFixed(1)}t</p>
-                      <p className="text-xs text-muted-foreground">Volume</p>
-                    </CardContent></Card>
+                      <p className="font-bold text-lg">{periodStats.totalVolume.toLocaleString()}</p>
+                      <p className="text-xs text-muted-foreground">Volume (kg)</p>
+                    </div>
                   </div>
 
                   {/* Muscle Distribution */}
                   {muscleDistribution.length > 0 && (
-                    <Card>
-                      <CardHeader className="pb-2"><CardTitle className="text-sm">Distribuzione Muscolare</CardTitle></CardHeader>
-                      <CardContent>
-                        <div className="h-[200px]">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                              <Pie data={muscleDistribution} cx="50%" cy="50%" outerRadius={70} dataKey="value" label={({ name, percentage }) => `${name} ${percentage}%`}>
-                                {muscleDistribution.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
-                              </Pie>
-                              <Tooltip />
-                            </PieChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </CardContent>
-                    </Card>
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <BarChart3 className="w-4 h-4 text-primary" />
+                        <h4 className="font-semibold text-sm">Distribuzione Muscoli</h4>
+                      </div>
+                      <div className="h-52">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie data={muscleDistribution} cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={2} dataKey="value">
+                              {muscleDistribution.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
+                            </Pie>
+                            <Tooltip content={({ active, payload }) => {
+                              if (active && payload?.length) {
+                                const d = payload[0].payload;
+                                return <div className="bg-background border rounded-lg p-2 text-sm"><p style={{ color: d.fill }} className="font-medium">{d.name}</p><p style={{ color: d.fill }}>{d.value} serie ({d.percentage}%)</p></div>;
+                              }
+                              return null;
+                            }} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
                   )}
 
                   {/* Volume by Muscle */}
                   {volumeByMuscle.length > 0 && (
-                    <Card>
-                      <CardHeader className="pb-2"><CardTitle className="text-sm">Volume per Gruppo Muscolare (kg)</CardTitle></CardHeader>
-                      <CardContent>
-                        <div className="h-[200px]">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={volumeByMuscle}>
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis dataKey="muscle" tick={{ fontSize: 10 }} />
-                              <YAxis tick={{ fontSize: 10 }} />
-                              <Tooltip />
-                              <Bar dataKey="volume" fill="hsl(160, 84%, 39%)" radius={[4, 4, 0, 0]} />
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </CardContent>
-                    </Card>
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <BarChart3 className="w-4 h-4 text-primary" />
+                        <h4 className="font-semibold text-sm">Volume per Muscolo</h4>
+                      </div>
+                      <div className="h-52">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={volumeByMuscle} layout="vertical">
+                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 14%, 18%)" />
+                            <XAxis type="number" stroke="hsl(220, 10%, 55%)" fontSize={12} />
+                            <YAxis dataKey="muscle" type="category" stroke="hsl(220, 10%, 55%)" fontSize={11} width={80} />
+                            <Tooltip contentStyle={{ backgroundColor: 'hsl(220, 18%, 10%)', border: '1px solid hsl(220, 14%, 18%)', borderRadius: '8px' }} formatter={(v: number) => [`${v} kg`, 'Volume']} />
+                            <Bar dataKey="volume" fill="hsl(160, 84%, 39%)" radius={[0, 4, 4, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
                   )}
 
-                  {/* Weight Progression */}
-                  <Card>
-                    <CardHeader className="pb-2"><CardTitle className="text-sm">Progressione Peso</CardTitle></CardHeader>
-                    <CardContent>
-                      <Select value={selectedExercise} onValueChange={setSelectedExercise}>
-                        <SelectTrigger className="mb-3"><SelectValue placeholder="Seleziona esercizio" /></SelectTrigger>
-                        <SelectContent>{progressExercises.map(e => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}</SelectContent>
-                      </Select>
-                      {chartData.length > 0 ? (
-                        <div className="h-[200px]">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={chartData}>
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis dataKey="date" tick={{ fontSize: 9 }} />
-                              <YAxis tick={{ fontSize: 10 }} />
-                              <Tooltip />
-                              <Line type="monotone" dataKey="peso" stroke="hsl(160, 84%, 39%)" strokeWidth={2} dot={{ r: 3 }} />
-                            </LineChart>
-                          </ResponsiveContainer>
-                        </div>
-                      ) : <p className="text-sm text-muted-foreground text-center py-4">Seleziona un esercizio per visualizzare la progressione</p>}
-                    </CardContent>
-                  </Card>
+                  {/* Exercise Selector */}
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground mb-2 block">Dettaglio Esercizio</label>
+                    <Select value={selectedExercise} onValueChange={setSelectedExercise}>
+                      <SelectTrigger className="bg-secondary/50 border-border/50">
+                        <SelectValue placeholder="Scegli un esercizio" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {progressExercises.map(ex => <SelectItem key={ex.id} value={ex.id}>{ex.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {selectedExercise && chartData.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold text-sm mb-1">Andamento Peso - Serie per Serie</h4>
+                      <div className="h-52">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={chartData}>
+                            <defs>
+                              <linearGradient id="gymPtColorWeight" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="hsl(160, 84%, 39%)" stopOpacity={0.3} />
+                                <stop offset="95%" stopColor="hsl(160, 84%, 39%)" stopOpacity={0} />
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 14%, 18%)" />
+                            <XAxis dataKey="date" stroke="hsl(220, 10%, 55%)" fontSize={10} angle={-45} textAnchor="end" height={60} interval="preserveStartEnd" />
+                            <YAxis stroke="hsl(220, 10%, 55%)" fontSize={12} />
+                            <Tooltip contentStyle={{ backgroundColor: 'hsl(220, 18%, 10%)', border: '1px solid hsl(220, 14%, 18%)', borderRadius: '8px' }} />
+                            <Area type="monotone" dataKey="peso" stroke="hsl(160, 84%, 39%)" strokeWidth={2} fill="url(#gymPtColorWeight)" dot={{ fill: 'hsl(160, 84%, 39%)', r: 3 }} />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                  )}
                 </AccordionContent>
               </AccordionItem>
 
-              {/* Session History */}
               <AccordionItem value="storico" className="border rounded-lg">
                 <AccordionTrigger className="px-4 py-3 hover:no-underline">
                   <span className="text-lg font-semibold flex items-center gap-2">
-                    <Activity className="w-5 h-5 text-primary" />
-                    Storico Sessioni ({sessionsByDate.length})
+                    <Calendar className="w-5 h-5 text-primary" />
+                    Storico Allenamenti
                   </span>
                 </AccordionTrigger>
                 <AccordionContent className="px-4 pb-4">
-                  {sessionsByDate.length === 0 ? (
-                    <p className="text-muted-foreground text-sm">Nessuna sessione nel periodo selezionato</p>
-                  ) : (
-                    <div className="space-y-4">
-                      {sessionsByDate.map(session => (
-                        <div key={session.date} className="border rounded-lg p-3">
-                          <p className="font-medium capitalize mb-2">{session.formattedDate}</p>
-                          <div className="space-y-1">
-                            {session.exercises.map((ex: any, i: number) => (
-                              <div key={i} className="text-sm flex justify-between">
-                                <span>{ex.exerciseName} <span className="text-xs text-muted-foreground">({ex.muscle})</span></span>
-                                <span className="text-muted-foreground">
-                                  {ex.setsData?.length || ex.setsCompleted}×{ex.repsCompleted} @ {ex.weightUsed}kg
-                                </span>
-                              </div>
-                            ))}
+                  <div className="space-y-3">
+                    {sessionsByDate.slice(0, 5).map(session => (
+                      <div key={session.date} className="rounded-lg border overflow-hidden">
+                        <div className="p-3 border-b bg-secondary/30">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-primary" />
+                            <span className="font-medium capitalize text-sm">{session.formattedDate}</span>
+                            <span className="text-xs text-muted-foreground ml-auto">{session.exercises.length} esercizi</span>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
+                        <div className="p-3 space-y-2">
+                          {session.exercises.map((ex: any, idx: number) => (
+                            <div key={idx} className="flex items-center gap-2 text-sm">
+                              <Dumbbell className="w-3 h-3 text-primary flex-shrink-0" />
+                              <span className="font-medium">{ex.exerciseName}</span>
+                              <span className="text-muted-foreground">
+                                {ex.muscle} • {ex.setsCompleted} serie
+                                {ex.setsData?.length && (
+                                  <> @ {Math.min(...ex.setsData.map((s: any) => s.weight))}-{Math.max(...ex.setsData.map((s: any) => s.weight))}kg</>
+                                )}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
