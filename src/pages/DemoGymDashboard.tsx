@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { exportMembersExcel, exportMembersPDF } from '@/lib/reportGenerator';
 import {
   Users, ArrowLeft, GraduationCap,
-  Activity, BarChart3, Clock, Dumbbell, Crown, FileDown, Eye, ChevronLeft
+  Activity, BarChart3, Clock, Dumbbell, Crown, FileDown, Eye, ChevronLeft, Trash2
 } from 'lucide-react';
 
 // ===== MOCK DATA =====
@@ -88,7 +88,6 @@ const MOCK_MEMBER_STATS: Record<string, MockMemberStats> = {
   gu16: { totalWorkouts: 0, totalSessions: 0, lastActive: null },
 };
 
-// Mock PT detail data: which clients each PT has
 const MOCK_PT_CLIENTS: Record<string, { name: string; email: string; workouts: number; sessions: number; lastActive: string | null }[]> = {
   gm1: [
     { name: 'Mario Rossi', email: 'mario.rossi@email.com', workouts: 3, sessions: 85, lastActive: '2026-02-14' },
@@ -126,6 +125,7 @@ export default function DemoGymDashboard() {
   const { isAdmin, loading: adminLoading } = useIsAdmin();
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedPT, setSelectedPT] = useState<string | null>(null);
+  const [selectedUser, setSelectedUser] = useState<MockGymMember | null>(null);
 
   const allMembers = [...MOCK_PT_MEMBERS, ...MOCK_USER_MEMBERS];
   const activePTs = MOCK_PT_MEMBERS.filter(m => m.member_id).length;
@@ -146,6 +146,15 @@ export default function DemoGymDashboard() {
       if (!m.member_id) return false;
       const stats = MOCK_MEMBER_STATS[m.id];
       return !stats?.lastActive || new Date(stats.lastActive) < twoWeeksAgo;
+    });
+  }, []);
+
+  // PTs without assigned clients (totalClients === 0 or no clients data)
+  const ptsWithoutClients = useMemo(() => {
+    return MOCK_PT_MEMBERS.filter(m => {
+      if (!m.member_id) return false;
+      const clients = MOCK_PT_CLIENTS[m.id];
+      return !clients || clients.length === 0;
     });
   }, []);
 
@@ -185,6 +194,7 @@ export default function DemoGymDashboard() {
   return (
     <div className="min-h-screen pt-20 pb-8">
       <div className="container mx-auto px-4">
+        {/* Header */}
         <div className="flex items-center justify-between mb-6 animate-fade-in">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" asChild>
@@ -226,6 +236,71 @@ export default function DemoGymDashboard() {
           </div>
         </div>
 
+        {/* KPI Boxes - Always visible */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+          <Card>
+            <CardContent className="pt-4 text-center">
+              <GraduationCap className="w-6 h-6 text-primary mx-auto mb-1" />
+              <p className="text-2xl font-bold">{activePTs}</p>
+              <p className="text-xs text-muted-foreground">PT Attivi</p>
+              {pendingPTs > 0 && <p className="text-xs text-warning">+{pendingPTs} in attesa</p>}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-4 text-center">
+              <Users className="w-6 h-6 text-primary mx-auto mb-1" />
+              <p className="text-2xl font-bold">{activeUsers}</p>
+              <p className="text-xs text-muted-foreground">Utenti Attivi</p>
+              {pendingUsers > 0 && <p className="text-xs text-warning">+{pendingUsers} in attesa</p>}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-4 text-center">
+              <Activity className="w-6 h-6 text-primary mx-auto mb-1" />
+              <p className="text-2xl font-bold">{weeklySessions}</p>
+              <p className="text-xs text-muted-foreground">Attivi questa sett.</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-4 text-center">
+              <Dumbbell className="w-6 h-6 text-primary mx-auto mb-1" />
+              <p className="text-2xl font-bold">{totalWorkouts}</p>
+              <p className="text-xs text-muted-foreground">Schede Totali</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Plan Usage - Always visible */}
+        <Card className="mb-6">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-primary" />
+              Utilizzo Piano
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div>
+              <div className="flex justify-between text-sm mb-1">
+                <span>Personal Trainer</span>
+                <span className="text-muted-foreground">{MOCK_PT_MEMBERS.length}/10</span>
+              </div>
+              <div className="w-full bg-secondary rounded-full h-2">
+                <div className="bg-primary rounded-full h-2 transition-all" style={{ width: `${MOCK_PT_MEMBERS.length / 10 * 100}%` }} />
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-between text-sm mb-1">
+                <span>Utenti</span>
+                <span className="text-muted-foreground">{MOCK_USER_MEMBERS.length}/150</span>
+              </div>
+              <div className="w-full bg-secondary rounded-full h-2">
+                <div className="bg-primary rounded-full h-2 transition-all" style={{ width: `${MOCK_USER_MEMBERS.length / 150 * 100}%` }} />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-3 mb-6">
             <TabsTrigger value="overview">Panoramica</TabsTrigger>
@@ -233,99 +308,110 @@ export default function DemoGymDashboard() {
             <TabsTrigger value="users">Utenti ({MOCK_USER_MEMBERS.length})</TabsTrigger>
           </TabsList>
 
-          {/* OVERVIEW */}
+          {/* PANORAMICA */}
           <TabsContent value="overview" className="space-y-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Card>
-                <CardContent className="pt-4 text-center">
-                  <GraduationCap className="w-6 h-6 text-primary mx-auto mb-1" />
-                  <p className="text-2xl font-bold">{activePTs}</p>
-                  <p className="text-xs text-muted-foreground">PT Attivi</p>
-                  {pendingPTs > 0 && <p className="text-xs text-warning">+{pendingPTs} in attesa</p>}
+            {/* PTs without clients */}
+            {ptsWithoutClients.length > 0 && (
+              <Card className="border-primary/30">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center gap-2 text-primary">
+                    <GraduationCap className="w-5 h-5" />
+                    PT senza utenti assegnati ({ptsWithoutClients.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="rounded-md border overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Nome</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead className="text-center">Schede</TableHead>
+                          <TableHead className="text-center">Sessioni</TableHead>
+                          <TableHead className="text-center">Ultima Attività</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {ptsWithoutClients.map(m => {
+                          const stats = MOCK_MEMBER_STATS[m.id];
+                          return (
+                            <TableRow key={m.id}>
+                              <TableCell className="font-medium">{m.member_name}</TableCell>
+                              <TableCell className="text-muted-foreground text-xs">{m.member_email}</TableCell>
+                              <TableCell className="text-center">{stats?.totalWorkouts || 0}</TableCell>
+                              <TableCell className="text-center">{stats?.totalSessions || 0}</TableCell>
+                              <TableCell className="text-center text-xs">
+                                {stats?.lastActive ? new Date(stats.lastActive).toLocaleDateString('it-IT') : 'Mai'}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </CardContent>
               </Card>
-              <Card>
-                <CardContent className="pt-4 text-center">
-                  <Users className="w-6 h-6 text-primary mx-auto mb-1" />
-                  <p className="text-2xl font-bold">{activeUsers}</p>
-                  <p className="text-xs text-muted-foreground">Utenti Attivi</p>
-                  {pendingUsers > 0 && <p className="text-xs text-warning">+{pendingUsers} in attesa</p>}
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="pt-4 text-center">
-                  <Activity className="w-6 h-6 text-primary mx-auto mb-1" />
-                  <p className="text-2xl font-bold">{weeklySessions}</p>
-                  <p className="text-xs text-muted-foreground">Attivi questa sett.</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="pt-4 text-center">
-                  <Dumbbell className="w-6 h-6 text-primary mx-auto mb-1" />
-                  <p className="text-2xl font-bold">{totalWorkouts}</p>
-                  <p className="text-xs text-muted-foreground">Schede Totali</p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Plan Usage */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5 text-primary" />
-                  Utilizzo Piano
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span>Personal Trainer</span>
-                    <span className="text-muted-foreground">{MOCK_PT_MEMBERS.length}/10</span>
-                  </div>
-                  <div className="w-full bg-secondary rounded-full h-2">
-                    <div className="bg-primary rounded-full h-2 transition-all" style={{ width: `${MOCK_PT_MEMBERS.length / 10 * 100}%` }} />
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span>Utenti</span>
-                    <span className="text-muted-foreground">{MOCK_USER_MEMBERS.length}/150</span>
-                  </div>
-                  <div className="w-full bg-secondary rounded-full h-2">
-                    <div className="bg-primary rounded-full h-2 transition-all" style={{ width: `${MOCK_USER_MEMBERS.length / 150 * 100}%` }} />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            )}
 
             {/* Inactive Members */}
             {inactiveMembers.length > 0 && (
               <Card className="border-warning/30">
-                <CardHeader>
+                <CardHeader className="pb-3">
                   <CardTitle className="text-lg flex items-center gap-2 text-warning">
                     <Clock className="w-5 h-5" />
-                    Membri Inattivi ({inactiveMembers.length})
+                    Utenti Inattivi ({inactiveMembers.length})
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
-                    {inactiveMembers.slice(0, 5).map(m => (
-                      <div key={m.id} className="flex justify-between items-center text-sm">
-                        <span>{m.member_name}</span>
-                        <span className="text-muted-foreground text-xs">
-                          {MOCK_MEMBER_STATS[m.id]?.lastActive
-                            ? `Ultimo: ${new Date(MOCK_MEMBER_STATS[m.id].lastActive!).toLocaleDateString('it-IT')}`
-                            : 'Mai attivo'}
-                        </span>
-                      </div>
-                    ))}
+                  <div className="rounded-md border overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Nome</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Ruolo</TableHead>
+                          <TableHead className="text-center">Schede</TableHead>
+                          <TableHead className="text-center">Sessioni</TableHead>
+                          <TableHead className="text-center">Ultima Attività</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {inactiveMembers.map(m => {
+                          const stats = MOCK_MEMBER_STATS[m.id];
+                          return (
+                            <TableRow key={m.id}>
+                              <TableCell className="font-medium">{m.member_name}</TableCell>
+                              <TableCell className="text-muted-foreground text-xs">{m.member_email}</TableCell>
+                              <TableCell className="text-xs">
+                                <Badge variant="outline" className="text-xs">
+                                  {m.member_role === 'personal_trainer' ? 'PT' : 'Utente'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-center">{stats?.totalWorkouts || 0}</TableCell>
+                              <TableCell className="text-center">{stats?.totalSessions || 0}</TableCell>
+                              <TableCell className="text-center text-xs">
+                                {stats?.lastActive ? new Date(stats.lastActive).toLocaleDateString('it-IT') : 'Mai'}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
                   </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {ptsWithoutClients.length === 0 && inactiveMembers.length === 0 && (
+              <Card>
+                <CardContent className="py-8 text-center text-muted-foreground">
+                  ✅ Tutto in ordine! Nessun PT senza clienti e nessun membro inattivo.
                 </CardContent>
               </Card>
             )}
           </TabsContent>
 
-          {/* TRAINERS */}
+          {/* PT TAB */}
           <TabsContent value="trainers" className="space-y-4">
             {selectedPT && selectedPTData ? (
               <>
@@ -412,38 +498,94 @@ export default function DemoGymDashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
-                    {MOCK_PT_MEMBERS.map(m => {
-                      const stats = MOCK_MEMBER_STATS[m.id];
-                      return (
-                        <div key={m.id}
-                          className={`flex items-center justify-between p-3 rounded-lg border ${m.member_id ? 'hover:border-primary/30 cursor-pointer' : ''} transition-colors`}
-                          onClick={() => m.member_id && setSelectedPT(m.id)}>
-                          <div className="flex-1">
-                            <p className="font-medium">{m.member_name}</p>
-                            <p className="text-xs text-muted-foreground">{m.member_email}</p>
-                            {m.member_id && stats && (
-                              <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
-                                <span>{stats.totalClients || 0} clienti</span>
-                                <span>{stats.totalWorkouts} schede</span>
-                                <span>{stats.totalSessions} sessioni</span>
-                              </div>
-                            )}
-                            {!m.member_id && (
-                              <span className="text-xs text-warning">In attesa di registrazione</span>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
+                  <div className="rounded-md border overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Nome</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead className="text-center">Clienti</TableHead>
+                          <TableHead className="text-center">Schede</TableHead>
+                          <TableHead className="text-center">Sessioni</TableHead>
+                          <TableHead className="text-center">Ultima Attività</TableHead>
+                          <TableHead className="text-center">Stato</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {MOCK_PT_MEMBERS.map(m => {
+                          const stats = MOCK_MEMBER_STATS[m.id];
+                          return (
+                            <TableRow 
+                              key={m.id}
+                              className={m.member_id ? 'cursor-pointer hover:bg-muted/50' : ''}
+                              onClick={() => m.member_id && setSelectedPT(m.id)}
+                            >
+                              <TableCell className="font-medium">{m.member_name}</TableCell>
+                              <TableCell className="text-muted-foreground text-xs">{m.member_email}</TableCell>
+                              <TableCell className="text-center">{stats?.totalClients || 0}</TableCell>
+                              <TableCell className="text-center">{stats?.totalWorkouts || 0}</TableCell>
+                              <TableCell className="text-center">{stats?.totalSessions || 0}</TableCell>
+                              <TableCell className="text-center text-xs">
+                                {stats?.lastActive ? new Date(stats.lastActive).toLocaleDateString('it-IT') : 'Mai'}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                {!m.member_id ? (
+                                  <Badge variant="outline" className="text-xs text-warning border-warning/50">In attesa</Badge>
+                                ) : (
+                                  <Badge variant={isActive(stats?.lastActive || null) ? 'default' : 'secondary'} className="text-xs">
+                                    {isActive(stats?.lastActive || null) ? 'Attivo' : 'Inattivo'}
+                                  </Badge>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
                   </div>
                 </CardContent>
               </Card>
             )}
           </TabsContent>
 
-          {/* USERS - Table View */}
+          {/* USERS TAB */}
           <TabsContent value="users" className="space-y-4">
+            {/* User detail dialog */}
+            <Dialog open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>{selectedUser?.member_name}</DialogTitle>
+                  <DialogDescription>{selectedUser?.member_email}</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="text-center p-3 rounded-lg bg-secondary/50">
+                      <p className="text-xl font-bold">{selectedUser ? MOCK_MEMBER_STATS[selectedUser.id]?.totalWorkouts || 0 : 0}</p>
+                      <p className="text-xs text-muted-foreground">Schede</p>
+                    </div>
+                    <div className="text-center p-3 rounded-lg bg-secondary/50">
+                      <p className="text-xl font-bold">{selectedUser ? MOCK_MEMBER_STATS[selectedUser.id]?.totalSessions || 0 : 0}</p>
+                      <p className="text-xs text-muted-foreground">Sessioni</p>
+                    </div>
+                  </div>
+                  <div className="text-sm">
+                    <span className="text-muted-foreground">PT Associato: </span>
+                    <span className="font-medium">{selectedUser?.pt_name || 'Nessuno'}</span>
+                  </div>
+                  <div className="text-sm">
+                    <span className="text-muted-foreground">Iscritto dal: </span>
+                    <span>{selectedUser ? new Date(selectedUser.created_at).toLocaleDateString('it-IT') : ''}</span>
+                  </div>
+                  <div className="flex flex-col gap-2 pt-2">
+                    <Button variant="outline" size="sm" onClick={() => setSelectedUser(null)}>
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Elimina Utente
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
@@ -470,7 +612,11 @@ export default function DemoGymDashboard() {
                       {MOCK_USER_MEMBERS.map(m => {
                         const stats = MOCK_MEMBER_STATS[m.id];
                         return (
-                          <TableRow key={m.id}>
+                          <TableRow 
+                            key={m.id}
+                            className="cursor-pointer hover:bg-muted/50"
+                            onClick={() => setSelectedUser(m)}
+                          >
                             <TableCell className="font-medium">{m.member_name}</TableCell>
                             <TableCell className="text-muted-foreground text-xs">{m.member_email}</TableCell>
                             <TableCell className="text-xs">
