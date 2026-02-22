@@ -4,21 +4,29 @@ export interface User {
   createdAt: string;
 }
 
+export type TrainingMode = 'normal' | 'superset' | 'cardio';
+
 export interface Exercise {
   id: string;
   name: string;
   muscle: string;
   sets: number;
   reps: number;
+  repsPerSet?: number[]; // Individual reps per set, e.g. [10, 10, 8, 6]
   targetWeight: number;
-  note?: string; // Max 10 chars, visual label e.g. "75% RM1"
-  restTime?: number; // Per-exercise rest time in seconds
+  note?: string;
+  restTime?: number;
   // Superset fields
   isSuperset?: boolean;
   exercise2Name?: string;
   muscle2?: string;
   reps2?: number;
   targetWeight2?: number;
+  // Cardio fields
+  isCardio?: boolean;
+  avgSpeed?: number;
+  avgIncline?: number;
+  avgBpm?: number;
 }
 
 export interface Workout {
@@ -47,11 +55,11 @@ export interface WorkoutProgress {
   muscle: string;
   date: string;
   setsCompleted: number;
-  weightUsed: number; // Max weight used (for backwards compatibility)
-  repsCompleted: number; // Average reps (for backwards compatibility)
+  weightUsed: number;
+  repsCompleted: number;
   notes?: string;
-  exerciseNote?: string; // Visual label from exercise template (e.g. "75% RM1")
-  setsData?: SetData[]; // Detailed data for each set
+  exerciseNote?: string;
+  setsData?: SetData[];
 }
 
 export interface WorkoutSession {
@@ -71,14 +79,20 @@ export interface ExerciseSession {
   targetWeight: number;
   completedSets: SetRecord[];
   notes?: string;
-  exerciseNote?: string; // Label from exercise template (e.g. "75% RM1")
-  restTime?: number; // Per-exercise rest time in seconds
+  exerciseNote?: string;
+  restTime?: number;
+  targetRepsPerSet?: number[];
   // Superset fields
   isSuperset?: boolean;
   exercise2Name?: string;
   muscle2?: string;
   targetReps2?: number;
   targetWeight2?: number;
+  // Cardio fields
+  isCardio?: boolean;
+  avgSpeed?: number;
+  avgIncline?: number;
+  avgBpm?: number;
 }
 
 // Extended SetRecord for superset

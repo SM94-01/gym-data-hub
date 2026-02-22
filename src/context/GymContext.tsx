@@ -130,6 +130,7 @@ export function GymProvider({ children }: { children: ReactNode }) {
           muscle: e.muscle,
           sets: e.sets,
           reps: e.reps,
+          repsPerSet: e.reps_per_set || undefined,
           targetWeight: Number(e.target_weight),
           note: e.note || undefined,
           restTime: e.rest_time || undefined,
@@ -138,6 +139,10 @@ export function GymProvider({ children }: { children: ReactNode }) {
           muscle2: e.muscle2 || undefined,
           reps2: e.reps2 || undefined,
           targetWeight2: e.target_weight2 ? Number(e.target_weight2) : undefined,
+          isCardio: e.is_cardio || false,
+          avgSpeed: e.avg_speed ? Number(e.avg_speed) : undefined,
+          avgIncline: e.avg_incline ? Number(e.avg_incline) : undefined,
+          avgBpm: e.avg_bpm ? Number(e.avg_bpm) : undefined,
         })),
     }));
     
@@ -258,6 +263,7 @@ export function GymProvider({ children }: { children: ReactNode }) {
         muscle: ex.muscle,
         sets: ex.sets,
         reps: ex.reps,
+        reps_per_set: ex.repsPerSet || null,
         target_weight: ex.targetWeight,
         position: idx,
         note: ex.note || null,
@@ -267,6 +273,10 @@ export function GymProvider({ children }: { children: ReactNode }) {
         muscle2: ex.muscle2 || null,
         reps2: ex.reps2 || null,
         target_weight2: ex.targetWeight2 || null,
+        is_cardio: ex.isCardio || false,
+        avg_speed: ex.avgSpeed || null,
+        avg_incline: ex.avgIncline || null,
+        avg_bpm: ex.avgBpm || null,
       }));
       
       const { error: exercisesError } = await supabase
@@ -308,6 +318,7 @@ export function GymProvider({ children }: { children: ReactNode }) {
         muscle: ex.muscle,
         sets: ex.sets,
         reps: ex.reps,
+        reps_per_set: ex.repsPerSet || null,
         target_weight: ex.targetWeight,
         position: idx,
         note: ex.note || null,
@@ -317,6 +328,10 @@ export function GymProvider({ children }: { children: ReactNode }) {
         muscle2: ex.muscle2 || null,
         reps2: ex.reps2 || null,
         target_weight2: ex.targetWeight2 || null,
+        is_cardio: ex.isCardio || false,
+        avg_speed: ex.avgSpeed || null,
+        avg_incline: ex.avgIncline || null,
+        avg_bpm: ex.avgBpm || null,
       }));
       
       await supabase.from('exercises').insert(exercisesToInsert);
