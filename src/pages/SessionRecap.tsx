@@ -244,9 +244,6 @@ export default function SessionRecap() {
                           <div>
                             <p className="font-medium">
                               {exercise.exerciseName}
-                              {exercise.exerciseNote && (
-                                <span className="font-normal text-muted-foreground"> ({exercise.exerciseNote})</span>
-                              )}
                             </p>
                             <p className="text-xs text-muted-foreground">
                               {exercise.muscle} • {exercise.setsCompleted} serie

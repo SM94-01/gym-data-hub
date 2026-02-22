@@ -72,9 +72,13 @@ export type Database = {
       }
       exercises: {
         Row: {
+          avg_bpm: number | null
+          avg_incline: number | null
+          avg_speed: number | null
           created_at: string
           exercise2_name: string | null
           id: string
+          is_cardio: boolean
           is_superset: boolean
           muscle: string
           muscle2: string | null
@@ -82,6 +86,7 @@ export type Database = {
           note: string | null
           position: number
           reps: number
+          reps_per_set: Json | null
           reps2: number | null
           rest_time: number | null
           sets: number
@@ -90,9 +95,13 @@ export type Database = {
           workout_id: string
         }
         Insert: {
+          avg_bpm?: number | null
+          avg_incline?: number | null
+          avg_speed?: number | null
           created_at?: string
           exercise2_name?: string | null
           id?: string
+          is_cardio?: boolean
           is_superset?: boolean
           muscle: string
           muscle2?: string | null
@@ -100,6 +109,7 @@ export type Database = {
           note?: string | null
           position?: number
           reps?: number
+          reps_per_set?: Json | null
           reps2?: number | null
           rest_time?: number | null
           sets?: number
@@ -108,9 +118,13 @@ export type Database = {
           workout_id: string
         }
         Update: {
+          avg_bpm?: number | null
+          avg_incline?: number | null
+          avg_speed?: number | null
           created_at?: string
           exercise2_name?: string | null
           id?: string
+          is_cardio?: boolean
           is_superset?: boolean
           muscle?: string
           muscle2?: string | null
@@ -118,6 +132,7 @@ export type Database = {
           note?: string | null
           position?: number
           reps?: number
+          reps_per_set?: Json | null
           reps2?: number | null
           rest_time?: number | null
           sets?: number
@@ -286,6 +301,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      workout_sessions: {
+        Row: {
+          created_at: string
+          duration_seconds: number
+          ended_at: string
+          id: string
+          started_at: string
+          user_id: string
+          workout_name: string
+        }
+        Insert: {
+          created_at?: string
+          duration_seconds: number
+          ended_at: string
+          id?: string
+          started_at: string
+          user_id: string
+          workout_name: string
+        }
+        Update: {
+          created_at?: string
+          duration_seconds?: number
+          ended_at?: string
+          id?: string
+          started_at?: string
+          user_id?: string
+          workout_name?: string
+        }
+        Relationships: []
       }
       workouts: {
         Row: {

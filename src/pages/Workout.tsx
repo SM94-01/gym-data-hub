@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ArrowLeft, Play, Check, ChevronRight, ChevronLeft, Trophy, Timer, Pause, Plus, Dumbbell, Zap, MessageSquare, ChevronDown, X, Loader2 } from 'lucide-react';
+import { ArrowLeft, Play, Check, ChevronRight, ChevronLeft, Trophy, Timer, Pause, Plus, Dumbbell, Zap, MessageSquare, ChevronDown, ChevronUp, X, Loader2, Heart } from 'lucide-react';
 import { toast } from 'sonner';
 import { AppVersion } from '@/components/gym/AppVersion';
 
@@ -39,6 +39,9 @@ export default function Workout() {
   const [mode, setMode] = useState<WorkoutMode>('select');
   const [isSaving, setIsSaving] = useState(false);
 
+  // Workout duration tracking (hidden)
+  const [workoutStartTime, setWorkoutStartTime] = useState<string | null>(null);
+
   // Custom workout state
   const [newExercise, setNewExercise] = useState({
     name: '',
@@ -60,6 +63,9 @@ export default function Workout() {
   const inputRef2 = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const dropdownRef2 = useRef<HTMLDivElement>(null);
+
+  // Exercise preview expand state
+  const [expandedExerciseId, setExpandedExerciseId] = useState<string | null>(null);
 
   const workouts = getUserWorkouts();
 
@@ -119,6 +125,7 @@ export default function Workout() {
   useEffect(() => {
     if (currentSession && !selectedWorkoutId) {
       setSelectedWorkoutId(currentSession.workoutId);
+      setWorkoutStartTime(currentSession.startedAt);
     } else if (urlWorkoutId && !selectedWorkoutId && !currentSession) {
       setSelectedWorkoutId(urlWorkoutId);
       if (shouldExpand) {
@@ -164,14 +171,42 @@ export default function Workout() {
     if (!workout) return;
 
     const allProgress = getUserProgress();
+    const now = new Date().toISOString();
+    setWorkoutStartTime(now);
 
     const exercises: ExerciseSession[] = workout.exercises.map(ex => {
+      // Cardio exercises don't need set tracking
+      if (ex.isCardio) {
+        return {
+          exerciseId: ex.id,
+          exerciseName: ex.name,
+          muscle: ex.muscle,
+          targetSets: 1,
+          targetReps: 1,
+          targetWeight: 0,
+          exerciseNote: ex.note,
+          restTime: ex.restTime,
+          isCardio: true,
+          avgSpeed: ex.avgSpeed,
+          avgIncline: ex.avgIncline,
+          avgBpm: ex.avgBpm,
+          completedSets: [{
+            setNumber: 1,
+            reps: 1,
+            weight: 0,
+            completed: false,
+          }]
+        };
+      }
+
       const exerciseProgress = allProgress
         .filter(p => p.exerciseId === ex.id)
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+      const targetRepsPerSet = ex.repsPerSet || Array(ex.sets).fill(ex.reps);
       
       let defaultWeights: number[] = Array(ex.sets).fill(ex.targetWeight);
-      let defaultReps: number[] = Array(ex.sets).fill(ex.reps);
+      let defaultReps: number[] = [...targetRepsPerSet];
       let defaultWeights2: number[] = Array(ex.sets).fill(ex.targetWeight2 || 0);
       let defaultReps2: number[] = Array(ex.sets).fill(ex.reps2 || 10);
       
@@ -184,16 +219,15 @@ export default function Workout() {
           });
           defaultReps = Array(ex.sets).fill(0).map((_, i) => {
             const setData = lastSession.setsData?.find(s => s.setNumber === i + 1);
-            return setData?.reps ?? ex.reps;
+            return setData?.reps ?? targetRepsPerSet[i] ?? ex.reps;
           });
         }
       }
 
       // For superset, also look for exercise 2 progress
       if (ex.isSuperset && ex.exercise2Name) {
-        const ex2Name = ex.exercise2Name;
         const ex2Progress = allProgress
-          .filter(p => p.exerciseName === ex2Name)
+          .filter(p => p.exerciseName === ex.exercise2Name)
           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         
         if (ex2Progress.length > 0) {
@@ -220,6 +254,7 @@ export default function Workout() {
         targetWeight: ex.targetWeight,
         exerciseNote: ex.note,
         restTime: ex.restTime,
+        targetRepsPerSet: ex.repsPerSet,
         isSuperset: ex.isSuperset || false,
         exercise2Name: ex.exercise2Name,
         muscle2: ex.muscle2,
@@ -239,17 +274,19 @@ export default function Workout() {
     startSession({
       workoutId: workout.id,
       workoutName: workout.name,
-      startedAt: new Date().toISOString(),
+      startedAt: now,
       recoveryTime,
       exercises
     });
   };
 
   const handleStartCustomWorkout = () => {
+    const now = new Date().toISOString();
+    setWorkoutStartTime(now);
     startSession({
       workoutId: 'custom-' + Date.now(),
       workoutName: 'Allenamento Custom',
-      startedAt: new Date().toISOString(),
+      startedAt: now,
       recoveryTime,
       exercises: []
     });
@@ -303,16 +340,8 @@ export default function Workout() {
     updateSession(updatedSession);
     setCurrentExerciseIndex(updatedSession.exercises.length - 1);
     setNewExercise({
-      name: '',
-      muscle: '',
-      sets: 3,
-      reps: 10,
-      targetWeight: 0,
-      isSuperset: false,
-      name2: '',
-      muscle2: '',
-      reps2: 10,
-      targetWeight2: 0,
+      name: '', muscle: '', sets: 3, reps: 10, targetWeight: 0,
+      isSuperset: false, name2: '', muscle2: '', reps2: 10, targetWeight2: 0,
     });
     toast.success(newExercise.isSuperset ? 'Superset aggiunto!' : 'Esercizio aggiunto!');
   };
@@ -330,10 +359,7 @@ export default function Workout() {
           ...ex,
           completedSets: ex.completedSets.map((set, sIdx) => {
             if (sIdx !== setIndex) return set;
-            return {
-              ...set,
-              [field]: value
-            };
+            return { ...set, [field]: value };
           })
         };
       })
@@ -358,118 +384,158 @@ export default function Workout() {
     updateSession(updatedSession);
   };
 
+  const saveWorkoutDuration = async () => {
+    if (!user || !currentSession) return;
+    const startedAt = workoutStartTime || currentSession.startedAt;
+    const endedAt = new Date().toISOString();
+    const durationMs = new Date(endedAt).getTime() - new Date(startedAt).getTime();
+    const durationSeconds = Math.round(durationMs / 1000);
+
+    try {
+      await supabase.from('workout_sessions').insert({
+        user_id: user.id,
+        workout_name: currentSession.workoutName,
+        started_at: startedAt,
+        ended_at: endedAt,
+        duration_seconds: durationSeconds,
+      } as any);
+    } catch (e) {
+      console.error('Error saving workout duration:', e);
+    }
+  };
+
   const handleFinishWorkout = async () => {
     if (!currentSession || isSaving) return;
     setIsSaving(true);
 
     try {
+      // Save workout duration
+      await saveWorkoutDuration();
 
-    // Save progress for each exercise
-    for (const ex of currentSession.exercises) {
-      const completedSets = ex.completedSets.filter(s => s.completed);
-      
-      if (completedSets.length > 0) {
-        // Save exercise 1 progress
-        const maxWeight = Math.max(...completedSets.map(s => s.weight));
-        const avgReps = completedSets.reduce((sum, s) => sum + s.reps, 0) / completedSets.length;
-        const setsData = completedSets.map(s => ({
-          setNumber: s.setNumber,
-          reps: s.reps,
-          weight: s.weight
-        }));
-
-        // For superset, extract exercise 1 name from "Superset (Ex1+Ex2)" format
-        let exercise1Name = ex.exerciseName;
-        if (ex.isSuperset && ex.exerciseName.startsWith('Superset (')) {
-          const match = ex.exerciseName.match(/Superset \((.+)\+(.+)\)/);
-          if (match) {
-            exercise1Name = match[1];
+      // Save progress for each exercise
+      for (const ex of currentSession.exercises) {
+        // Skip cardio from set-based progress
+        if (ex.isCardio) {
+          const isCompleted = ex.completedSets.some(s => s.completed);
+          if (isCompleted) {
+            await addProgress({
+              exerciseId: ex.exerciseId,
+              exerciseName: ex.exerciseName,
+              muscle: ex.muscle,
+              date: new Date().toISOString(),
+              setsCompleted: 1,
+              weightUsed: 0,
+              repsCompleted: 0,
+              notes: ex.notes || [
+                ex.avgSpeed && `${ex.avgSpeed} km/h`,
+                ex.avgIncline && `${ex.avgIncline}%`,
+                ex.avgBpm && `${ex.avgBpm} bpm`
+              ].filter(Boolean).join(' | '),
+              exerciseNote: ex.exerciseNote,
+              setsData: [],
+            });
           }
+          continue;
         }
 
-        await addProgress({
-          exerciseId: ex.exerciseId,
-          exerciseName: exercise1Name,
-          muscle: ex.muscle,
-          date: new Date().toISOString(),
-          setsCompleted: completedSets.length,
-          weightUsed: maxWeight,
-          repsCompleted: Math.round(avgReps),
-          notes: ex.notes,
-          exerciseNote: ex.exerciseNote,
-          setsData
-        });
-
-        // Save exercise 2 progress for superset
-        if (ex.isSuperset && ex.exercise2Name && ex.muscle2) {
-          const supersetSets = completedSets as SupersetSetRecord[];
-          const weights2 = supersetSets.map(s => s.weight2 || 0);
-          const reps2Arr = supersetSets.map(s => s.reps2 || 0);
-          const maxWeight2 = Math.max(...weights2);
-          const avgReps2 = reps2Arr.reduce((sum, r) => sum + r, 0) / reps2Arr.length;
-          const setsData2 = supersetSets.map(s => ({
+        const completedSets = ex.completedSets.filter(s => s.completed);
+        
+        if (completedSets.length > 0) {
+          const maxWeight = Math.max(...completedSets.map(s => s.weight));
+          const avgReps = completedSets.reduce((sum, s) => sum + s.reps, 0) / completedSets.length;
+          const setsData = completedSets.map(s => ({
             setNumber: s.setNumber,
-            reps: s.reps2 || 0,
-            weight: s.weight2 || 0
+            reps: s.reps,
+            weight: s.weight
           }));
 
+          let exercise1Name = ex.exerciseName;
+          if (ex.isSuperset && ex.exerciseName.startsWith('Superset (')) {
+            const match = ex.exerciseName.match(/Superset \((.+)\+(.+)\)/);
+            if (match) exercise1Name = match[1];
+          }
+
           await addProgress({
-            exerciseId: crypto.randomUUID(),
-            exerciseName: ex.exercise2Name,
-            muscle: ex.muscle2,
+            exerciseId: ex.exerciseId,
+            exerciseName: exercise1Name,
+            muscle: ex.muscle,
             date: new Date().toISOString(),
             setsCompleted: completedSets.length,
-            weightUsed: maxWeight2,
-            repsCompleted: Math.round(avgReps2),
+            weightUsed: maxWeight,
+            repsCompleted: Math.round(avgReps),
             notes: ex.notes,
-            setsData: setsData2
+            exerciseNote: ex.exerciseNote,
+            setsData
           });
+
+          // Save exercise 2 progress for superset
+          if (ex.isSuperset && ex.exercise2Name && ex.muscle2) {
+            const supersetSets = completedSets as SupersetSetRecord[];
+            const weights2 = supersetSets.map(s => s.weight2 || 0);
+            const reps2Arr = supersetSets.map(s => s.reps2 || 0);
+            const maxWeight2 = Math.max(...weights2);
+            const avgReps2 = reps2Arr.reduce((sum, r) => sum + r, 0) / reps2Arr.length;
+            const setsData2 = supersetSets.map(s => ({
+              setNumber: s.setNumber,
+              reps: s.reps2 || 0,
+              weight: s.weight2 || 0
+            }));
+
+            await addProgress({
+              exerciseId: crypto.randomUUID(),
+              exerciseName: ex.exercise2Name,
+              muscle: ex.muscle2,
+              date: new Date().toISOString(),
+              setsCompleted: completedSets.length,
+              weightUsed: maxWeight2,
+              repsCompleted: Math.round(avgReps2),
+              notes: ex.notes,
+              setsData: setsData2
+            });
+          }
         }
       }
-    }
-    
-    // Notify trainer if user has one
-    try {
-      if (user) {
-        const { data: trainerRelations } = await supabase
-          .from('trainer_clients')
-          .select('trainer_id')
-          .eq('client_id', user.id);
+      
+      // Notify trainer if user has one
+      try {
+        if (user) {
+          const { data: trainerRelations } = await supabase
+            .from('trainer_clients')
+            .select('trainer_id')
+            .eq('client_id', user.id);
 
-        if (trainerRelations && trainerRelations.length > 0) {
-          const profileRes = await supabase.from('profiles').select('name').eq('id', user.id).maybeSingle();
-          const clientName = profileRes.data?.name || 'Atleta';
+          if (trainerRelations && trainerRelations.length > 0) {
+            const profileRes = await supabase.from('profiles').select('name').eq('id', user.id).maybeSingle();
+            const clientName = profileRes.data?.name || 'Atleta';
 
-          // Fetch all trainer profiles in parallel
-          const trainerProfilesRes = await Promise.all(
-            trainerRelations.map(tr => supabase.from('profiles').select('name').eq('id', tr.trainer_id).maybeSingle())
-          );
+            const trainerProfilesRes = await Promise.all(
+              trainerRelations.map(tr => supabase.from('profiles').select('name').eq('id', tr.trainer_id).maybeSingle())
+            );
 
-          // Send notification to each trainer in parallel
-          const notifyResults = await Promise.all(
-            trainerRelations.map((tr, i) =>
-              supabase.functions.invoke('notify-workout', {
-                body: {
-                  type: 'workout_completed',
-                  trainerId: tr.trainer_id,
-                  trainerName: trainerProfilesRes[i].data?.name || 'Trainer',
-                  clientName,
-                },
-              })
-            )
-          );
-          notifyResults.forEach((res, i) => {
-            console.log(`notify-workout to trainer ${trainerRelations[i].trainer_id}:`, res.data, res.error);
-          });
+            const notifyResults = await Promise.all(
+              trainerRelations.map((tr, i) =>
+                supabase.functions.invoke('notify-workout', {
+                  body: {
+                    type: 'workout_completed',
+                    trainerId: tr.trainer_id,
+                    trainerName: trainerProfilesRes[i].data?.name || 'Trainer',
+                    clientName,
+                  },
+                })
+              )
+            );
+            notifyResults.forEach((res, i) => {
+              console.log(`notify-workout to trainer ${trainerRelations[i].trainer_id}:`, res.data, res.error);
+            });
+          }
         }
+      } catch (e) {
+        console.error('Error sending workout completion notification:', e);
       }
-    } catch (e) {
-      console.error('Error sending workout completion notification:', e);
-    }
 
-    endSession();
-    toast.success('Allenamento completato! 💪');
-    navigate('/');
+      endSession();
+      toast.success('Allenamento completato! 💪');
+      navigate('/');
     } catch (error) {
       console.error('Error finishing workout:', error);
       toast.error('Errore durante il salvataggio');
@@ -520,9 +586,7 @@ export default function Workout() {
               <div className="flex items-center justify-center gap-3">
                 <Timer className="w-6 h-6 text-warning" />
                 <span className="font-display text-3xl font-bold text-warning">{formatTime(timeLeft)}</span>
-                <Button variant="outline" size="sm" onClick={() => setTimeLeft(prev => prev + 30)} className="border-warning/50 text-warning hover:bg-warning/10 font-semibold">
-                  +30
-                </Button>
+                <Button variant="outline" size="sm" onClick={() => setTimeLeft(prev => prev + 30)} className="border-warning/50 text-warning hover:bg-warning/10 font-semibold">+30</Button>
                 <Button variant="ghost" size="sm" onClick={() => { setTimerActive(false); setTimeLeft(0); }}>
                   <Pause className="w-4 h-4" />
                 </Button>
@@ -535,20 +599,14 @@ export default function Workout() {
           {isCustomWorkout && (
             <div className="glass-card rounded-xl p-4 mb-6 space-y-3 border-primary/30">
               <h3 className="font-semibold flex items-center gap-2">
-                <Plus className="w-4 h-4 text-primary" />
-                Aggiungi Esercizio
+                <Plus className="w-4 h-4 text-primary" /> Aggiungi Esercizio
               </h3>
-
               {/* Superset Toggle */}
               <div className="flex items-center space-x-2 p-2 bg-secondary/30 rounded-lg">
-                <Checkbox
-                  id="superset-custom"
-                  checked={newExercise.isSuperset}
-                  onCheckedChange={(checked) => setNewExercise({ ...newExercise, isSuperset: !!checked })}
-                />
+                <Checkbox id="superset-custom" checked={newExercise.isSuperset}
+                  onCheckedChange={(checked) => setNewExercise({ ...newExercise, isSuperset: !!checked })} />
                 <Label htmlFor="superset-custom" className="flex items-center gap-2 cursor-pointer text-sm">
-                  <Zap className="w-4 h-4 text-warning" />
-                  Superset
+                  <Zap className="w-4 h-4 text-warning" /> Superset
                 </Label>
               </div>
 
@@ -556,108 +614,72 @@ export default function Workout() {
               <div className={`space-y-3 ${newExercise.isSuperset ? 'p-3 border border-border/50 rounded-lg bg-secondary/10' : ''}`}>
                 {newExercise.isSuperset && <p className="text-xs font-medium text-muted-foreground">Esercizio 1</p>}
                 <div className="relative">
-                  <Input
-                    ref={inputRef}
-                    value={newExercise.name}
+                  <Input ref={inputRef} value={newExercise.name}
                     onChange={e => { setNewExercise({ ...newExercise, name: e.target.value }); setShowSuggestions(true); }}
                     onFocus={() => { if (exerciseSuggestions.length > 0) setShowSuggestions(true); }}
-                    placeholder="Nome esercizio"
-                    className="bg-secondary/50"
-                    autoComplete="off"
-                  />
+                    placeholder="Nome esercizio" className="bg-secondary/50" autoComplete="off" />
                   {showSuggestions && filteredSuggestions.length > 0 && (
                     <div ref={dropdownRef} className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
                       <div className="p-1">
                         <p className="px-2 py-1.5 text-xs font-medium text-muted-foreground">Esercizi precedenti</p>
                         {filteredSuggestions.map((s) => (
                           <button key={s} type="button" onClick={() => { setNewExercise({ ...newExercise, name: s }); setShowSuggestions(false); }}
-                            className="w-full text-left px-2 py-1.5 text-sm rounded hover:bg-accent hover:text-accent-foreground transition-colors">
-                            {s}
-                          </button>
+                            className="w-full text-left px-2 py-1.5 text-sm rounded hover:bg-accent hover:text-accent-foreground transition-colors">{s}</button>
                         ))}
                       </div>
                     </div>
                   )}
                 </div>
                 <Select value={newExercise.muscle} onValueChange={v => setNewExercise({ ...newExercise, muscle: v })}>
-                  <SelectTrigger className="bg-secondary/50">
-                    <SelectValue placeholder="Seleziona muscolo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {MUSCLE_GROUPS.map(muscle => <SelectItem key={muscle} value={muscle}>{muscle}</SelectItem>)}
-                  </SelectContent>
+                  <SelectTrigger className="bg-secondary/50"><SelectValue placeholder="Seleziona muscolo" /></SelectTrigger>
+                  <SelectContent>{MUSCLE_GROUPS.map(muscle => <SelectItem key={muscle} value={muscle}>{muscle}</SelectItem>)}</SelectContent>
                 </Select>
                 <div className="grid grid-cols-3 gap-2">
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Serie</Label>
-                    <Input type="number" value={newExercise.sets || ''} onChange={e => setNewExercise({ ...newExercise, sets: parseInt(e.target.value) || 0 })} placeholder="3" className="bg-secondary/50" />
-                  </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Reps</Label>
-                    <Input type="number" value={newExercise.reps || ''} onChange={e => setNewExercise({ ...newExercise, reps: parseInt(e.target.value) || 0 })} placeholder="10" className="bg-secondary/50" />
-                  </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Peso (kg)</Label>
-                    <Input type="number" step="0.5" value={newExercise.targetWeight || ''} onChange={e => setNewExercise({ ...newExercise, targetWeight: parseFloat(e.target.value) || 0 })} placeholder="0" className="bg-secondary/50" />
-                  </div>
+                  <div><Label className="text-xs text-muted-foreground">Serie</Label>
+                    <Input type="number" value={newExercise.sets || ''} onChange={e => setNewExercise({ ...newExercise, sets: parseInt(e.target.value) || 0 })} placeholder="3" className="bg-secondary/50" /></div>
+                  <div><Label className="text-xs text-muted-foreground">Reps</Label>
+                    <Input type="number" value={newExercise.reps || ''} onChange={e => setNewExercise({ ...newExercise, reps: parseInt(e.target.value) || 0 })} placeholder="10" className="bg-secondary/50" /></div>
+                  <div><Label className="text-xs text-muted-foreground">Peso (kg)</Label>
+                    <Input type="number" step="0.5" value={newExercise.targetWeight || ''} onChange={e => setNewExercise({ ...newExercise, targetWeight: parseFloat(e.target.value) || 0 })} placeholder="0" className="bg-secondary/50" /></div>
                 </div>
               </div>
 
               {/* Exercise 2 (Superset) */}
               {newExercise.isSuperset && (
                 <div className="space-y-3 p-3 border border-warning/30 rounded-lg bg-warning/5">
-                  <p className="text-xs font-medium text-warning flex items-center gap-1">
-                    <Zap className="w-3 h-3" />
-                    Esercizio 2
-                  </p>
+                  <p className="text-xs font-medium text-warning flex items-center gap-1"><Zap className="w-3 h-3" /> Esercizio 2</p>
                   <div className="relative">
-                    <Input
-                      ref={inputRef2}
-                      value={newExercise.name2}
+                    <Input ref={inputRef2} value={newExercise.name2}
                       onChange={e => { setNewExercise({ ...newExercise, name2: e.target.value }); setShowSuggestions2(true); }}
                       onFocus={() => { if (exerciseSuggestions.length > 0) setShowSuggestions2(true); }}
-                      placeholder="Nome esercizio 2"
-                      className="bg-secondary/50"
-                      autoComplete="off"
-                    />
+                      placeholder="Nome esercizio 2" className="bg-secondary/50" autoComplete="off" />
                     {showSuggestions2 && filteredSuggestions2.length > 0 && (
                       <div ref={dropdownRef2} className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
                         <div className="p-1">
                           <p className="px-2 py-1.5 text-xs font-medium text-muted-foreground">Esercizi precedenti</p>
                           {filteredSuggestions2.map((s) => (
                             <button key={s} type="button" onClick={() => { setNewExercise({ ...newExercise, name2: s }); setShowSuggestions2(false); }}
-                              className="w-full text-left px-2 py-1.5 text-sm rounded hover:bg-accent hover:text-accent-foreground transition-colors">
-                              {s}
-                            </button>
+                              className="w-full text-left px-2 py-1.5 text-sm rounded hover:bg-accent hover:text-accent-foreground transition-colors">{s}</button>
                           ))}
                         </div>
                       </div>
                     )}
                   </div>
                   <Select value={newExercise.muscle2} onValueChange={v => setNewExercise({ ...newExercise, muscle2: v })}>
-                    <SelectTrigger className="bg-secondary/50">
-                      <SelectValue placeholder="Seleziona muscolo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {MUSCLE_GROUPS.map(muscle => <SelectItem key={muscle} value={muscle}>{muscle}</SelectItem>)}
-                    </SelectContent>
+                    <SelectTrigger className="bg-secondary/50"><SelectValue placeholder="Seleziona muscolo" /></SelectTrigger>
+                    <SelectContent>{MUSCLE_GROUPS.map(muscle => <SelectItem key={muscle} value={muscle}>{muscle}</SelectItem>)}</SelectContent>
                   </Select>
                   <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Reps</Label>
-                      <Input type="number" value={newExercise.reps2 || ''} onChange={e => setNewExercise({ ...newExercise, reps2: parseInt(e.target.value) || 0 })} placeholder="10" className="bg-secondary/50" />
-                    </div>
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Peso (kg)</Label>
-                      <Input type="number" step="0.5" value={newExercise.targetWeight2 || ''} onChange={e => setNewExercise({ ...newExercise, targetWeight2: parseFloat(e.target.value) || 0 })} placeholder="0" className="bg-secondary/50" />
-                    </div>
+                    <div><Label className="text-xs text-muted-foreground">Reps</Label>
+                      <Input type="number" value={newExercise.reps2 || ''} onChange={e => setNewExercise({ ...newExercise, reps2: parseInt(e.target.value) || 0 })} placeholder="10" className="bg-secondary/50" /></div>
+                    <div><Label className="text-xs text-muted-foreground">Peso (kg)</Label>
+                      <Input type="number" step="0.5" value={newExercise.targetWeight2 || ''} onChange={e => setNewExercise({ ...newExercise, targetWeight2: parseFloat(e.target.value) || 0 })} placeholder="0" className="bg-secondary/50" /></div>
                   </div>
                 </div>
               )}
 
               <Button onClick={handleAddExerciseDuringWorkout} className="w-full gap-2">
-                <Plus className="w-4 h-4" />
-                {newExercise.isSuperset ? 'Aggiungi Superset' : 'Aggiungi Esercizio'}
+                <Plus className="w-4 h-4" /> {newExercise.isSuperset ? 'Aggiungi Superset' : 'Aggiungi Esercizio'}
               </Button>
             </div>
           )}
@@ -677,122 +699,130 @@ export default function Workout() {
                   )}
                   {currentExercise.isSuperset && (
                     <span className="px-2 py-1 bg-warning/20 text-warning rounded-full text-xs font-medium flex items-center gap-1">
-                      <Zap className="w-3 h-3" />
-                      Superset
+                      <Zap className="w-3 h-3" /> Superset
+                    </span>
+                  )}
+                  {currentExercise.isCardio && (
+                    <span className="px-2 py-1 bg-destructive/20 text-destructive rounded-full text-xs font-medium flex items-center gap-1">
+                      <Heart className="w-3 h-3" /> Cardio
                     </span>
                   )}
                 </div>
                 <h2 className="font-display text-2xl font-bold mt-3 text-foreground">
                   {currentExercise.exerciseName}
-                  {currentExercise.exerciseNote && (
-                    <span className="text-base font-normal text-muted-foreground ml-2">({currentExercise.exerciseNote})</span>
-                  )}
                 </h2>
-                <p className="text-muted-foreground mt-1">
-                  {currentExercise.targetSets} × {currentExercise.targetReps} @ {currentExercise.targetWeight}kg
-                  {currentExercise.isSuperset && (
-                    <span className="text-warning"> | {currentExercise.targetReps2} @ {currentExercise.targetWeight2}kg</span>
-                  )}
-                </p>
+
+                {/* Cardio info */}
+                {currentExercise.isCardio ? (
+                  <div className="flex items-center justify-center gap-4 mt-2 text-sm text-muted-foreground">
+                    {currentExercise.avgSpeed && <span>{currentExercise.avgSpeed} km/h</span>}
+                    {currentExercise.avgIncline && <span>{currentExercise.avgIncline}%</span>}
+                    {currentExercise.avgBpm && <span>{currentExercise.avgBpm} bpm</span>}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground mt-1">
+                    {currentExercise.targetSets} × {currentExercise.targetReps} @ {currentExercise.targetWeight}kg
+                    {currentExercise.isSuperset && (
+                      <span className="text-warning"> | {currentExercise.targetReps2} @ {currentExercise.targetWeight2}kg</span>
+                    )}
+                  </p>
+                )}
+
+                {/* Exercise note displayed directly below */}
+                {currentExercise.exerciseNote && (
+                  <div className="mt-3 p-2 bg-secondary/30 rounded-lg">
+                    <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
+                      <MessageSquare className="w-4 h-4 text-warning flex-shrink-0" />
+                      {currentExercise.exerciseNote}
+                    </p>
+                  </div>
+                )}
               </div>
 
-              {/* Sets */}
-              <div className="space-y-3">
-                {currentExercise.completedSets.map((set, setIdx) => {
-                  const supersetSet = set as SupersetSetRecord;
-                  return (
-                    <div
-                      key={set.setNumber}
-                      className={`p-4 rounded-xl transition-all ${set.completed ? 'bg-primary/10 border border-primary/30' : 'bg-secondary/50'}`}
-                    >
-                      <div className="flex items-center gap-4 mb-2">
-                        <Checkbox
-                          checked={set.completed}
-                          onCheckedChange={checked => handleSetUpdate(currentExerciseIndex, setIdx, 'completed', !!checked)}
-                          className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                        />
-                        <span className="font-display font-semibold text-lg w-8">{set.setNumber}</span>
-                      </div>
-                      
-                      {/* Exercise 1 inputs */}
-                      {currentExercise.isSuperset && (
-                        <p className="text-xs text-muted-foreground mb-1 ml-12">
-                          {currentExercise.exerciseName.match(/Superset \((.+)\+/)?.[1] || 'Esercizio 1'}
-                        </p>
-                      )}
-                      <div className="flex items-center gap-4 ml-12">
-                        <div className="flex-1 grid grid-cols-2 gap-3">
-                          <div>
-                            <label className="text-xs text-muted-foreground mb-1 block">Reps</label>
-                            <Input
-                              type="number"
-                              value={set.reps || ''}
-                              onChange={e => handleSetUpdate(currentExerciseIndex, setIdx, 'reps', parseInt(e.target.value) || 0)}
-                              className="bg-background/50 h-10 text-center"
-                              placeholder="0"
-                            />
-                          </div>
-                          <div>
-                            <label className="text-xs text-muted-foreground mb-1 block">Kg</label>
-                            <Input
-                              type="number"
-                              step="0.5"
-                              value={set.weight || ''}
-                              onChange={e => handleSetUpdate(currentExerciseIndex, setIdx, 'weight', parseFloat(e.target.value) || 0)}
-                              className="bg-background/50 h-10 text-center"
-                              placeholder="0"
-                            />
-                          </div>
+              {/* Sets - for cardio just a single checkbox */}
+              {currentExercise.isCardio ? (
+                <div className="flex items-center justify-center gap-4 p-4 bg-secondary/50 rounded-xl">
+                  <Checkbox
+                    checked={currentExercise.completedSets[0]?.completed || false}
+                    onCheckedChange={checked => handleSetUpdate(currentExerciseIndex, 0, 'completed', !!checked)}
+                    className="data-[state=checked]:bg-primary data-[state=checked]:border-primary w-6 h-6"
+                  />
+                  <span className="font-medium">{currentExercise.completedSets[0]?.completed ? 'Completato ✓' : 'Segna come completato'}</span>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {currentExercise.completedSets.map((set, setIdx) => {
+                    const supersetSet = set as SupersetSetRecord;
+                    return (
+                      <div key={set.setNumber} className={`p-4 rounded-xl transition-all ${set.completed ? 'bg-primary/10 border border-primary/30' : 'bg-secondary/50'}`}>
+                        <div className="flex items-center gap-4 mb-2">
+                          <Checkbox checked={set.completed}
+                            onCheckedChange={checked => handleSetUpdate(currentExerciseIndex, setIdx, 'completed', !!checked)}
+                            className="data-[state=checked]:bg-primary data-[state=checked]:border-primary" />
+                          <span className="font-display font-semibold text-lg w-8">{set.setNumber}</span>
                         </div>
-                      </div>
-
-                      {/* Exercise 2 inputs (Superset) */}
-                      {currentExercise.isSuperset && (
-                        <div className="mt-3 pt-3 border-t border-warning/30 ml-12">
-                          <p className="text-xs text-warning mb-1 flex items-center gap-1">
-                            <Zap className="w-3 h-3" />
-                            {currentExercise.exercise2Name || 'Esercizio 2'}
+                        
+                        {currentExercise.isSuperset && (
+                          <p className="text-xs text-muted-foreground mb-1 ml-12">
+                            {currentExercise.exerciseName.match(/Superset \((.+)\+/)?.[1] || 'Esercizio 1'}
                           </p>
-                          <div className="grid grid-cols-2 gap-3">
+                        )}
+                        <div className="flex items-center gap-4 ml-12">
+                          <div className="flex-1 grid grid-cols-2 gap-3">
                             <div>
                               <label className="text-xs text-muted-foreground mb-1 block">Reps</label>
-                              <Input
-                                type="number"
-                                value={supersetSet.reps2 || ''}
-                                onChange={e => handleSetUpdate(currentExerciseIndex, setIdx, 'reps2', parseInt(e.target.value) || 0)}
-                                className="bg-background/50 h-10 text-center border-warning/30"
-                                placeholder="0"
-                              />
+                              <Input type="number" value={set.reps || ''}
+                                onChange={e => handleSetUpdate(currentExerciseIndex, setIdx, 'reps', parseInt(e.target.value) || 0)}
+                                className="bg-background/50 h-10 text-center" placeholder="0" />
                             </div>
                             <div>
                               <label className="text-xs text-muted-foreground mb-1 block">Kg</label>
-                              <Input
-                                type="number"
-                                step="0.5"
-                                value={supersetSet.weight2 || ''}
-                                onChange={e => handleSetUpdate(currentExerciseIndex, setIdx, 'weight2', parseFloat(e.target.value) || 0)}
-                                className="bg-background/50 h-10 text-center border-warning/30"
-                                placeholder="0"
-                              />
+                              <Input type="number" step="0.5" value={set.weight || ''}
+                                onChange={e => handleSetUpdate(currentExerciseIndex, setIdx, 'weight', parseFloat(e.target.value) || 0)}
+                                className="bg-background/50 h-10 text-center" placeholder="0" />
                             </div>
                           </div>
                         </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
 
-              <div className="mt-4 text-center text-sm text-muted-foreground">
-                {completedSets} / {currentExercise.targetSets} serie completate
-              </div>
+                        {currentExercise.isSuperset && (
+                          <div className="mt-3 pt-3 border-t border-warning/30 ml-12">
+                            <p className="text-xs text-warning mb-1 flex items-center gap-1">
+                              <Zap className="w-3 h-3" /> {currentExercise.exercise2Name || 'Esercizio 2'}
+                            </p>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="text-xs text-muted-foreground mb-1 block">Reps</label>
+                                <Input type="number" value={supersetSet.reps2 || ''}
+                                  onChange={e => handleSetUpdate(currentExerciseIndex, setIdx, 'reps2', parseInt(e.target.value) || 0)}
+                                  className="bg-background/50 h-10 text-center border-warning/30" placeholder="0" />
+                              </div>
+                              <div>
+                                <label className="text-xs text-muted-foreground mb-1 block">Kg</label>
+                                <Input type="number" step="0.5" value={supersetSet.weight2 || ''}
+                                  onChange={e => handleSetUpdate(currentExerciseIndex, setIdx, 'weight2', parseFloat(e.target.value) || 0)}
+                                  className="bg-background/50 h-10 text-center border-warning/30" placeholder="0" />
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {!currentExercise.isCardio && (
+                <div className="mt-4 text-center text-sm text-muted-foreground">
+                  {completedSets} / {currentExercise.targetSets} serie completate
+                </div>
+              )}
 
               {/* Notes Section */}
               <div className="mt-4">
                 <Collapsible>
                   <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full justify-center">
                     <MessageSquare className="w-4 h-4" />
-                    <span>{currentExercise.notes ? 'Modifica nota' : 'Aggiungi nota'}</span>
+                    <span>{currentExercise.notes ? 'Modifica nota sessione' : 'Aggiungi nota sessione'}</span>
                     <ChevronDown className="w-4 h-4" />
                   </CollapsibleTrigger>
                   <CollapsibleContent className="mt-3">
@@ -818,12 +848,8 @@ export default function Workout() {
           ) : (
             <div className="glass-card rounded-2xl p-6 mb-6 text-center">
               <Zap className="w-12 h-12 text-primary mx-auto mb-4" />
-              <h2 className="font-display text-xl font-bold text-foreground mb-2">
-                Allenamento Custom
-              </h2>
-              <p className="text-muted-foreground">
-                Aggiungi il tuo primo esercizio per iniziare!
-              </p>
+              <h2 className="font-display text-xl font-bold text-foreground mb-2">Allenamento Custom</h2>
+              <p className="text-muted-foreground">Aggiungi il tuo primo esercizio per iniziare!</p>
             </div>
           )}
 
@@ -833,17 +859,13 @@ export default function Workout() {
               <h4 className="text-sm font-medium text-muted-foreground mb-3">Esercizi aggiunti:</h4>
               <div className="flex flex-wrap gap-2">
                 {currentSession.exercises.map((ex, idx) => (
-                  <button
-                    key={ex.exerciseId}
-                    onClick={() => setCurrentExerciseIndex(idx)}
+                  <button key={ex.exerciseId} onClick={() => setCurrentExerciseIndex(idx)}
                     className={`px-3 py-1.5 rounded-full text-sm transition-all flex items-center gap-1 ${
-                      idx === currentExerciseIndex
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
-                    }`}
-                  >
+                      idx === currentExerciseIndex ? 'bg-primary text-primary-foreground' : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
+                    }`}>
                     {ex.isSuperset && <Zap className="w-3 h-3" />}
-                    {ex.exerciseName}{ex.exerciseNote && ` (${ex.exerciseNote})`}
+                    {ex.isCardio && <Heart className="w-3 h-3" />}
+                    {ex.exerciseName}
                   </button>
                 ))}
               </div>
@@ -853,16 +875,9 @@ export default function Workout() {
           {/* Navigation */}
           <div className="flex items-center justify-between gap-4">
             {currentExerciseIndex === 0 ? (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  if (window.confirm("Sei sicuro di voler annullare l'allenamento?")) {
-                    endSession();
-                    navigate('/');
-                  }
-                }}
-                className="border-destructive/50 text-destructive hover:bg-destructive/10"
-              >
+              <Button variant="outline" onClick={() => {
+                if (window.confirm("Sei sicuro di voler annullare l'allenamento?")) { endSession(); navigate('/'); }
+              }} className="border-destructive/50 text-destructive hover:bg-destructive/10">
                 <X className="w-5 h-5" />
               </Button>
             ) : (
@@ -878,16 +893,12 @@ export default function Workout() {
               </Button>
             ) : (
               <Button onClick={() => setCurrentExerciseIndex(prev => prev + 1)} className="flex-1 gap-2">
-                Prossimo
-                <ChevronRight className="w-5 h-5" />
+                Prossimo <ChevronRight className="w-5 h-5" />
               </Button>
             )}
 
-            <Button
-              variant="outline"
-              onClick={() => setCurrentExerciseIndex(prev => Math.min(totalExercises - 1, prev + 1))}
-              disabled={currentExerciseIndex === totalExercises - 1 || totalExercises === 0}
-            >
+            <Button variant="outline" onClick={() => setCurrentExerciseIndex(prev => Math.min(totalExercises - 1, prev + 1))}
+              disabled={currentExerciseIndex === totalExercises - 1 || totalExercises === 0}>
               <ChevronRight className="w-5 h-5" />
             </Button>
           </div>
@@ -905,26 +916,19 @@ export default function Workout() {
       <div className="container mx-auto px-4 max-w-lg">
         <div className="mb-6">
           <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="text-muted-foreground mb-4">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Torna alla Home
+            <ArrowLeft className="w-4 h-4 mr-2" /> Torna alla Home
           </Button>
-          <h1 className="font-display text-3xl font-bold text-foreground">
-            Allenamento
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Seleziona una scheda o crea un allenamento custom
-          </p>
+          <h1 className="font-display text-3xl font-bold text-foreground">Allenamento</h1>
+          <p className="text-muted-foreground mt-2">Seleziona una scheda o crea un allenamento custom</p>
         </div>
 
         {/* Mode Tabs */}
         <div className="flex gap-2 mb-6">
           <Button variant={mode === 'select' ? 'default' : 'outline'} onClick={() => setMode('select')} className="flex-1 gap-2">
-            <Dumbbell className="w-4 h-4" />
-            Scheda Salvata
+            <Dumbbell className="w-4 h-4" /> Scheda Salvata
           </Button>
           <Button variant={mode === 'custom' ? 'default' : 'outline'} onClick={() => setMode('custom')} className="flex-1 gap-2">
-            <Zap className="w-4 h-4" />
-            Custom
+            <Zap className="w-4 h-4" /> Custom
           </Button>
         </div>
 
@@ -932,9 +936,7 @@ export default function Workout() {
           <>
             {workouts.length === 0 ? (
               <div className="glass-card rounded-2xl p-8 text-center">
-                <p className="text-muted-foreground mb-4">
-                  Nessuna scheda disponibile. Crea la tua prima scheda!
-                </p>
+                <p className="text-muted-foreground mb-4">Nessuna scheda disponibile. Crea la tua prima scheda!</p>
                 <Button onClick={() => navigate('/create')}>Crea Scheda</Button>
               </div>
             ) : (
@@ -945,18 +947,10 @@ export default function Workout() {
 
                 {/* Recovery Time Setting */}
                 <div className="glass-card rounded-xl p-4">
-                  <Label className="text-sm font-medium text-muted-foreground mb-2 block">
-                    Tempo di recupero (secondi)
-                  </Label>
+                  <Label className="text-sm font-medium text-muted-foreground mb-2 block">Tempo di recupero (secondi)</Label>
                   <div className="flex gap-2">
                     {[30, 60, 90, 120].map(time => (
-                      <Button
-                        key={time}
-                        variant={recoveryTime === time ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setRecoveryTime(time)}
-                        className="flex-1"
-                      >
+                      <Button key={time} variant={recoveryTime === time ? 'default' : 'outline'} size="sm" onClick={() => setRecoveryTime(time)} className="flex-1">
                         {time}s
                       </Button>
                     ))}
@@ -965,12 +959,10 @@ export default function Workout() {
 
                 {workouts.map(workout => (
                   <Collapsible key={workout.id} open={expandedWorkoutId === workout.id} onOpenChange={(open) => setExpandedWorkoutId(open ? workout.id : null)}>
-                    <div
-                      onClick={() => setSelectedWorkoutId(workout.id)}
+                    <div onClick={() => setSelectedWorkoutId(workout.id)}
                       className={`glass-card rounded-xl overflow-hidden cursor-pointer transition-all ${
                         selectedWorkoutId === workout.id ? 'border-primary glow-primary' : 'hover:border-primary/30'
-                      }`}
-                    >
+                      }`}>
                       <div className="p-5">
                         <div className="flex items-center justify-between">
                           <div>
@@ -979,11 +971,9 @@ export default function Workout() {
                             </div>
                             <p className="text-sm text-muted-foreground">{workout.exercises.length} esercizi</p>
                           </div>
-                          <div
-                            className={`w-5 h-5 rounded-full border-2 transition-all ${
-                              selectedWorkoutId === workout.id ? 'bg-primary border-primary' : 'border-muted-foreground'
-                            }`}
-                          >
+                          <div className={`w-5 h-5 rounded-full border-2 transition-all ${
+                            selectedWorkoutId === workout.id ? 'bg-primary border-primary' : 'border-muted-foreground'
+                          }`}>
                             {selectedWorkoutId === workout.id && <Check className="w-full h-full text-primary-foreground p-0.5" />}
                           </div>
                         </div>
@@ -994,8 +984,7 @@ export default function Workout() {
                         <div className="px-5 pb-4">
                           <CollapsibleTrigger
                             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full"
-                            onClick={e => e.stopPropagation()}
-                          >
+                            onClick={e => e.stopPropagation()}>
                             <Dumbbell className="w-4 h-4" />
                             <span>Mostra esercizi</span>
                             <ChevronDown className="w-4 h-4 ml-auto" />
@@ -1024,21 +1013,55 @@ export default function Workout() {
                                   }
                                 }
 
+                                const repsDisplay = ex.repsPerSet && ex.repsPerSet.length > 0
+                                  ? ex.repsPerSet.join('/')
+                                  : String(ex.reps);
+
+                                const isExpanded = expandedExerciseId === ex.id;
+                                const hasDetails = ex.note || ex.restTime;
+
                                 return (
-                                  <div key={ex.id} className="flex items-center gap-3 p-2 bg-secondary/30 rounded-lg text-sm">
-                                    <span className="text-muted-foreground w-5">
-                                      {ex.isSuperset ? <Zap className="w-4 h-4 text-warning" /> : `${idx + 1}.`}
-                                    </span>
-                                    <div className="flex-1">
-                                      <span className="font-medium">
-                                        {ex.name}
-                                        {ex.note && <span className="font-normal text-muted-foreground"> ({ex.note})</span>}
+                                  <div key={ex.id}>
+                                    <div
+                                      className={`flex items-center gap-3 p-2 bg-secondary/30 rounded-lg text-sm ${hasDetails ? 'cursor-pointer hover:bg-secondary/50' : ''}`}
+                                      onClick={(e) => { e.stopPropagation(); if (hasDetails) setExpandedExerciseId(isExpanded ? null : ex.id); }}
+                                    >
+                                      <span className="text-muted-foreground w-5">
+                                        {ex.isSuperset ? <Zap className="w-4 h-4 text-warning" /> : ex.isCardio ? <Heart className="w-4 h-4 text-destructive" /> : `${idx + 1}.`}
                                       </span>
-                                      <span className="text-muted-foreground ml-2">({ex.muscle})</span>
+                                      <div className="flex-1">
+                                        <span className="font-medium">{ex.name}</span>
+                                        <span className="text-muted-foreground ml-2">({ex.muscle})</span>
+                                      </div>
+                                      {ex.isCardio ? (
+                                        <span className="text-xs text-muted-foreground">
+                                          {[ex.avgSpeed && `${ex.avgSpeed}km/h`, ex.avgIncline && `${ex.avgIncline}%`, ex.avgBpm && `${ex.avgBpm}bpm`].filter(Boolean).join(' ')}
+                                        </span>
+                                      ) : (
+                                        <span className="text-xs text-muted-foreground">
+                                          {ex.sets}×{repsDisplay} @ {weightDisplay}
+                                        </span>
+                                      )}
+                                      {hasDetails && (
+                                        isExpanded ? <ChevronUp className="w-3 h-3 text-muted-foreground" /> : <ChevronDown className="w-3 h-3 text-muted-foreground" />
+                                      )}
                                     </div>
-                                    <span className="text-xs text-muted-foreground">
-                                      {ex.sets}×{ex.reps} @ {weightDisplay}
-                                    </span>
+                                    {isExpanded && hasDetails && (
+                                      <div className="ml-8 mt-1 mb-1 p-2 bg-secondary/20 rounded-lg space-y-1">
+                                        {ex.note && (
+                                          <div className="flex items-start gap-2 text-xs text-muted-foreground">
+                                            <MessageSquare className="w-3 h-3 text-warning mt-0.5" />
+                                            <span>{ex.note}</span>
+                                          </div>
+                                        )}
+                                        {ex.restTime && (
+                                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                            <Timer className="w-3 h-3 text-primary" />
+                                            <span>Recupero: {ex.restTime}s</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
                                   </div>
                                 );
                               })}
@@ -1052,8 +1075,7 @@ export default function Workout() {
 
                 <div className="flex gap-3 mt-6">
                   <Button onClick={handleStartWorkout} size="lg" className="flex-1" disabled={!selectedWorkoutId}>
-                    <Play className="w-5 h-5 mr-2" />
-                    Inizia
+                    <Play className="w-5 h-5 mr-2" /> Inizia
                   </Button>
                   <Button variant="outline" size="lg" onClick={() => navigate('/create')}>
                     <Plus className="w-5 h-5" />
@@ -1066,18 +1088,10 @@ export default function Workout() {
           <div className="space-y-4">
             {/* Recovery Time Setting */}
             <div className="glass-card rounded-xl p-4">
-              <Label className="text-sm font-medium text-muted-foreground mb-2 block">
-                Tempo di recupero (secondi)
-              </Label>
+              <Label className="text-sm font-medium text-muted-foreground mb-2 block">Tempo di recupero (secondi)</Label>
               <div className="flex gap-2">
                 {[30, 60, 90, 120].map(time => (
-                  <Button
-                    key={time}
-                    variant={recoveryTime === time ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setRecoveryTime(time)}
-                    className="flex-1"
-                  >
+                  <Button key={time} variant={recoveryTime === time ? 'default' : 'outline'} size="sm" onClick={() => setRecoveryTime(time)} className="flex-1">
                     {time}s
                   </Button>
                 ))}
@@ -1087,12 +1101,9 @@ export default function Workout() {
             <div className="glass-card rounded-xl p-6 text-center">
               <Zap className="w-12 h-12 text-primary mx-auto mb-4" />
               <h3 className="font-display text-xl font-bold mb-2">Allenamento Custom</h3>
-              <p className="text-muted-foreground mb-6">
-                Inizia l'allenamento e aggiungi gli esercizi man mano durante la sessione
-              </p>
+              <p className="text-muted-foreground mb-6">Inizia l'allenamento e aggiungi gli esercizi man mano durante la sessione</p>
               <Button onClick={handleStartCustomWorkout} size="lg" className="w-full gap-2">
-                <Play className="w-5 h-5" />
-                Inizia Allenamento
+                <Play className="w-5 h-5" /> Inizia Allenamento
               </Button>
             </div>
 
