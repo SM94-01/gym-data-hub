@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ArrowLeft, Play, Check, ChevronRight, ChevronLeft, Trophy, Timer, Pause, Plus, Dumbbell, Zap, MessageSquare, ChevronDown, X } from 'lucide-react';
+import { ArrowLeft, Play, Check, ChevronRight, ChevronLeft, Trophy, Timer, Pause, Plus, Dumbbell, Zap, MessageSquare, ChevronDown, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AppVersion } from '@/components/gym/AppVersion';
 
@@ -37,6 +37,7 @@ export default function Workout() {
   const [timerActive, setTimerActive] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const [mode, setMode] = useState<WorkoutMode>('select');
+  const [isSaving, setIsSaving] = useState(false);
 
   // Custom workout state
   const [newExercise, setNewExercise] = useState({
@@ -358,7 +359,10 @@ export default function Workout() {
   };
 
   const handleFinishWorkout = async () => {
-    if (!currentSession) return;
+    if (!currentSession || isSaving) return;
+    setIsSaving(true);
+
+    try {
 
     // Save progress for each exercise
     for (const ex of currentSession.exercises) {
@@ -466,6 +470,12 @@ export default function Workout() {
     endSession();
     toast.success('Allenamento completato! 💪');
     navigate('/');
+    } catch (error) {
+      console.error('Error finishing workout:', error);
+      toast.error('Errore durante il salvataggio');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (!user) {
@@ -483,7 +493,15 @@ export default function Workout() {
     const progress = totalExercises > 0 ? currentExerciseIndex / totalExercises * 100 : 0;
 
     return (
-      <div className="min-h-screen pt-20 pb-8">
+      <div className="min-h-screen pt-20 pb-8 relative">
+        {/* Full-screen saving overlay */}
+        {isSaving && (
+          <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center gap-4">
+            <Loader2 className="w-10 h-10 animate-spin text-primary" />
+            <p className="text-lg font-semibold text-foreground">Salvataggio in corso...</p>
+            <p className="text-sm text-muted-foreground">Attendi qualche secondo</p>
+          </div>
+        )}
         <div className="container mx-auto px-4 max-w-lg">
           {/* Progress Bar */}
           <div className="mb-6">
@@ -854,9 +872,9 @@ export default function Workout() {
             )}
 
             {currentExerciseIndex === totalExercises - 1 || totalExercises === 0 ? (
-              <Button onClick={handleFinishWorkout} className="flex-1 gap-2" disabled={totalExercises === 0}>
-                <Trophy className="w-5 h-5" />
-                Termina Allenamento
+              <Button onClick={handleFinishWorkout} className="flex-1 gap-2" disabled={totalExercises === 0 || isSaving}>
+                {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Trophy className="w-5 h-5" />}
+                {isSaving ? 'Salvataggio...' : 'Termina Allenamento'}
               </Button>
             ) : (
               <Button onClick={() => setCurrentExerciseIndex(prev => prev + 1)} className="flex-1 gap-2">
