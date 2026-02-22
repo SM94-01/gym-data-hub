@@ -204,11 +204,12 @@ export default function Workout() {
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
       const targetRepsPerSet = ex.repsPerSet || Array(ex.sets).fill(ex.reps);
+      const targetRepsPerSet2 = ex.repsPerSet2 || Array(ex.sets).fill(ex.reps2 || 10);
       
       let defaultWeights: number[] = Array(ex.sets).fill(ex.targetWeight);
       let defaultReps: number[] = [...targetRepsPerSet];
       let defaultWeights2: number[] = Array(ex.sets).fill(ex.targetWeight2 || 0);
-      let defaultReps2: number[] = Array(ex.sets).fill(ex.reps2 || 10);
+      let defaultReps2: number[] = [...targetRepsPerSet2];
       
       if (exerciseProgress.length > 0) {
         const lastSession = exerciseProgress[0];
@@ -414,27 +415,8 @@ export default function Workout() {
 
       // Save progress for each exercise
       for (const ex of currentSession.exercises) {
-        // Skip cardio from set-based progress
+        // Skip cardio exercises entirely - no progress saved
         if (ex.isCardio) {
-          const isCompleted = ex.completedSets.some(s => s.completed);
-          if (isCompleted) {
-            await addProgress({
-              exerciseId: ex.exerciseId,
-              exerciseName: ex.exerciseName,
-              muscle: ex.muscle,
-              date: new Date().toISOString(),
-              setsCompleted: 1,
-              weightUsed: 0,
-              repsCompleted: 0,
-              notes: ex.notes || [
-                ex.avgSpeed && `${ex.avgSpeed} km/h`,
-                ex.avgIncline && `${ex.avgIncline}%`,
-                ex.avgBpm && `${ex.avgBpm} bpm`
-              ].filter(Boolean).join(' | '),
-              exerciseNote: ex.exerciseNote,
-              setsData: [],
-            });
-          }
           continue;
         }
 

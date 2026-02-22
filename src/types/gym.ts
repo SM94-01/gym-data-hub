@@ -21,6 +21,7 @@ export interface Exercise {
   exercise2Name?: string;
   muscle2?: string;
   reps2?: number;
+  repsPerSet2?: number[];
   targetWeight2?: number;
   // Cardio fields
   isCardio?: boolean;
