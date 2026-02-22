@@ -1,0 +1,1 @@
+ALTER TABLE public.exercises ADD COLUMN reps_per_set_2 jsonb DEFAULT NULL;

@@ -28,7 +28,7 @@ export function ExerciseForm({ onAdd }: ExerciseFormProps) {
   // Superset state
   const [name2, setName2] = useState("");
   const [muscle2, setMuscle2] = useState("");
-  const [reps2, setReps2] = useState("");
+  const [repsPerSet2, setRepsPerSet2] = useState<string[]>([]);
   const [weight2, setWeight2] = useState("");
   const [showSuggestions2, setShowSuggestions2] = useState(false);
   const inputRef2 = useRef<HTMLInputElement>(null);
@@ -51,8 +51,18 @@ export function ExerciseForm({ onAdd }: ExerciseFormProps) {
         }
         return newArr;
       });
+      if (trainingMode === 'superset') {
+        setRepsPerSet2(prev => {
+          const newArr = Array(setsCount).fill("");
+          for (let i = 0; i < Math.min(prev.length, setsCount); i++) {
+            newArr[i] = prev[i];
+          }
+          return newArr;
+        });
+      }
     } else {
       setRepsPerSet([]);
+      setRepsPerSet2([]);
     }
   }, [setsCount, trainingMode]);
 
@@ -120,6 +130,7 @@ export function ExerciseForm({ onAdd }: ExerciseFormProps) {
     } else if (trainingMode === 'superset') {
       if (!name || !muscle || !name2 || !muscle2) return;
       const parsedRepsPerSet = repsPerSet.map(r => parseInt(r) || 10);
+      const parsedRepsPerSet2 = repsPerSet2.map(r => parseInt(r) || 10);
       onAdd({
         name: `Superset (${name}+${name2})`,
         muscle,
@@ -132,7 +143,8 @@ export function ExerciseForm({ onAdd }: ExerciseFormProps) {
         isSuperset: true,
         exercise2Name: name2,
         muscle2,
-        reps2: parseInt(reps2) || 10,
+        reps2: parsedRepsPerSet2[0] || 10,
+        repsPerSet2: parsedRepsPerSet2.length > 0 ? parsedRepsPerSet2 : undefined,
         targetWeight2: parseFloat(weight2) || 0,
       });
     } else {
@@ -153,7 +165,7 @@ export function ExerciseForm({ onAdd }: ExerciseFormProps) {
     // Reset form
     setName(""); setMuscle(""); setSets(""); setRepsPerSet([]); setWeight(""); setNote("");
     setRestTime(""); setTrainingMode("normal");
-    setName2(""); setMuscle2(""); setReps2(""); setWeight2("");
+    setName2(""); setMuscle2(""); setRepsPerSet2([]); setWeight2("");
     setAvgSpeed(""); setAvgIncline(""); setAvgBpm("");
   };
 
@@ -376,14 +388,35 @@ export function ExerciseForm({ onAdd }: ExerciseFormProps) {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="reps-2">Ripetizioni</Label>
-                  <Input id="reps-2" type="number" value={reps2} onChange={(e) => setReps2(e.target.value)} min="1" placeholder="10" className="bg-secondary/50 border-border/50" />
-                </div>
-                <div className="space-y-2">
                   <Label htmlFor="weight-2">Peso (kg)</Label>
                   <Input id="weight-2" type="number" step="0.5" value={weight2} onChange={(e) => setWeight2(e.target.value)} placeholder="0" className="bg-secondary/50 border-border/50" />
                 </div>
               </div>
+              {/* Per-set reps for exercise 2 */}
+              {setsCount > 0 && (
+                <div className="space-y-2">
+                  <Label>Ripetizioni per serie</Label>
+                  <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.min(setsCount, 6)}, 1fr)` }}>
+                    {repsPerSet2.map((r, i) => (
+                      <div key={i} className="space-y-1">
+                        <span className="text-xs text-muted-foreground text-center block">S{i + 1}</span>
+                        <Input
+                          type="number"
+                          value={r}
+                          onChange={(e) => {
+                            const newReps = [...repsPerSet2];
+                            newReps[i] = e.target.value;
+                            setRepsPerSet2(newReps);
+                          }}
+                          placeholder="10"
+                          className="bg-secondary/50 border-border/50 text-center"
+                          min="1"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </>

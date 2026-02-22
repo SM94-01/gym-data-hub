@@ -87,6 +87,7 @@ export type Database = {
           position: number
           reps: number
           reps_per_set: Json | null
+          reps_per_set_2: Json | null
           reps2: number | null
           rest_time: number | null
           sets: number
@@ -110,6 +111,7 @@ export type Database = {
           position?: number
           reps?: number
           reps_per_set?: Json | null
+          reps_per_set_2?: Json | null
           reps2?: number | null
           rest_time?: number | null
           sets?: number
@@ -133,6 +135,7 @@ export type Database = {
           position?: number
           reps?: number
           reps_per_set?: Json | null
+          reps_per_set_2?: Json | null
           reps2?: number | null
           rest_time?: number | null
           sets?: number
